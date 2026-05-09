@@ -28,13 +28,15 @@ function Padres() {
   });
 
   async function generate() {
+    if (!profile) return;
+    const p = profile;
     setLoading(true); setReport("");
     try {
       const r = await ask({ data: {
-        childName: profile.childName, xp: profile.xp, streak: profile.streak,
-        completedCount: profile.completedLessons.length,
-        subjects: profile.subjects.map((s) => ({ name: SUBJECTS.find(x => x.id === s.id)!.label, difficulty: s.difficulty })),
-        language: profile.language,
+        childName: p.childName, xp: p.xp, streak: p.streak,
+        completedCount: p.completedLessons.length,
+        subjects: p.subjects.map((s) => ({ name: SUBJECTS.find(x => x.id === s.id)!.label, difficulty: s.difficulty })),
+        language: p.language,
       }});
       setReport(r.report);
     } catch (e) { setReport(e instanceof Error ? e.message : "Error"); }

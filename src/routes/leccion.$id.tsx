@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { generateLesson } from "@/lib/ai.functions";
+import { generateLesson, generateHeroImage } from "@/lib/ai.functions";
 import { awardXP, markLessonDone, useProfile } from "@/lib/profile";
 import { buildCurriculum } from "@/lib/curriculum";
 import { IgnoOwl } from "@/components/Igno";
@@ -23,7 +23,9 @@ function Lesson() {
   const profile = useProfile();
   const nav = useNavigate();
   const gen = useServerFn(generateLesson);
+  const genImg = useServerFn(generateHeroImage);
   const [lesson, setLesson] = useState<LessonShape | null>(null);
+  const [heroUrl, setHeroUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [stage, setStage] = useState<"reading" | "quiz" | "done">("reading");
   const [qIdx, setQIdx] = useState(0);
@@ -34,15 +36,22 @@ function Lesson() {
     if (!profile) return;
     const node = buildCurriculum(profile).find((n) => n.id === id);
     if (!node) { setError("Lección no encontrada"); return; }
-    setLesson(null); setError(null); setStage("reading"); setQIdx(0); setPicked(null); setCorrect(0);
+    setLesson(null); setHeroUrl(null); setError(null); setStage("reading"); setQIdx(0); setPicked(null); setCorrect(0);
     gen({ data: {
       lessonId: id, subject: node.subjectLabel, topic: node.topic,
       childName: profile.childName, age: profile.age, level: profile.level,
       interests: profile.interests, difficulty: node.difficulty,
       language: profile.language,
-    }}).then((r) => setLesson(r.lesson as LessonShape))
+    }}).then((r) => {
+        const lsn = r.lesson as LessonShape;
+        setLesson(lsn);
+        const promptText = lsn.heroImagePrompt || `${node.subjectLabel}: ${lsn.title}`;
+        genImg({ data: { prompt: promptText, interests: profile.interests } })
+          .then((res) => { if (res.url) setHeroUrl(res.url); })
+          .catch(() => {});
+      })
       .catch((e) => setError(e instanceof Error ? e.message : "Error generando la lección"));
-  }, [id, profile, gen]);
+  }, [id, profile, gen, genImg]);
 
   if (!profile) return <Loader text="Cargando perfil…" />;
   if (error) return (
@@ -72,10 +81,28 @@ function Lesson() {
     <main className="max-w-2xl mx-auto px-4 py-6 pb-24">
       {stage === "reading" && (
         <article className="space-y-5 animate-pop-in">
-          <div className="rounded-3xl overflow-hidden bg-gradient-hero p-6 text-primary-foreground shadow-soft">
-            <div className="text-xs font-bold uppercase opacity-90 tracking-wider">Misión</div>
-            <h1 className="font-display text-3xl font-bold mt-1">{lesson.title}</h1>
-            <p className="mt-2 opacity-90 text-sm">{lesson.objective}</p>
+          <div className="rounded-3xl overflow-hidden bg-gradient-hero text-primary-foreground shadow-soft">
+            {heroUrl ? (
+              <div className="relative aspect-[16/9] w-full">
+                <img src={heroUrl} alt={lesson.title} className="absolute inset-0 w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-primary/80 via-primary/30 to-transparent" />
+                <div className="absolute bottom-0 left-0 right-0 p-5">
+                  <div className="text-[10px] font-bold uppercase opacity-90 tracking-wider">Misión</div>
+                  <h1 className="font-display text-2xl md:text-3xl font-bold leading-tight">{lesson.title}</h1>
+                  <p className="mt-1 opacity-90 text-sm">{lesson.objective}</p>
+                </div>
+              </div>
+            ) : (
+              <div className="p-6">
+                <div className="text-xs font-bold uppercase opacity-90 tracking-wider">Misión</div>
+                <h1 className="font-display text-3xl font-bold mt-1">{lesson.title}</h1>
+                <p className="mt-2 opacity-90 text-sm">{lesson.objective}</p>
+                <div className="mt-3 flex items-center gap-2 text-xs opacity-90">
+                  <span className="inline-block w-3 h-3 rounded-full bg-accent animate-pulse" />
+                  IGNO está pintando la portada…
+                </div>
+              </div>
+            )}
           </div>
           <div className="rounded-3xl bg-coral text-coral-foreground p-5 shadow-soft">
             <div className="text-xs font-bold uppercase opacity-90 mb-1">📖 Historia</div>

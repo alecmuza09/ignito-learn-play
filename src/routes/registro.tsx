@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type KeyboardEvent } from "react";
 import { AVATARS, LEVELS, SUBJECTS, interestsForAge, saveProfile, type Difficulty, type Subject, type LearningLevel, type IgnotoProfile } from "@/lib/profile";
 import { IgnoOwl } from "@/components/Igno";
 
@@ -26,6 +26,7 @@ function Registro() {
   });
   const interests = useMemo(() => interestsForAge(data.age), [data.age]);
   const totalSteps = 5;
+  const [customInput, setCustomInput] = useState("");
 
   function next() { setStep((s) => Math.min(totalSteps, s + 1)); }
   function back() { setStep((s) => Math.max(1, s - 1)); }
@@ -34,10 +35,24 @@ function Registro() {
     setData((d) => {
       const has = d.interests.includes(id);
       const list = has ? d.interests.filter((x) => x !== id) : [...d.interests, id];
-      if (list.length > 8) return d;
+      if (list.length > 12) return d;
       return { ...d, interests: list };
     });
   }
+  function addCustomInterest() {
+    const v = customInput.trim();
+    if (!v) return;
+    setData((d) => {
+      if (d.interests.includes(v) || d.interests.length >= 12) return d;
+      return { ...d, interests: [...d.interests, v] };
+    });
+    setCustomInput("");
+  }
+  function onCustomKey(e: KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter" || e.key === ",") { e.preventDefault(); addCustomInterest(); }
+  }
+  const presetIds = new Set(interests.map((i) => i.id));
+  const customSelected = data.interests.filter((i) => !presetIds.has(i));
   function toggleSubject(id: Subject) {
     setData((d) => {
       const has = d.subjects.find((s) => s.id === id);
@@ -137,7 +152,7 @@ function Registro() {
         {step === 3 && (
           <>
             <h2 className="font-display text-3xl font-bold mb-1">¿Qué te apasiona?</h2>
-            <p className="text-muted-foreground mb-5">Elige entre 3 y 8. ({data.interests.length} seleccionados)</p>
+            <p className="text-muted-foreground mb-5">Elige al menos 3 — y añade los tuyos (Spiderman, Roblox, dinosaurios, princesas…). {data.interests.length} seleccionados.</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
               {interests.map((it) => {
                 const sel = data.interests.includes(it.id);
@@ -149,6 +164,32 @@ function Registro() {
                   </button>
                 );
               })}
+            </div>
+            <div className="mt-5">
+              <label className="block text-sm font-bold mb-2">✨ Añade los tuyos</label>
+              <div className="flex gap-2">
+                <input
+                  value={customInput}
+                  onChange={(e) => setCustomInput(e.target.value)}
+                  onKeyDown={onCustomKey}
+                  placeholder="Spiderman, Minecraft, Roblox, carros…"
+                  maxLength={40}
+                  className="flex-1 rounded-2xl bg-muted px-4 py-3 outline-none focus:ring-2 ring-primary"
+                />
+                <button type="button" onClick={addCustomInterest} className="rounded-2xl bg-primary text-primary-foreground px-4 font-bold shadow-pop hover:translate-y-0.5 hover:shadow-none transition-all">
+                  +
+                </button>
+              </div>
+              {customSelected.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {customSelected.map((c) => (
+                    <span key={c} className="inline-flex items-center gap-1.5 rounded-full bg-coral text-coral-foreground px-3 py-1 text-xs font-bold">
+                      {c}
+                      <button onClick={() => toggleInterest(c)} aria-label={`Quitar ${c}`} className="opacity-80 hover:opacity-100">✕</button>
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           </>
         )}
