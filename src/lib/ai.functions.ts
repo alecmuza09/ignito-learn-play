@@ -317,6 +317,7 @@ export const generateHeroImage = createServerFn({ method: "POST" })
         false,
         model,
         ["image", "text"],
+        18000,
       );
       return images[0] ?? "";
     };
