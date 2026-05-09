@@ -78,9 +78,8 @@ function HeroBlock({ b, url }: { b: Extract<GenBlock,{type:"hero"}>; url?: strin
           <div className="text-xs font-bold uppercase opacity-90 tracking-wider">Misión</div>
           <h1 className="font-display text-3xl font-bold mt-1">{b.title}</h1>
           {b.subtitle && <p className="mt-2 opacity-90 text-sm">{b.subtitle}</p>}
-          <div className="mt-3 flex items-center gap-2 text-xs opacity-90">
-            <span className="inline-block w-3 h-3 rounded-full bg-accent animate-pulse" />
-            IGNO está pintando la portada…
+          <div className="mt-4 text-foreground">
+            <AnimatedVisualFallback prompt={b.imagePrompt} title={b.title} compact />
           </div>
         </div>
       )}
