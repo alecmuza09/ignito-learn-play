@@ -207,9 +207,11 @@ Composition rules:
 - Density: ${targetCount} body blocks (excluding finalQuiz).
 - Always include at least one of: compare OR steps OR tryIt — to break the monotony.
 - Prefer a "simulation" block for visible processes — pick the MOST SPECIFIC kind that matches the topic (e.g. "heart" for circulation, "solarSystem" for planets, "circuit" for electricity, "dna" for genetics, "volcano", "lifeCycle" for metamorphosis, "multiplication" for tables, "geometry" for shapes, "timeline" for history, "atom" for chemistry, "wave" for sound). Avoid "generic" unless nothing fits — every simulation in the lesson should use a DIFFERENT kind so visuals never repeat.
+- Each "simulation" MUST have a title AND caption that name the EXACT concept being shown (not generic words like "ciencia" or "aprende"). The "steps" array must describe the precise stages of THIS specific process, in order, in the child's language.
 - Across all simulation/tryIt/miniQuiz blocks try to pair each with a distinct visual kind so animations stay varied.
 - Sprinkle exactly one mascotSays somewhere mid-lesson with a warm, in-character message.
-- Every imagePrompt must be a vivid 1-sentence English cartoon prompt that mixes the concept with the child's favorite world. NO text inside images.
+- Every imagePrompt MUST contain BOTH (a) a concrete, specific visual of the lesson concept (the actual subject/topic, not abstract symbols) AND (b) a recognizable element from the child's favorite world (${data.interests.join(", ") || "general kid"}). Example: instead of "a colorful classroom", write "a Spider-Man swinging between planets of the solar system in a cartoon style". NO text inside images.
+- The HERO imagePrompt is the cover of the lesson — it MUST be the most striking blend of the lesson topic AND the child's favorite world, instantly readable as both.
 - Use the child's interests as the visual and verbal language.
 - Difficulty ${data.difficulty}/4. Adjust vocabulary and depth.
 - styleSpec: pick ONE consistent visual identity for the whole lesson (palette + illustrationStyle + a 3-5 word vibe). Every imagePrompt should match this identity so the lesson feels like a single illustrated book.
