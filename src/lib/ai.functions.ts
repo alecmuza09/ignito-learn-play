@@ -7,6 +7,50 @@ const MODEL = "google/gemini-3-flash-preview";
 const IMAGE_MODEL = "google/gemini-3.1-flash-image-preview"; // Nano Banana 2
 const IMAGE_MODEL_FALLBACK = "google/gemini-3-pro-image-preview";
 
+const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
+const GEMINI_TEXT_MODEL = "gemini-2.5-flash";
+const GEMINI_IMAGE_MODEL = "gemini-2.5-flash-image-preview";
+
+/** Call Google Gemini directly using the user-supplied GEMINI_API_KEY.
+ *  Used for both text (JSON) and image generation, bypassing the Lovable gateway. */
+async function callGemini(
+  model: string,
+  contents: unknown,
+  opts: { json?: boolean; image?: boolean; timeoutMs?: number; system?: string } = {},
+): Promise<{ text: string; images: string[] }> {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) throw new Error("Falta GEMINI_API_KEY");
+  const body: Record<string, unknown> = { contents };
+  if (opts.system) body.systemInstruction = { role: "system", parts: [{ text: opts.system }] };
+  const generationConfig: Record<string, unknown> = {};
+  if (opts.json) generationConfig.responseMimeType = "application/json";
+  if (opts.image) generationConfig.responseModalities = ["IMAGE", "TEXT"];
+  if (Object.keys(generationConfig).length) body.generationConfig = generationConfig;
+
+  const controller = opts.timeoutMs ? new AbortController() : undefined;
+  const t = opts.timeoutMs ? setTimeout(() => controller?.abort(), opts.timeoutMs) : undefined;
+  const res = await fetch(`${GEMINI_BASE}/${model}:generateContent?key=${key}`, {
+    method: "POST",
+    signal: controller?.signal,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  }).finally(() => { if (t) clearTimeout(t); });
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error(`Gemini ${res.status}: ${txt.slice(0, 240)}`);
+  }
+  const data = await res.json();
+  const parts = data?.candidates?.[0]?.content?.parts ?? [];
+  let text = "";
+  const images: string[] = [];
+  for (const p of parts) {
+    if (typeof p?.text === "string") text += p.text;
+    const inline = p?.inlineData ?? p?.inline_data;
+    if (inline?.data) images.push(`data:${inline.mimeType ?? inline.mime_type ?? "image/png"};base64,${inline.data}`);
+  }
+  return { text, images };
+}
+
 async function callAI(
   messages: { role: string; content: string }[],
   jsonMode = false,
