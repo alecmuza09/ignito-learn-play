@@ -365,6 +365,20 @@ export const generateHeroImage = createServerFn({ method: "POST" })
       : " Bold flat colors, soft shapes, cheerful lighting.";
     const fullPrompt = `Friendly children's-book illustration. ${data.prompt}${interestsLine}${styleLine} No text, no letters, no logos, wide 16:9 composition.`;
 
+    // Prefer direct Gemini call when the user-provided key is set (no Lovable credits required).
+    if (process.env.GEMINI_API_KEY) {
+      try {
+        const { images } = await callGemini(
+          GEMINI_IMAGE_MODEL,
+          [{ role: "user", parts: [{ text: fullPrompt }] }],
+          { image: true, timeoutMs: 25000 },
+        );
+        if (images[0]) return { url: images[0] };
+      } catch (e) {
+        console.warn("[generateHeroImage] direct Gemini failed:", (e as Error).message);
+      }
+    }
+
     const tryModel = async (model: string) => {
       const { images } = await callAI(
         [{ role: "user", content: fullPrompt }],
