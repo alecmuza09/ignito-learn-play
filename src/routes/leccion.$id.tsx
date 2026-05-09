@@ -15,7 +15,7 @@ export const Route = createFileRoute("/leccion/$id")({
 
 interface LessonShape {
   title: string; objective: string; story: string; heroImagePrompt: string;
-  sections: { kind: string; title: string; body: string }[];
+  sections: { kind: string; title: string; body: string; imagePrompt?: string }[];
   quiz: { type: string; question: string; options: string[]; answerIndex: number; explanation: string }[];
   celebration: string;
 }
@@ -28,6 +28,7 @@ function Lesson() {
   const genImg = useServerFn(generateHeroImage);
   const [lesson, setLesson] = useState<LessonShape | null>(null);
   const [heroUrl, setHeroUrl] = useState<string | null>(null);
+  const [sectionUrls, setSectionUrls] = useState<Record<number, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [stage, setStage] = useState<"reading" | "quiz" | "done">("reading");
   const [qIdx, setQIdx] = useState(0);
@@ -51,10 +52,18 @@ function Lesson() {
     }}).then((r) => {
         const lsn = r.lesson as LessonShape;
         setLesson(lsn);
+        setSectionUrls({});
         const promptText = lsn.heroImagePrompt || `${node.subjectLabel}: ${lsn.title}`;
         genImg({ data: { prompt: promptText, interests: profile.interests } })
           .then((res) => { if (res.url) setHeroUrl(res.url); })
           .catch(() => {});
+        // Generate one illustration per section in parallel so the lesson is mostly visual.
+        lsn.sections.forEach((s, idx) => {
+          const p = s.imagePrompt || `${s.title}: ${s.body.slice(0, 120)}`;
+          genImg({ data: { prompt: p, interests: profile.interests } })
+            .then((res) => { if (res.url) setSectionUrls((prev) => ({ ...prev, [idx]: res.url })); })
+            .catch(() => {});
+        });
       })
       .catch((e) => setError(e instanceof Error ? e.message : "Error generando la lección"));
   }, [id, profile, gen, genImg]);
@@ -139,6 +148,15 @@ function Lesson() {
                 {s.kind === "funFact" ? "💡 Dato curioso" : s.kind === "analogy" ? "🔗 Analogía" : s.kind === "miniChallenge" ? "⚡ Mini reto" : "📚 Explicación"}
               </div>
               <h3 className="font-display text-lg font-bold mb-1">{s.title}</h3>
+              {sectionUrls[i] ? (
+                <div className="rounded-2xl overflow-hidden mb-3 mt-2 aspect-[16/10] bg-muted">
+                  <img src={sectionUrls[i]} alt={s.title} className="w-full h-full object-cover" />
+                </div>
+              ) : (
+                <div className="rounded-2xl mb-3 mt-2 aspect-[16/10] bg-muted/60 grid place-items-center text-xs text-muted-foreground animate-pulse">
+                  IGNO está dibujando…
+                </div>
+              )}
               <p className="text-sm leading-relaxed text-foreground/90">{s.body}</p>
             </div>
           ))}
