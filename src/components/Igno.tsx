@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { askIgno, generateHeroImage, type IgnoBlock } from "@/lib/ai.functions";
 import { useProfile } from "@/lib/profile";
 import { KawaiiBlob } from "./KawaiiBlob";
+import { AnimatedSimulation, AnimatedVisualFallback } from "./gen-ui/AnimatedSimulation";
 
 export function IgnoOwl({ size = 64, animate = true }: { size?: number; animate?: boolean }) {
   return (
@@ -45,8 +46,8 @@ export function IgnoFloating() {
       }});
       const blocks = res.blocks.map((b) => ({ ...b }));
       setMessages((m) => [...m, { role: "igno", blocks }]);
-      // generate images for any image blocks in parallel
-      blocks.forEach((b, bi) => {
+      // AI images can be slow, so only enrich the first image block; SVG simulations render instantly.
+      blocks.map((b, bi) => ({ b, bi })).filter(({ b }) => b.type === "image" && b.imagePrompt).slice(0, 1).forEach(({ b, bi }) => {
         if (b.type === "image" && b.imagePrompt) {
           genImg({ data: { prompt: b.imagePrompt, interests: profile!.interests } })
             .then((r) => {
