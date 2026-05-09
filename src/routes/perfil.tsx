@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, type KeyboardEvent } from "react";
 import { AVATARS, clearProfile, updateProfile, useProfile, SUBJECTS, interestsForAge, type Subject, type Difficulty } from "@/lib/profile";
-import { useT, useLang } from "@/lib/i18n";
+import { useT } from "@/lib/i18n";
 
 const T = {
   es: {
@@ -53,7 +53,6 @@ function Perfil() {
   const profile = useProfile();
   const nav = useNavigate();
   const t = useT(T);
-  const { lang } = useLang();
   const [newInterest, setNewInterest] = useState("");
   if (!profile) return <div className="min-h-[60vh] grid place-items-center text-muted-foreground">{t.loading}</div>;
   const presets = interestsForAge(profile.age);
