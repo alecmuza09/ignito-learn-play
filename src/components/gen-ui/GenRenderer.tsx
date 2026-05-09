@@ -195,7 +195,7 @@ function CalloutBlock({ b }: { b: Extract<GenBlock,{type:"callout"}> }) {
 function MascotSaysBlock({ b }: { b: Extract<GenBlock,{type:"mascotSays"}> }) {
   const theme = useGenTheme();
   const t = toneClasses(theme.tone);
-  const mood = (b.mood ?? "happy") as "happy"|"wink"|"wow"|"sleepy";
+  const mood = (b.mood ?? "happy") as "happy"|"wink"|"wow"|"calm";
   return (
     <div className="flex items-end gap-3">
       <div className="animate-float shrink-0"><KawaiiBlob size={64} mood={mood} /></div>
