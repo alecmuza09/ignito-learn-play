@@ -33,6 +33,8 @@ export type SimulationKind =
   | "circuit" | "magnet" | "gravity" | "dna" | "volcano"
   | "geometry" | "multiplication" | "alphabet" | "timeline"
   | "musicNotes" | "lifeCycle" | "weather" | "rocket" | "wave"
+  | "digestion" | "respiration" | "seasons" | "phaseChange"
+  | "pendulum" | "additionBlocks" | "mapRoute"
   | "generic";
 
 export const SIMULATION_KINDS: SimulationKind[] = [
@@ -40,7 +42,10 @@ export const SIMULATION_KINDS: SimulationKind[] = [
   "solarSystem","heart","atom","ecosystem","foodChain",
   "circuit","magnet","gravity","dna","volcano",
   "geometry","multiplication","alphabet","timeline",
-  "musicNotes","lifeCycle","weather","rocket","wave","generic",
+  "musicNotes","lifeCycle","weather","rocket","wave",
+  "digestion","respiration","seasons","phaseChange",
+  "pendulum","additionBlocks","mapRoute",
+  "generic",
 ];
 export type SimulationBlock = BlockBase & {
   type: "simulation";
@@ -118,7 +123,9 @@ export const blockZ: z.ZodType<GenBlock> = z.lazy(() => z.discriminatedUnion("ty
       "solarSystem","heart","atom","ecosystem","foodChain",
       "circuit","magnet","gravity","dna","volcano",
       "geometry","multiplication","alphabet","timeline",
-      "musicNotes","lifeCycle","weather","rocket","wave","generic",
+      "musicNotes","lifeCycle","weather","rocket","wave",
+      "digestion","respiration","seasons","phaseChange",
+      "pendulum","additionBlocks","mapRoute","generic",
     ]),
     title: z.string(), caption: z.string().optional(), steps: z.array(z.string()).min(1).max(6).optional() }),
 ])) as z.ZodType<GenBlock>;
