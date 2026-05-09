@@ -4,8 +4,12 @@ import { decideReaction } from "@/lib/ui-agent.functions";
 import type { AgentReaction } from "@/components/gen-ui/primitives";
 import { GenTheme } from "@/lib/theme-from-interests";
 import type { IgnotoProfile } from "@/lib/profile";
+import type { GenBlock } from "@/lib/gen-blocks";
+import { newId } from "@/lib/gen-blocks";
 
 type Event = "correct" | "wrong" | "streak" | "complete" | "stuck" | "start";
+
+export type LayoutAction = { kind: "insertBlock"; at: "after-current" | "end"; block: GenBlock };
 
 /** Local rule-based fallback so UI reacts INSTANTLY while AI thinks. */
 function localReaction(event: Event, theme: GenTheme): AgentReaction {
@@ -23,6 +27,7 @@ function localReaction(event: Event, theme: GenTheme): AgentReaction {
 
 export function useUIAgent(profile: IgnotoProfile | null, theme: GenTheme, lessonTitle?: string) {
   const [reaction, setReaction] = useState<AgentReaction | null>(null);
+  const [action, setAction] = useState<LayoutAction | null>(null);
   const decide = useServerFn(decideReaction);
 
   const emit = useCallback((event: Event, context?: { correctSoFar?: number; wrongSoFar?: number; questionIndex?: number; questionTotal?: number }) => {
@@ -43,9 +48,15 @@ export function useUIAgent(profile: IgnotoProfile | null, theme: GenTheme, lesso
         lessonTitle,
       },
     }})
-      .then((r) => setReaction(r.reaction as AgentReaction))
+      .then((r) => {
+        setReaction(r.reaction as AgentReaction);
+        if (r.layout?.insertBlock) {
+          setAction({ kind: "insertBlock", at: "end",
+            block: { ...r.layout.insertBlock, id: r.layout.insertBlock.id || newId("ag") } });
+        }
+      })
       .catch(() => { /* keep instant fallback */ });
   }, [profile, theme, decide, lessonTitle]);
 
-  return { reaction, emit, clear: () => setReaction(null) };
+  return { reaction, action, emit, clear: () => setReaction(null), clearAction: () => setAction(null) };
 }
