@@ -228,6 +228,10 @@ function CelebrateBlock({ b }: { b: Extract<GenBlock,{type:"celebrate"}> }) {
   );
 }
 
+function SimulationBlockView({ b }: { b: Extract<GenBlock,{type:"simulation"}> }) {
+  return <AnimatedSimulation kind={b.kind} title={b.title} caption={b.caption} steps={b.steps} />;
+}
+
 function MiniQuizBlockView({ b, onAnswer }: { b: MiniQuizBlock; onAnswer?: (b: MiniQuizBlock, picked: number, correct: boolean) => void }) {
   const [picked, setPicked] = useState<number | null>(null);
   const theme = useGenTheme();
