@@ -3,6 +3,7 @@ import type { GenBlock, MiniQuizBlock, TryItBlock } from "@/lib/gen-blocks";
 import { toneClasses } from "@/lib/theme-from-interests";
 import { useGenTheme } from "./primitives";
 import { KawaiiBlob } from "./KawaiiBlob";
+import { AnimatedSimulation, AnimatedVisualFallback } from "./AnimatedSimulation";
 
 export interface GenRendererProps {
   blocks: GenBlock[];
@@ -51,6 +52,7 @@ function RenderOne({ b, imageUrls, onMiniQuizAnswer, onTryItDone }: {
     case "tryIt":      return <TryItBlockView b={b} onDone={onTryItDone} />;
     case "miniQuiz":   return <MiniQuizBlockView b={b} onAnswer={onMiniQuizAnswer} />;
     case "celebrate":  return <CelebrateBlock b={b} />;
+    case "simulation": return <SimulationBlockView b={b} />;
   }
 }
 
@@ -115,8 +117,8 @@ function ImageBlock({ b, url }: { b: Extract<GenBlock,{type:"image"}>; url?: str
       {url ? (
         <img src={url} alt={b.caption ?? ""} className={`w-full ${ratio} object-cover`} />
       ) : (
-        <div className={`w-full ${ratio} bg-muted/60 grid place-items-center text-xs text-muted-foreground animate-pulse`}>
-          🎨 IGNO está dibujando…
+        <div className={ratio}>
+          <AnimatedVisualFallback prompt={b.imagePrompt} title={b.caption ?? "Visual generativo"} compact />
         </div>
       )}
       {b.caption && <figcaption className="px-4 py-2 text-xs text-muted-foreground">{b.caption}</figcaption>}
@@ -137,7 +139,9 @@ function CompareBlock({ b, urls }: { b: Extract<GenBlock,{type:"compare"}>; urls
               {u ? (
                 <img src={u as string} alt={s.label} className="w-full aspect-square object-cover" />
               ) : (
-                <div className="aspect-square grid place-items-center text-xs text-muted-foreground animate-pulse">🎨</div>
+                <div className="aspect-square overflow-hidden">
+                  <AnimatedVisualFallback prompt={s.imagePrompt} title={s.label} compact />
+                </div>
               )}
               <div className="px-3 py-2 text-sm font-bold text-center">{s.label}</div>
             </div>
