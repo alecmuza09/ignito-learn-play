@@ -5,7 +5,6 @@ import {
 import appCss from "../styles.css?url";
 import { AppHeader } from "@/components/AppHeader";
 import { IgnoFloating } from "@/components/Igno";
-import { GenBackdrop } from "@/components/gen-ui/primitives";
 
 function NotFound() {
   return (
@@ -41,9 +40,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "IGNOTO — Aprendizaje adaptativo con IA para niños" },
       { name: "description", content: "Plataforma educativa gamificada con IA que se adapta a los intereses y nivel de cada niño." },
-      { property: "og:title", content: "IGNOTO — Aprende como nunca" },
-      { property: "og:description", content: "Lecciones generadas por IA, juegos, niveles y un tutor búho llamado IGNO." },
+      { property: "og:title", content: "IGNOTO — Aprendizaje adaptativo con IA para niños" },
+      { property: "og:description", content: "Plataforma educativa gamificada con IA que se adapta a los intereses y nivel de cada niño." },
       { property: "og:type", content: "website" },
+      { name: "twitter:title", content: "IGNOTO — Aprendizaje adaptativo con IA para niños" },
+      { name: "twitter:description", content: "Plataforma educativa gamificada con IA que se adapta a los intereses y nivel de cada niño." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/2925d684-3c07-4d93-bc3e-b47348d04b3e/id-preview-b38c7664--9d946c84-4817-469b-91b4-91b6d4b80606.lovable.app-1778361756882.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/2925d684-3c07-4d93-bc3e-b47348d04b3e/id-preview-b38c7664--9d946c84-4817-469b-91b4-91b6d4b80606.lovable.app-1778361756882.png" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
@@ -71,7 +75,6 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   return (
     <QueryClientProvider client={queryClient}>
-      <GenBackdrop />
       <AppHeader />
       <Outlet />
       <IgnoFloating />
