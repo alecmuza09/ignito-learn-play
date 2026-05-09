@@ -103,6 +103,7 @@ export const generateLesson = createServerFn({ method: "POST" })
     const focus = data.style?.focus ?? "";
     const format = data.style?.format ?? "";
     const mode = data.style?.mode ?? "";
+    const topicText = `${data.subject} ${data.topic ?? ""}`.toLowerCase();
     const targetCount = focus === "5" ? "4-5" : focus === "10" ? "5-7" : focus === "15" ? "7-9" : "8-10";
     const formatHint =
       format === "video"  ? "Lean heavily on hero/image/compare/steps blocks (very visual)."
@@ -195,6 +196,17 @@ Return ONLY the JSON.`;
       blocks: ensureIds(safeBlocks, "b"),
       finalQuiz: ensureIds(finalQuizBlocks, "fq") as MiniQuizBlock[],
     };
+    if (topicText.includes("fotos") && !lesson.blocks.some((b) => b.type === "simulation" && b.kind === "photosynthesis")) {
+      lesson.blocks.splice(Math.min(1, lesson.blocks.length), 0, {
+        id: "",
+        type: "simulation",
+        kind: "photosynthesis",
+        title: lang === "English" ? "Photosynthesis in action" : "Fotosíntesis en acción",
+        caption: lang === "English" ? "Light, water and air become plant food." : "La luz, el agua y el aire se transforman en alimento para la planta.",
+        steps: lang === "English" ? ["Sunlight arrives", "Roots drink water", "Leaves take CO₂", "Glucose and oxygen appear"] : ["Llega luz solar", "Las raíces toman agua", "Las hojas capturan CO₂", "Aparecen glucosa y oxígeno"],
+      });
+      lesson.blocks = ensureIds(lesson.blocks, "b");
+    }
     return { lessonId: data.lessonId, lesson };
   });
 
