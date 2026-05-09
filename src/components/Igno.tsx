@@ -155,13 +155,14 @@ function IgnoMessage({ text, blocks }: { text?: string; blocks?: (IgnoBlock & { 
               {b._imgUrl ? (
                 <img src={b._imgUrl} alt={b.caption ?? ""} className="w-full aspect-[4/3] object-cover" />
               ) : (
-                <div className="w-full aspect-[4/3] bg-muted/70 grid place-items-center text-xs text-muted-foreground animate-pulse">
-                  🎨 IGNO está pintando…
-                </div>
+                <AnimatedVisualFallback prompt={b.imagePrompt} title={b.caption ?? "Visual generativo"} compact />
               )}
               {b.caption && <div className="p-2 text-xs text-muted-foreground">{b.caption}</div>}
             </div>
           );
+        }
+        if (b.type === "simulation") {
+          return <AnimatedSimulation key={i} kind={b.kind} title={b.title} caption={b.caption} steps={b.steps} compact />;
         }
         if (b.type === "example") {
           return (
