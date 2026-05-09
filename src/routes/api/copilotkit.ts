@@ -109,6 +109,37 @@ function parseModelJson(content?: string | null) {
   }
 }
 
+function lastUserText(data: NonNullable<CopilotRequestPayload["variables"]>["data"]) {
+  return [...(data?.messages ?? [])].reverse().find((message) => message.textMessage?.role === "user")?.textMessage?.content ?? "";
+}
+
+function inferKind(text: string) {
+  const lower = text.toLowerCase();
+  if (/gravedad|caer|peso|planeta/.test(lower)) return "gravity";
+  if (/planeta|sol|luna|espacio|sistema solar/.test(lower)) return "solarSystem";
+  if (/corazón|sangre|latido/.test(lower)) return "heart";
+  if (/agua|lluvia|nube|evapor/.test(lower)) return "waterCycle";
+  if (/planta|hoja|fotosíntesis|sol/.test(lower)) return "photosynthesis";
+  if (/fracci|mitad|tercio|parte/.test(lower)) return "fractionBar";
+  if (/multiplic|tabla|veces/.test(lower)) return "multiplication";
+  if (/volcán|lava|erup/.test(lower)) return "volcano";
+  if (/electric|circuit|bater/.test(lower)) return "circuit";
+  if (/imán|magnet/.test(lower)) return "magnet";
+  if (/música|nota|sonido/.test(lower)) return "musicNotes";
+  if (/clima|viento|tormenta/.test(lower)) return "weather";
+  return "generic";
+}
+
+function fallbackSimulationArgs(data: NonNullable<CopilotRequestPayload["variables"]>["data"]) {
+  const topic = lastUserText(data) || "lo que estás aprendiendo";
+  return {
+    kind: inferKind(topic),
+    title: topic.length > 48 ? "Idea en movimiento" : topic,
+    caption: "Una animación conectada con tu pregunta para verlo paso a paso.",
+    steps: ["Observa la idea principal", "Mira cómo cambia", "Conecta el dibujo con la explicación"],
+  };
+}
+
 async function callModel(data: NonNullable<CopilotRequestPayload["variables"]>["data"]) {
   const geminiKey = process.env.GEMINI_API_KEY ?? process.env.GOOGLE_API_KEY;
   if (geminiKey) {
@@ -186,19 +217,21 @@ async function handleGenerate(payload: CopilotRequestPayload) {
   const assistantId = makeId("assistant");
   const outputMessages: unknown[] = [];
 
-  if (parsed?.toolName) {
+  const toolName = parsed?.toolName ?? "presentSimulation";
+  const toolArgs = parsed?.args ?? fallbackSimulationArgs(data);
+  if (toolName) {
     outputMessages.push({
       __typename: "ActionExecutionMessageOutput",
       id: makeId("tool"),
       createdAt: now,
-      name: parsed.toolName,
-      arguments: [normalizeToolArguments(parsed.args)],
+      name: toolName,
+      arguments: [normalizeToolArguments(toolArgs)],
       parentMessageId: assistantId,
       status: successStatus(),
     });
   }
 
-  const content = parsed?.text?.trim() || message.content?.trim() || "¡Mira esta idea en movimiento! ¿Qué parte quieres explorar ahora?";
+  const content = parsed?.text?.trim() || "¡Mira esta idea en movimiento! ¿Qué parte quieres explorar ahora?";
   outputMessages.push({
     __typename: "TextMessageOutput",
     id: assistantId,
