@@ -58,8 +58,18 @@ async function callAI(
   modalities?: string[],
   timeoutMs?: number,
 ): Promise<{ text: string; images: string[] }> {
+  // Prefer the user-supplied Gemini API key (no Lovable credits required).
+  if (process.env.GEMINI_API_KEY && !modalities) {
+    const sysParts = messages.filter((m) => m.role === "system").map((m) => m.content).join("\n\n");
+    const userParts = messages.filter((m) => m.role !== "system");
+    const contents = userParts.map((m) => ({
+      role: m.role === "assistant" ? "model" : "user",
+      parts: [{ text: m.content }],
+    }));
+    return await callGemini(GEMINI_TEXT_MODEL, contents, { json: jsonMode, system: sysParts || undefined, timeoutMs });
+  }
   const key = process.env.LOVABLE_API_KEY;
-  if (!key) throw new Error("Falta LOVABLE_API_KEY");
+  if (!key) throw new Error("Falta GEMINI_API_KEY o LOVABLE_API_KEY");
   const body: Record<string, unknown> = { model: modelOverride ?? MODEL, messages };
   if (jsonMode) body.response_format = { type: "json_object" };
   if (modalities) (body as { modalities?: string[] }).modalities = modalities;
