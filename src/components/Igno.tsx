@@ -52,7 +52,7 @@ Contexto: el niño se llama ${profile.childName}, tiene ${profile.age} años y l
       { name: "caption", type: "string", description: "Frase breve que explica qué muestra", required: false },
       { name: "steps", type: "string[]", description: "Pasos opcionales (2-4 strings cortos)", required: false },
     ],
-    available: "frontend",
+    available: "enabled",
     render: ({ args }) => {
       const k = (args.kind as SimulationKind) ?? inferSimulationKind(args.title ?? "");
       const safeKind = SIMULATION_KINDS.includes(k) ? k : inferSimulationKind(`${args.title ?? ""} ${args.caption ?? ""}`);
@@ -79,7 +79,7 @@ Contexto: el niño se llama ${profile.childName}, tiene ${profile.age} años y l
       { name: "answerIndex", type: "number", description: "Índice (0-based) de la respuesta correcta", required: true },
       { name: "explanation", type: "string", description: "Explicación corta de la respuesta", required: false },
     ],
-    available: "frontend",
+    available: "enabled",
     render: ({ args }) => (
       <QuizCard
         question={args.question ?? ""}
@@ -100,7 +100,7 @@ Contexto: el niño se llama ${profile.childName}, tiene ${profile.age} años y l
       { name: "hint", type: "string", required: false },
       { name: "explanation", type: "string", required: false },
     ],
-    available: "frontend",
+    available: "enabled",
     render: ({ args }) => (
       <TryItCard
         question={args.question ?? ""}
@@ -120,7 +120,7 @@ Contexto: el niño se llama ${profile.childName}, tiene ${profile.age} años y l
       { name: "steps", type: "string[]", description: "3-6 pasos cortos en orden", required: true },
       { name: "emoji", type: "string", description: "Emoji decorativo", required: false },
     ],
-    available: "frontend",
+    available: "enabled",
     render: ({ args }) => (
       <StoryStepsCard
         title={args.title ?? ""}
