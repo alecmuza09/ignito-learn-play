@@ -5,6 +5,8 @@ import { generateLesson, generateHeroImage } from "@/lib/ai.functions";
 import { awardXP, markLessonDone, useProfile } from "@/lib/profile";
 import { buildCurriculum } from "@/lib/curriculum";
 import { IgnoOwl } from "@/components/Igno";
+import { GenButton, GenCard, GenReaction, useGenTheme } from "@/components/gen-ui/primitives";
+import { useUIAgent } from "@/lib/use-ui-agent";
 
 export const Route = createFileRoute("/leccion/$id")({
   head: () => ({ meta: [{ title: "Lección — IGNOTO" }] }),
@@ -31,6 +33,10 @@ function Lesson() {
   const [qIdx, setQIdx] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
   const [correct, setCorrect] = useState(0);
+  const [wrong, setWrong] = useState(0);
+  const [streakRun, setStreakRun] = useState(0);
+  const theme = useGenTheme();
+  const { reaction, emit, clear } = useUIAgent(profile, theme, lesson?.title);
 
   useEffect(() => {
     if (!profile) return;
@@ -66,7 +72,23 @@ function Lesson() {
   function pickAnswer(i: number) {
     if (!lesson || picked !== null) return;
     setPicked(i);
-    if (i === lesson.quiz[qIdx].answerIndex) setCorrect((c) => c + 1);
+    const isCorrect = i === lesson.quiz[qIdx].answerIndex;
+    if (isCorrect) {
+      const newCorrect = correct + 1;
+      const newRun = streakRun + 1;
+      setCorrect(newCorrect); setStreakRun(newRun);
+      emit(newRun >= 3 ? "streak" : "correct", {
+        correctSoFar: newCorrect, wrongSoFar: wrong,
+        questionIndex: qIdx, questionTotal: lesson.quiz.length,
+      });
+    } else {
+      const newWrong = wrong + 1;
+      setWrong(newWrong); setStreakRun(0);
+      emit("wrong", {
+        correctSoFar: correct, wrongSoFar: newWrong,
+        questionIndex: qIdx, questionTotal: lesson.quiz.length,
+      });
+    }
   }
   function nextQ() {
     if (!lesson) return;
@@ -74,11 +96,13 @@ function Lesson() {
       const xp = 20 + correct * 4 + (picked === lesson.quiz[qIdx].answerIndex ? 4 : 0);
       awardXP(xp); markLessonDone(id);
       setStage("done");
+      emit("complete", { correctSoFar: correct, wrongSoFar: wrong, questionIndex: qIdx + 1, questionTotal: lesson.quiz.length });
     } else { setQIdx((i) => i + 1); setPicked(null); }
   }
 
   return (
     <main className="max-w-2xl mx-auto px-4 py-6 pb-24">
+      <GenReaction reaction={reaction} onDone={clear} />
       {stage === "reading" && (
         <article className="space-y-5 animate-pop-in">
           <div className="rounded-3xl overflow-hidden bg-gradient-hero text-primary-foreground shadow-soft">
@@ -117,9 +141,9 @@ function Lesson() {
               <p className="text-sm leading-relaxed text-foreground/90">{s.body}</p>
             </div>
           ))}
-          <button onClick={() => setStage("quiz")} className="w-full rounded-full bg-primary text-primary-foreground py-4 font-bold text-lg shadow-pop hover:translate-y-0.5 hover:shadow-none transition-all">
+          <GenButton onClick={() => { setStage("quiz"); emit("start"); }} className="w-full py-4 text-lg">
             ¡Al quiz! →
-          </button>
+          </GenButton>
         </article>
       )}
 
@@ -147,13 +171,13 @@ function Lesson() {
           </div>
           {picked !== null && (
             <>
-              <div className="mt-4 rounded-2xl bg-muted p-4 text-sm animate-pop-in">
+              <GenCard className="mt-4 text-sm" tone={picked === lesson.quiz[qIdx].answerIndex ? "mint" : "accent"}>
                 <div className="font-bold mb-1">{picked === lesson.quiz[qIdx].answerIndex ? "¡Correcto! 🎉" : "Casi… 💭"}</div>
-                <p className="text-muted-foreground">{lesson.quiz[qIdx].explanation}</p>
-              </div>
-              <button onClick={nextQ} className="mt-4 w-full rounded-full bg-primary text-primary-foreground py-3.5 font-bold shadow-pop">
+                <p className="opacity-80">{lesson.quiz[qIdx].explanation}</p>
+              </GenCard>
+              <GenButton onClick={nextQ} className="mt-4 w-full py-3.5">
                 {qIdx + 1 >= lesson.quiz.length ? "Terminar" : "Siguiente →"}
-              </button>
+              </GenButton>
             </>
           )}
         </div>
