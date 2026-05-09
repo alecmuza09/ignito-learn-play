@@ -10,11 +10,24 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as RegistroRouteImport } from './routes/registro'
+import { Route as MapaRouteImport } from './routes/mapa'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as LeccionIdRouteImport } from './routes/leccion.$id'
 
 const RegistroRoute = RegistroRouteImport.update({
   id: '/registro',
   path: '/registro',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MapaRoute = MapaRouteImport.update({
+  id: '/mapa',
+  path: '/mapa',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -22,31 +35,48 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LeccionIdRoute = LeccionIdRouteImport.update({
+  id: '/leccion/$id',
+  path: '/leccion/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
+  '/mapa': typeof MapaRoute
   '/registro': typeof RegistroRoute
+  '/leccion/$id': typeof LeccionIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
+  '/mapa': typeof MapaRoute
   '/registro': typeof RegistroRoute
+  '/leccion/$id': typeof LeccionIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
+  '/mapa': typeof MapaRoute
   '/registro': typeof RegistroRoute
+  '/leccion/$id': typeof LeccionIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/registro'
+  fullPaths: '/' | '/dashboard' | '/mapa' | '/registro' | '/leccion/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/registro'
-  id: '__root__' | '/' | '/registro'
+  to: '/' | '/dashboard' | '/mapa' | '/registro' | '/leccion/$id'
+  id: '__root__' | '/' | '/dashboard' | '/mapa' | '/registro' | '/leccion/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DashboardRoute: typeof DashboardRoute
+  MapaRoute: typeof MapaRoute
   RegistroRoute: typeof RegistroRoute
+  LeccionIdRoute: typeof LeccionIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -58,6 +88,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RegistroRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/mapa': {
+      id: '/mapa'
+      path: '/mapa'
+      fullPath: '/mapa'
+      preLoaderRoute: typeof MapaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -65,12 +109,22 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/leccion/$id': {
+      id: '/leccion/$id'
+      path: '/leccion/$id'
+      fullPath: '/leccion/$id'
+      preLoaderRoute: typeof LeccionIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DashboardRoute: DashboardRoute,
+  MapaRoute: MapaRoute,
   RegistroRoute: RegistroRoute,
+  LeccionIdRoute: LeccionIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
