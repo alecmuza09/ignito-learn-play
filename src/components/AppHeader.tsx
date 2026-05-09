@@ -1,6 +1,6 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { useProfile, levelTitle } from "@/lib/profile";
-import { IgnoOwl } from "./Igno";
+import { KawaiiBlob } from "./KawaiiBlob";
 
 export function AppHeader() {
   const profile = useProfile();
@@ -11,8 +11,8 @@ export function AppHeader() {
     <header className="sticky top-0 z-40 bg-background/85 backdrop-blur-md border-b border-border">
       <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
         <Link to="/" className="flex items-center gap-2 font-display text-2xl font-bold tracking-tight">
-          <IgnoOwl size={36} animate={false} />
-          <span className="bg-gradient-hero bg-clip-text text-transparent">IGNOTO</span>
+          <KawaiiBlob shape="blob" color="var(--primary)" size={36} mood="happy" />
+          <span className="text-foreground">IGNOTO</span>
         </Link>
         <nav className="ml-auto hidden md:flex items-center gap-1 text-sm font-semibold">
           {profile ? (
@@ -62,7 +62,7 @@ export function LevelBadge() {
         <span className="text-xs text-muted-foreground">{profile.xp}/{lvl.next} XP</span>
       </div>
       <div className="h-3 rounded-full bg-muted overflow-hidden">
-        <div className="h-full bg-gradient-hero transition-all duration-500" style={{ width: `${pct}%` }} />
+        <div className="h-full bg-primary transition-all duration-500" style={{ width: `${pct}%` }} />
       </div>
     </div>
   );

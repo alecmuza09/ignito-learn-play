@@ -106,11 +106,11 @@ function Lesson() {
       <div className="mb-5"><GenThemeBanner /></div>
       {stage === "reading" && (
         <article className="space-y-5 animate-pop-in">
-          <div className="rounded-3xl overflow-hidden bg-gradient-hero text-primary-foreground shadow-soft">
+          <div className="rounded-3xl overflow-hidden bg-primary text-primary-foreground shadow-soft">
             {heroUrl ? (
               <div className="relative aspect-[16/9] w-full">
                 <img src={heroUrl} alt={lesson.title} className="absolute inset-0 w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-t from-primary/80 via-primary/30 to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 h-2/3 bg-primary/70" />
                 <div className="absolute bottom-0 left-0 right-0 p-5">
                   <div className="text-[10px] font-bold uppercase opacity-90 tracking-wider">Misión</div>
                   <h1 className="font-display text-2xl md:text-3xl font-bold leading-tight">{lesson.title}</h1>

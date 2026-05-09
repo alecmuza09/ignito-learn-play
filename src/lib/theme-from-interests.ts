@@ -142,11 +142,11 @@ export function themeFromInterests(interests: string[]): GenTheme {
 
 export function toneClasses(tone: Tone): { bg: string; bgSoft: string; text: string; ring: string; border: string; gradient: string } {
   switch (tone) {
-    case "coral":   return { bg: "bg-coral",   bgSoft: "bg-coral/15",   text: "text-coral-foreground",   ring: "ring-coral",   border: "border-coral",   gradient: "bg-gradient-sun"  };
-    case "mint":    return { bg: "bg-mint",    bgSoft: "bg-mint/15",    text: "text-mint-foreground",    ring: "ring-mint",    border: "border-mint",    gradient: "bg-gradient-mint" };
-    case "sky":     return { bg: "bg-sky",     bgSoft: "bg-sky/15",     text: "text-sky-foreground",     ring: "ring-sky",     border: "border-sky",     gradient: "bg-gradient-mint" };
-    case "accent":  return { bg: "bg-accent",  bgSoft: "bg-accent/20",  text: "text-accent-foreground",  ring: "ring-accent",  border: "border-accent",  gradient: "bg-gradient-sun"  };
+    case "coral":   return { bg: "bg-coral",   bgSoft: "bg-coral/15",   text: "text-coral-foreground",   ring: "ring-coral",   border: "border-coral",   gradient: "bg-coral"   };
+    case "mint":    return { bg: "bg-mint",    bgSoft: "bg-mint/15",    text: "text-mint-foreground",    ring: "ring-mint",    border: "border-mint",    gradient: "bg-mint"    };
+    case "sky":     return { bg: "bg-sky",     bgSoft: "bg-sky/15",     text: "text-sky-foreground",     ring: "ring-sky",     border: "border-sky",     gradient: "bg-sky"     };
+    case "accent":  return { bg: "bg-accent",  bgSoft: "bg-accent/20",  text: "text-accent-foreground",  ring: "ring-accent",  border: "border-accent",  gradient: "bg-accent"  };
     case "primary":
-    default:        return { bg: "bg-primary", bgSoft: "bg-primary/10", text: "text-primary-foreground", ring: "ring-primary", border: "border-primary", gradient: "bg-gradient-hero" };
+    default:        return { bg: "bg-primary", bgSoft: "bg-primary/10", text: "text-primary-foreground", ring: "ring-primary", border: "border-primary", gradient: "bg-primary" };
   }
 }

@@ -46,9 +46,10 @@
   --shadow-soft: 0 10px 30px -10px color-mix(in oklab, var(--primary) 35%, transparent);
   --shadow-glow: 0 0 40px color-mix(in oklab, var(--accent) 50%, transparent);
 
-  --gradient-hero: linear-gradient(135deg, var(--primary) 0%, var(--primary-glow) 60%, var(--accent) 100%);
-  --gradient-sun: linear-gradient(135deg, var(--accent) 0%, var(--coral) 100%);
-  --gradient-mint: linear-gradient(135deg, var(--mint) 0%, var(--sky) 100%);
+  /* Gradients removed by design — keep var names as solid colors for legacy refs. */
+  --gradient-hero: var(--primary);
+  --gradient-sun: var(--accent);
+  --gradient-mint: var(--mint);
 
   --animate-pop-in: pop-in 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
   --animate-float: float 4s ease-in-out infinite;
@@ -174,17 +175,14 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
-    background-image:
-      radial-gradient(circle at 12% 8%, color-mix(in oklab, var(--coral) 18%, transparent), transparent 35%),
-      radial-gradient(circle at 88% 92%, color-mix(in oklab, var(--mint) 16%, transparent), transparent 35%);
-    background-attachment: fixed;
   }
 }
 
 @layer utilities {
-  .bg-gradient-hero { background-image: var(--gradient-hero); background-color: var(--primary); }
-  .bg-gradient-sun { background-image: var(--gradient-sun); background-color: var(--accent); }
-  .bg-gradient-mint { background-image: var(--gradient-mint); background-color: var(--mint); }
+  /* Kawaii flat style: no gradients. Aliases kept so legacy classes render solid. */
+  .bg-gradient-hero { background-image: none; background-color: var(--primary); color: var(--primary-foreground); }
+  .bg-gradient-sun  { background-image: none; background-color: var(--accent);  color: var(--accent-foreground); }
+  .bg-gradient-mint { background-image: none; background-color: var(--mint);    color: var(--mint-foreground); }
   .shadow-pop { box-shadow: var(--shadow-pop); }
   .shadow-soft { box-shadow: var(--shadow-soft); }
   .shadow-glow { box-shadow: var(--shadow-glow); }
