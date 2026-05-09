@@ -41,7 +41,7 @@ function Lesson() {
   // Generate images for blocks as they appear.
   useEffect(() => {
     if (!blocks || !profile) return;
-    const jobs = collectImageJobs(blocks).filter((j) => !imageUrls[j.key]);
+    const jobs = collectImageJobs(blocks).filter((j) => !imageUrls[j.key]).slice(0, 2);
     jobs.forEach((j) => {
       genImg({ data: { prompt: j.prompt, interests: profile.interests, styleSpec } })
         .then((res) => { if (res.url) setImageUrls((prev) => ({ ...prev, [j.key]: res.url })); })

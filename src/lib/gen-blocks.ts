@@ -27,10 +27,18 @@ export type TryItBlock     = BlockBase & {
 };
 export type MiniQuizBlock  = BlockBase & { type: "miniQuiz"; question: string; options: string[]; answerIndex: number; explanation?: string };
 export type CelebrateBlock = BlockBase & { type: "celebrate"; message: string; particles?: string[] };
+export type SimulationKind = "photosynthesis" | "waterCycle" | "fractionBar" | "logicPath" | "generic";
+export type SimulationBlock = BlockBase & {
+  type: "simulation";
+  kind: SimulationKind;
+  title: string;
+  caption?: string;
+  steps?: string[];
+};
 
 export type GenBlock =
   | HeroBlock | TextBlock | ImageBlock | CompareBlock | StepsBlock
-  | CalloutBlock | MascotSays | TryItBlock | MiniQuizBlock | CelebrateBlock;
+  | CalloutBlock | MascotSays | TryItBlock | MiniQuizBlock | CelebrateBlock | SimulationBlock;
 
 /** Visual style the AI commits to for a whole lesson — used to keep
  *  every generated image in the same look, like the "Wizard Green"
@@ -89,6 +97,9 @@ export const blockZ: z.ZodType<GenBlock> = z.lazy(() => z.discriminatedUnion("ty
   z.object({ id: z.string().optional().default(""), agentInserted: z.boolean().optional(),
     type: z.literal("celebrate"), message: z.string(),
     particles: z.array(z.string()).optional() }),
+  z.object({ id: z.string().optional().default(""), agentInserted: z.boolean().optional(),
+    type: z.literal("simulation"), kind: z.enum(["photosynthesis","waterCycle","fractionBar","logicPath","generic"]),
+    title: z.string(), caption: z.string().optional(), steps: z.array(z.string()).min(1).max(6).optional() }),
 ])) as z.ZodType<GenBlock>;
 
 /** Assign stable ids to a block list (id-less blocks get one). */

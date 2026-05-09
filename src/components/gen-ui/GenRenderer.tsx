@@ -3,6 +3,7 @@ import type { GenBlock, MiniQuizBlock, TryItBlock } from "@/lib/gen-blocks";
 import { toneClasses } from "@/lib/theme-from-interests";
 import { useGenTheme } from "./primitives";
 import { KawaiiBlob } from "./KawaiiBlob";
+import { AnimatedSimulation, AnimatedVisualFallback } from "./AnimatedSimulation";
 
 export interface GenRendererProps {
   blocks: GenBlock[];
@@ -51,6 +52,7 @@ function RenderOne({ b, imageUrls, onMiniQuizAnswer, onTryItDone }: {
     case "tryIt":      return <TryItBlockView b={b} onDone={onTryItDone} />;
     case "miniQuiz":   return <MiniQuizBlockView b={b} onAnswer={onMiniQuizAnswer} />;
     case "celebrate":  return <CelebrateBlock b={b} />;
+    case "simulation": return <SimulationBlockView b={b} />;
   }
 }
 
@@ -76,9 +78,8 @@ function HeroBlock({ b, url }: { b: Extract<GenBlock,{type:"hero"}>; url?: strin
           <div className="text-xs font-bold uppercase opacity-90 tracking-wider">Misión</div>
           <h1 className="font-display text-3xl font-bold mt-1">{b.title}</h1>
           {b.subtitle && <p className="mt-2 opacity-90 text-sm">{b.subtitle}</p>}
-          <div className="mt-3 flex items-center gap-2 text-xs opacity-90">
-            <span className="inline-block w-3 h-3 rounded-full bg-accent animate-pulse" />
-            IGNO está pintando la portada…
+          <div className="mt-4 text-foreground">
+            <AnimatedVisualFallback prompt={b.imagePrompt} title={b.title} compact />
           </div>
         </div>
       )}
@@ -115,8 +116,8 @@ function ImageBlock({ b, url }: { b: Extract<GenBlock,{type:"image"}>; url?: str
       {url ? (
         <img src={url} alt={b.caption ?? ""} className={`w-full ${ratio} object-cover`} />
       ) : (
-        <div className={`w-full ${ratio} bg-muted/60 grid place-items-center text-xs text-muted-foreground animate-pulse`}>
-          🎨 IGNO está dibujando…
+        <div className={ratio}>
+          <AnimatedVisualFallback prompt={b.imagePrompt} title={b.caption ?? "Visual generativo"} compact />
         </div>
       )}
       {b.caption && <figcaption className="px-4 py-2 text-xs text-muted-foreground">{b.caption}</figcaption>}
@@ -137,7 +138,9 @@ function CompareBlock({ b, urls }: { b: Extract<GenBlock,{type:"compare"}>; urls
               {u ? (
                 <img src={u as string} alt={s.label} className="w-full aspect-square object-cover" />
               ) : (
-                <div className="aspect-square grid place-items-center text-xs text-muted-foreground animate-pulse">🎨</div>
+                <div className="aspect-square overflow-hidden">
+                  <AnimatedVisualFallback prompt={s.imagePrompt} title={s.label} compact />
+                </div>
               )}
               <div className="px-3 py-2 text-sm font-bold text-center">{s.label}</div>
             </div>
@@ -222,6 +225,10 @@ function CelebrateBlock({ b }: { b: Extract<GenBlock,{type:"celebrate"}> }) {
       <div className="relative font-display text-xl font-bold">{b.message}</div>
     </div>
   );
+}
+
+function SimulationBlockView({ b }: { b: Extract<GenBlock,{type:"simulation"}> }) {
+  return <AnimatedSimulation kind={b.kind} title={b.title} caption={b.caption} steps={b.steps} />;
 }
 
 function MiniQuizBlockView({ b, onAnswer }: { b: MiniQuizBlock; onAnswer?: (b: MiniQuizBlock, picked: number, correct: boolean) => void }) {

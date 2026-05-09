@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { askIgno, generateHeroImage, type IgnoBlock } from "@/lib/ai.functions";
 import { useProfile } from "@/lib/profile";
 import { KawaiiBlob } from "./KawaiiBlob";
+import { AnimatedSimulation, AnimatedVisualFallback } from "./gen-ui/AnimatedSimulation";
 
 export function IgnoOwl({ size = 64, animate = true }: { size?: number; animate?: boolean }) {
   return (
@@ -45,8 +46,8 @@ export function IgnoFloating() {
       }});
       const blocks = res.blocks.map((b) => ({ ...b }));
       setMessages((m) => [...m, { role: "igno", blocks }]);
-      // generate images for any image blocks in parallel
-      blocks.forEach((b, bi) => {
+      // AI images can be slow, so only enrich the first image block; SVG simulations render instantly.
+      blocks.map((b, bi) => ({ b, bi })).filter(({ b }) => b.type === "image" && b.imagePrompt).slice(0, 1).forEach(({ b, bi }) => {
         if (b.type === "image" && b.imagePrompt) {
           genImg({ data: { prompt: b.imagePrompt, interests: profile!.interests } })
             .then((r) => {
@@ -154,13 +155,14 @@ function IgnoMessage({ text, blocks }: { text?: string; blocks?: (IgnoBlock & { 
               {b._imgUrl ? (
                 <img src={b._imgUrl} alt={b.caption ?? ""} className="w-full aspect-[4/3] object-cover" />
               ) : (
-                <div className="w-full aspect-[4/3] bg-muted/70 grid place-items-center text-xs text-muted-foreground animate-pulse">
-                  🎨 IGNO está pintando…
-                </div>
+                <AnimatedVisualFallback prompt={b.imagePrompt} title={b.caption ?? "Visual generativo"} compact />
               )}
               {b.caption && <div className="p-2 text-xs text-muted-foreground">{b.caption}</div>}
             </div>
           );
+        }
+        if (b.type === "simulation") {
+          return <AnimatedSimulation key={i} kind={b.kind} title={b.title} caption={b.caption} steps={b.steps} compact />;
         }
         if (b.type === "example") {
           return (

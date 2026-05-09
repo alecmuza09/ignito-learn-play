@@ -12,20 +12,24 @@ async function callAI(
   jsonMode = false,
   modelOverride?: string,
   modalities?: string[],
+  timeoutMs?: number,
 ): Promise<{ text: string; images: string[] }> {
   const key = process.env.LOVABLE_API_KEY;
   if (!key) throw new Error("Falta LOVABLE_API_KEY");
   const body: Record<string, unknown> = { model: modelOverride ?? MODEL, messages };
   if (jsonMode) body.response_format = { type: "json_object" };
   if (modalities) (body as { modalities?: string[] }).modalities = modalities;
+  const controller = timeoutMs ? new AbortController() : undefined;
+  const timeout = timeoutMs ? setTimeout(() => controller?.abort(), timeoutMs) : undefined;
   const res = await fetch(GATEWAY_URL, {
     method: "POST",
+    signal: controller?.signal,
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${key}`,
     },
     body: JSON.stringify(body),
-  });
+  }).finally(() => { if (timeout) clearTimeout(timeout); });
   if (!res.ok) {
     const txt = await res.text();
     if (res.status === 429) throw new Error("Demasiadas solicitudes. Intenta en un momento.");
@@ -103,6 +107,7 @@ export const generateLesson = createServerFn({ method: "POST" })
     const focus = data.style?.focus ?? "";
     const format = data.style?.format ?? "";
     const mode = data.style?.mode ?? "";
+    const topicText = `${data.subject} ${data.topic ?? ""}`.toLowerCase();
     const targetCount = focus === "5" ? "4-5" : focus === "10" ? "5-7" : focus === "15" ? "7-9" : "8-10";
     const formatHint =
       format === "video"  ? "Lean heavily on hero/image/compare/steps blocks (very visual)."
@@ -139,6 +144,7 @@ GenBlock union (pick the best for each beat — order matters, must start with a
         { "kind": "sort",  "items": [string in CORRECT order], "explanation": string }
         { "kind": "input", "answer": string (short), "hint": string, "explanation": string } }
   { "type": "miniQuiz", "question": string, "options": [string,string,string?,string?], "answerIndex": number, "explanation": string }
+  { "type": "simulation", "kind": "photosynthesis"|"waterCycle"|"fractionBar"|"logicPath"|"generic", "title": string, "caption": string, "steps": [string,string?,string?,string?] }
 
 MiniQuizBlock = the same as the miniQuiz shape above.
 
@@ -146,6 +152,7 @@ Composition rules:
 - ${formatHint}
 - Density: ${targetCount} body blocks (excluding finalQuiz).
 - Always include at least one of: compare OR steps OR tryIt — to break the monotony.
+- Prefer a "simulation" block for visible processes, cycles, flows, systems, fractions or logic paths. Example: photosynthesis MUST use kind "photosynthesis" so the frontend renders an instant animated SVG instead of waiting for an AI image.
 - Sprinkle exactly one mascotSays somewhere mid-lesson with a warm, in-character message.
 - Every imagePrompt must be a vivid 1-sentence English cartoon prompt that mixes the concept with the child's favorite world. NO text inside images.
 - Use the child's interests as the visual and verbal language.
@@ -193,6 +200,17 @@ Return ONLY the JSON.`;
       blocks: ensureIds(safeBlocks, "b"),
       finalQuiz: ensureIds(finalQuizBlocks, "fq") as MiniQuizBlock[],
     };
+    if (topicText.includes("fotos") && !lesson.blocks.some((b) => b.type === "simulation" && b.kind === "photosynthesis")) {
+      lesson.blocks.splice(Math.min(1, lesson.blocks.length), 0, {
+        id: "",
+        type: "simulation",
+        kind: "photosynthesis",
+        title: lang === "English" ? "Photosynthesis in action" : "Fotosíntesis en acción",
+        caption: lang === "English" ? "Light, water and air become plant food." : "La luz, el agua y el aire se transforman en alimento para la planta.",
+        steps: lang === "English" ? ["Sunlight arrives", "Roots drink water", "Leaves take CO₂", "Glucose and oxygen appear"] : ["Llega luz solar", "Las raíces toman agua", "Las hojas capturan CO₂", "Aparecen glucosa y oxígeno"],
+      });
+      lesson.blocks = ensureIds(lesson.blocks, "b");
+    }
     return { lessonId: data.lessonId, lesson };
   });
 
@@ -206,13 +224,15 @@ const ignoInput = z.object({
 });
 
 export interface IgnoBlock {
-  type: "text" | "image" | "example" | "tip";
+  type: "text" | "image" | "example" | "tip" | "simulation";
   text?: string;
   imagePrompt?: string;
   caption?: string;
   icon?: string;
   title?: string;
   body?: string;
+  kind?: "photosynthesis" | "waterCycle" | "fractionBar" | "logicPath" | "generic";
+  steps?: string[];
 }
 
 export const askIgno = createServerFn({ method: "POST" })
@@ -228,11 +248,12 @@ Responde como STRICT JSON (sin markdown fences) con esta forma:
     { "type": "text", "text": string (1-3 frases cortas, puedes usar **negritas** y emojis) },
     // opcionales:
     { "type": "image", "imagePrompt": string (frase EN inglés para una ilustración cartoon kid-friendly que mezcle el concepto con el mundo favorito del niño; sin texto en la imagen), "caption": string (en ${lang}) },
+    { "type": "simulation", "kind": "photosynthesis"|"waterCycle"|"fractionBar"|"logicPath"|"generic", "title": string, "caption": string, "steps": [string,string?,string?,string?] },
     { "type": "example", "icon": string (1 emoji), "title": string (3-6 palabras), "body": string (1-2 frases con un ejemplo concreto del mundo del niño) },
     { "type": "tip", "icon": string (1 emoji), "text": string (un mini consejo accionable) }
   ]
 }
-Reglas: 2 a 4 bloques en total. SIEMPRE incluye al menos 1 "text". Incluye 1 "image" si ayuda visualmente (casi siempre que sea un concepto). Si das un ejemplo concreto, usa "example". Devuelve SOLO el JSON.`;
+Reglas: 2 a 4 bloques en total. SIEMPRE incluye al menos 1 "text". Para procesos visibles (ej: fotosíntesis, ciclo del agua, fracciones, rutas lógicas) prefiere "simulation" porque aparece al instante con SVG animado. Incluye "image" solo si una ilustración libre aporta más que una simulación. Si das un ejemplo concreto, usa "example". Devuelve SOLO el JSON.`;
     const { text: raw } = await callAI([
       { role: "system", content: sys },
       { role: "user", content: user },
@@ -296,6 +317,7 @@ export const generateHeroImage = createServerFn({ method: "POST" })
         false,
         model,
         ["image", "text"],
+        18000,
       );
       return images[0] ?? "";
     };
