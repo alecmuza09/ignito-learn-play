@@ -56,7 +56,7 @@ export interface LessonShape {
   objective: string;
   story: string;
   heroImagePrompt: string;
-  sections: { kind: string; title: string; body: string }[];
+  sections: { kind: string; title: string; body: string; imagePrompt: string }[];
   quiz: { type: string; question: string; options: string[]; answerIndex: number; explanation: string }[];
   celebration: string;
 }
@@ -72,7 +72,7 @@ export const generateLesson = createServerFn({ method: "POST" })
  "objective": string (1 sentence learning goal),
  "story": string (2-4 sentence story hook connecting the topic to the child's interests),
  "heroImagePrompt": string (vivid English prompt, 1-2 sentences, for a colorful kid-friendly cartoon illustration that mixes the topic with the child's interests; no text in image),
- "sections": [ { "kind": "explanation"|"funFact"|"analogy"|"miniChallenge", "title": string, "body": string } ] (3 to 5 items, mixed kinds),
+ "sections": [ { "kind": "explanation"|"funFact"|"analogy"|"miniChallenge", "title": string, "body": string, "imagePrompt": string } ] (3 to 5 items, mixed kinds; imagePrompt is a 1-sentence English prompt for a kid-friendly cartoon illustration that VISUALIZES this section's concept blended with the child's favorite world; no text in image),
  "quiz": [ { "type": "multiple"|"truefalse", "question": string, "options": string[], "answerIndex": number, "explanation": string } ] (exactly 5 items),
  "celebration": string (1 hyped sentence for finishing)
 }
