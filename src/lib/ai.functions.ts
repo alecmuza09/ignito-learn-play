@@ -109,17 +109,47 @@ const ignoInput = z.object({
   language: z.string(),
 });
 
+export interface IgnoBlock {
+  type: "text" | "image" | "example" | "tip";
+  text?: string;
+  imagePrompt?: string;
+  caption?: string;
+  icon?: string;
+  title?: string;
+  body?: string;
+}
+
 export const askIgno = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => ignoInput.parse(d))
   .handler(async ({ data }) => {
     const lang = data.language === "en" ? "English" : "Spanish";
-    const sys = `You are IGNO, a wise but playful owl tutor for ${data.childName}, age ${data.age}. Always reply in ${lang} with warmth, brevity (max 4 short sentences), and use their interests (${data.interests.join(", ")}) as analogies. Never lecture. Be a friend who happens to be brilliant.`;
-    const user = `${data.lessonContext ? `(Contexto de la lección: ${data.lessonContext})\n\n` : ""}Pregunta: ${data.question}`;
-    const { text: reply } = await callAI([
+    const sys = `You are IGNO, a playful tutor for ${data.childName}, age ${data.age}. Reply in ${lang} with warmth and brevity. Always weave in their favorite world: ${data.interests.join(", ") || "general kid topics"}. You build RICH, multi-block answers — not walls of text. Be a friend who happens to be brilliant.`;
+    const user = `${data.lessonContext ? `(Contexto de la lección: ${data.lessonContext})\n\n` : ""}Pregunta del niño: ${data.question}
+
+Responde como STRICT JSON (sin markdown fences) con esta forma:
+{
+  "blocks": [
+    { "type": "text", "text": string (1-3 frases cortas, puedes usar **negritas** y emojis) },
+    // opcionales:
+    { "type": "image", "imagePrompt": string (frase EN inglés para una ilustración cartoon kid-friendly que mezcle el concepto con el mundo favorito del niño; sin texto en la imagen), "caption": string (en ${lang}) },
+    { "type": "example", "icon": string (1 emoji), "title": string (3-6 palabras), "body": string (1-2 frases con un ejemplo concreto del mundo del niño) },
+    { "type": "tip", "icon": string (1 emoji), "text": string (un mini consejo accionable) }
+  ]
+}
+Reglas: 2 a 4 bloques en total. SIEMPRE incluye al menos 1 "text". Incluye 1 "image" si ayuda visualmente (casi siempre que sea un concepto). Si das un ejemplo concreto, usa "example". Devuelve SOLO el JSON.`;
+    const { text: raw } = await callAI([
       { role: "system", content: sys },
       { role: "user", content: user },
-    ]);
-    return { reply };
+    ], true);
+    let parsed: { blocks?: IgnoBlock[] };
+    try { parsed = JSON.parse(raw); } catch {
+      const m = raw.match(/\{[\s\S]*\}/);
+      parsed = m ? JSON.parse(m[0]) : { blocks: [{ type: "text", text: raw }] };
+    }
+    const blocks: IgnoBlock[] = Array.isArray(parsed.blocks) && parsed.blocks.length
+      ? parsed.blocks
+      : [{ type: "text", text: raw }];
+    return { blocks };
   });
 
 const reportInput = z.object({
