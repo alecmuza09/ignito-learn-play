@@ -162,7 +162,7 @@ function IgnoMessage({ text, blocks }: { text?: string; blocks?: (IgnoBlock & { 
           );
         }
         if (b.type === "simulation") {
-          return <AnimatedSimulation key={i} kind={b.kind} title={b.title} caption={b.caption} steps={b.steps} compact />;
+          return <AnimatedSimulation key={i} kind={b.kind} title={b.title} caption={b.caption} steps={b.steps} compact hint={`${b.title ?? ""} ${b.caption ?? ""} ${(b.steps ?? []).join(" ")}`} />;
         }
         if (b.type === "example") {
           return (
