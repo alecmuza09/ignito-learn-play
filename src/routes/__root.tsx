@@ -5,6 +5,7 @@ import {
 import appCss from "../styles.css?url";
 import { AppHeader } from "@/components/AppHeader";
 import { IgnoFloating } from "@/components/Igno";
+import { GenBackdrop } from "@/components/gen-ui/primitives";
 
 function NotFound() {
   return (
@@ -70,6 +71,7 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   return (
     <QueryClientProvider client={queryClient}>
+      <GenBackdrop />
       <AppHeader />
       <Outlet />
       <IgnoFloating />
