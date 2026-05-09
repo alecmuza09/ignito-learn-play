@@ -110,6 +110,35 @@ function parseModelJson(content?: string | null) {
 }
 
 async function callModel(data: NonNullable<CopilotRequestPayload["variables"]>["data"]) {
+  if (process.env.GEMINI_API_KEY) {
+    const promptMessages = asPromptMessages(data);
+    const system = promptMessages.find((message) => message.role === "system")?.content ?? "";
+    const contents = promptMessages
+      .filter((message) => message.role !== "system")
+      .map((message) => ({
+        role: message.role === "assistant" ? "model" : "user",
+        parts: [{ text: message.content }],
+      }));
+
+    const response = await fetch(`${GEMINI_BASE}/${GEMINI_MODEL}:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        systemInstruction: { role: "system", parts: [{ text: system }] },
+        contents: contents.length ? contents : [{ role: "user", parts: [{ text: "Saluda y propone aprender algo divertido." }] }],
+        generationConfig: { responseMimeType: "application/json" },
+      }),
+    });
+
+    if (!response.ok) {
+      const detail = await response.text();
+      throw new Error(`Error de IA ${response.status}: ${detail.slice(0, 180)}`);
+    }
+
+    const gemini = await response.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
+    return { choices: [{ message: { content: gemini.candidates?.[0]?.content?.parts?.map((part) => part.text ?? "").join("") ?? "" } }] };
+  }
+
   const key = process.env.LOVABLE_API_KEY;
   if (!key) throw new Error("Falta configurar la conexión de IA");
 
@@ -195,10 +224,10 @@ async function handleGenerate(payload: CopilotRequestPayload) {
 }
 
 function handleQuery(payload: CopilotRequestPayload) {
-  if (payload.operationName === "availableAgents") {
+  if (payload.operationName === "availableAgents" || payload.query?.includes("availableAgents")) {
     return { data: { availableAgents: { __typename: "AgentsResponse", agents: [] } } };
   }
-  if (payload.operationName === "loadAgentState") {
+  if (payload.operationName === "loadAgentState" || payload.query?.includes("loadAgentState")) {
     return {
       data: {
         loadAgentState: {
