@@ -4,6 +4,13 @@ import { createFileRoute } from "@tanstack/react-router";
 const COPILOTKIT_VERSION = "1.57.1";
 const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const MODEL = "google/gemini-3-flash-preview";
+const SIMULATION_KINDS = [
+  "photosynthesis", "waterCycle", "fractionBar", "logicPath", "solarSystem", "heart", "atom",
+  "ecosystem", "foodChain", "circuit", "magnet", "gravity", "dna", "volcano", "geometry",
+  "multiplication", "alphabet", "timeline", "musicNotes", "lifeCycle", "weather", "rocket",
+  "wave", "digestion", "respiration", "seasons", "phaseChange", "pendulum", "additionBlocks",
+  "mapRoute", "generic",
+];
 
 type CopilotMessageInput = {
   id?: string;
@@ -39,15 +46,6 @@ function makeId(prefix: string) {
   return `${prefix}-${crypto.randomUUID()}`;
 }
 
-function parseSchema(schema?: string) {
-  if (!schema) return { type: "object", properties: {}, required: [] };
-  try {
-    return JSON.parse(schema);
-  } catch {
-    return { type: "object", properties: {}, required: [] };
-  }
-}
-
 function asPromptMessages(data: NonNullable<CopilotRequestPayload["variables"]>["data"]) {
   const messages = data?.messages ?? [];
   const context = data?.context ?? [];
@@ -56,11 +54,12 @@ function asPromptMessages(data: NonNullable<CopilotRequestPayload["variables"]>[
 
   const systemParts = [
     "Eres IGNO, un tutor educativo para niños. Responde SIEMPRE en español, con tono claro, cálido y dinámico.",
-    "Antes del texto final, debes elegir exactamente una herramienta visual disponible y devolverla como tool call.",
-    "La herramienta debe estar directamente relacionada con el tema preguntado y con los gustos/contexto del niño. Evita animaciones genéricas.",
-    "Después del tool call, escribe 1 a 3 frases breves que complementen la visualización con una idea clave o pregunta.",
+    "Devuelve ÚNICAMENTE JSON válido con esta forma: {\"toolName\":\"presentSimulation\",\"args\":{...},\"text\":\"1 a 3 frases\"}.",
+    `Si usas presentSimulation, el campo args.kind debe ser uno de: ${SIMULATION_KINDS.join(", ")}. Usa generic solo si nada más encaja.`,
+    "La herramienta visual debe estar directamente relacionada con el tema preguntado y con los gustos/contexto del niño. Evita animaciones genéricas.",
+    "Después de la herramienta, el campo text debe complementar la visualización con una idea clave o una pregunta corta.",
     actions.length
-      ? `Herramientas disponibles: ${actions.map((action) => `${action.name}: ${action.description ?? ""}`).join("\n")}`
+      ? `Herramientas disponibles y sus parámetros JSON: ${actions.map((action) => `${action.name}: ${action.description ?? ""}\n${action.jsonSchema ?? ""}`).join("\n\n")}`
       : "",
     context.length
       ? `Contexto del niño:\n${context.map((item) => `${item.description ?? "Contexto"}: ${item.value ?? ""}`).join("\n")}`
