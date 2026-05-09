@@ -5,8 +5,6 @@ import {
 import appCss from "../styles.css?url";
 import { AppHeader } from "@/components/AppHeader";
 import { IgnoFloating } from "@/components/Igno";
-import { CopilotKit } from "@copilotkit/react-core";
-import "@copilotkit/react-ui/styles.css";
 import { LanguageProvider } from "@/lib/i18n";
 
 function NotFound() {
@@ -79,11 +77,9 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
-        <CopilotKit runtimeUrl="/api/copilotkit">
-          <AppHeader />
-          <Outlet />
-          <IgnoFloating />
-        </CopilotKit>
+        <AppHeader />
+        <Outlet />
+        <IgnoFloating />
       </LanguageProvider>
     </QueryClientProvider>
   );
