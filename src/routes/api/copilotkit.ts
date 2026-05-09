@@ -81,34 +81,40 @@ function asPromptMessages(data: NonNullable<CopilotRequestPayload["variables"]>[
   return [{ role: "system", content: systemParts }, ...chatMessages];
 }
 
-function buildTools(actions: CopilotActionInput[]) {
-  return actions.map((action) => ({
-    type: "function",
-    function: {
-      name: action.name,
-      description: action.description ?? action.name,
-      parameters: parseSchema(action.jsonSchema),
-    },
-  }));
-}
-
 function normalizeToolArguments(value: unknown) {
   if (typeof value === "string") return value;
   if (value && typeof value === "object") return JSON.stringify(value);
   return "{}";
 }
 
+function parseModelJson(content?: string | null) {
+  if (!content) return null;
+  const cleaned = content.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```$/i, "").trim();
+  try {
+    return JSON.parse(cleaned) as { toolName?: string; args?: unknown; text?: string };
+  } catch {
+    const start = cleaned.indexOf("{");
+    const end = cleaned.lastIndexOf("}");
+    if (start >= 0 && end > start) {
+      try {
+        return JSON.parse(cleaned.slice(start, end + 1)) as { toolName?: string; args?: unknown; text?: string };
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  }
+}
+
 async function callModel(data: NonNullable<CopilotRequestPayload["variables"]>["data"]) {
   const key = process.env.LOVABLE_API_KEY;
   if (!key) throw new Error("Falta configurar la conexión de IA");
 
-  const actions = data?.frontend?.actions ?? [];
   const body = {
     model: MODEL,
     messages: asPromptMessages(data),
     temperature: 0.8,
-    tools: buildTools(actions),
-    tool_choice: actions.length ? "auto" : undefined,
+    response_format: { type: "json_object" },
   };
 
   const response = await fetch(GATEWAY_URL, {
@@ -129,7 +135,6 @@ async function callModel(data: NonNullable<CopilotRequestPayload["variables"]>["
     choices?: Array<{
       message?: {
         content?: string | null;
-        tool_calls?: Array<{ id?: string; function?: { name?: string; arguments?: unknown } }>;
       };
     }>;
   }>;
@@ -143,25 +148,24 @@ async function handleGenerate(payload: CopilotRequestPayload) {
   const data = payload.variables?.data;
   const result = await callModel(data);
   const message = result.choices?.[0]?.message ?? {};
+  const parsed = parseModelJson(message.content);
   const now = new Date().toISOString();
   const assistantId = makeId("assistant");
   const outputMessages: unknown[] = [];
 
-  for (const call of message.tool_calls ?? []) {
-    const name = call.function?.name;
-    if (!name) continue;
+  if (parsed?.toolName) {
     outputMessages.push({
       __typename: "ActionExecutionMessageOutput",
-      id: call.id ?? makeId("tool"),
+      id: makeId("tool"),
       createdAt: now,
-      name,
-      arguments: [normalizeToolArguments(call.function?.arguments)],
+      name: parsed.toolName,
+      arguments: [normalizeToolArguments(parsed.args)],
       parentMessageId: assistantId,
       status: successStatus(),
     });
   }
 
-  const content = message.content?.trim() || "¡Mira esta idea en movimiento! ¿Qué parte quieres explorar ahora?";
+  const content = parsed?.text?.trim() || message.content?.trim() || "¡Mira esta idea en movimiento! ¿Qué parte quieres explorar ahora?";
   outputMessages.push({
     __typename: "TextMessageOutput",
     id: assistantId,
