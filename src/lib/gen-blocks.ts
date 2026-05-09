@@ -15,7 +15,7 @@ export type ImageBlock     = BlockBase & { type: "image"; imagePrompt: string; c
 export type CompareBlock   = BlockBase & { type: "compare"; left: { label: string; imagePrompt: string }; right: { label: string; imagePrompt: string }; takeaway?: string };
 export type StepsBlock     = BlockBase & { type: "steps"; title?: string; items: { icon?: string; label: string; body?: string }[] };
 export type CalloutBlock   = BlockBase & { type: "callout"; icon?: string; title: string; body: string; tone?: Tone };
-export type MascotSays     = BlockBase & { type: "mascotSays"; text: string; mood?: "happy" | "wink" | "wow" | "sleepy" };
+export type MascotSays     = BlockBase & { type: "mascotSays"; text: string; mood?: "happy" | "wink" | "wow" | "calm" };
 export type TryItBlock     = BlockBase & {
   type: "tryIt";
   question: string;
@@ -64,7 +64,7 @@ export const blockZ: z.ZodType<GenBlock> = z.lazy(() => z.discriminatedUnion("ty
     body: z.string(), tone: toneZ.optional() }),
   z.object({ id: z.string().optional().default(""), agentInserted: z.boolean().optional(),
     type: z.literal("mascotSays"), text: z.string(),
-    mood: z.enum(["happy","wink","wow","sleepy"]).optional() }),
+    mood: z.enum(["happy","wink","wow","calm"]).optional() }),
   z.object({ id: z.string().optional().default(""), agentInserted: z.boolean().optional(),
     type: z.literal("tryIt"), question: z.string(),
     kind: z.enum(["tap","sort","input"]),
