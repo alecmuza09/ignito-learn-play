@@ -1,10 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { blockZ, ensureIds, type GenBlock, type MiniQuizBlock } from "./gen-blocks";
+import { blockZ, ensureIds, type GenBlock, type MiniQuizBlock, type StyleSpec } from "./gen-blocks";
 
 const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const MODEL = "google/gemini-3-flash-preview";
-const IMAGE_MODEL = "google/gemini-2.5-flash-image";
+const IMAGE_MODEL = "google/gemini-3.1-flash-image-preview"; // Nano Banana 2
+const IMAGE_MODEL_FALLBACK = "google/gemini-3-pro-image-preview";
 
 async function callAI(
   messages: { role: string; content: string }[],
@@ -34,10 +35,43 @@ async function callAI(
   const data = await res.json();
   const msg = data.choices?.[0]?.message ?? {};
   const text: string = typeof msg.content === "string" ? msg.content : "";
-  const images: string[] = Array.isArray(msg.images)
-    ? msg.images.map((im: { image_url?: { url?: string } }) => im?.image_url?.url ?? "").filter(Boolean)
-    : [];
+  const images: string[] = extractImages(msg);
   return { text, images };
+}
+
+/** Extract image URLs from any of the shapes the gateway may return:
+ *  - message.images[].image_url.url
+ *  - message.images[].url
+ *  - message.images[].b64_json  → wrap as data URL
+ *  - message.content[] parts with type image_url / image / output_image
+ */
+function extractImages(msg: unknown): string[] {
+  const out: string[] = [];
+  const m = msg as {
+    images?: Array<{ image_url?: { url?: string }; url?: string; b64_json?: string; mime_type?: string }>;
+    content?: unknown;
+  };
+  if (Array.isArray(m.images)) {
+    for (const im of m.images) {
+      const url = im?.image_url?.url || im?.url;
+      if (url) { out.push(url); continue; }
+      if (im?.b64_json) { out.push(`data:${im.mime_type || "image/png"};base64,${im.b64_json}`); }
+    }
+  }
+  if (Array.isArray(m.content)) {
+    for (const part of m.content as Array<Record<string, unknown>>) {
+      const t = part?.type as string | undefined;
+      if (t === "image_url" || t === "image" || t === "output_image") {
+        const u = (part as { image_url?: { url?: string }; url?: string }).image_url?.url
+              ?? (part as { url?: string }).url;
+        if (u) out.push(u);
+        const b64 = (part as { b64_json?: string }).b64_json;
+        const mime = (part as { mime_type?: string }).mime_type;
+        if (!u && b64) out.push(`data:${mime || "image/png"};base64,${b64}`);
+      }
+    }
+  }
+  return out.filter(Boolean);
 }
 
 const lessonInput = z.object({
@@ -59,6 +93,7 @@ export interface LessonShape {
   blocks: GenBlock[];
   finalQuiz: MiniQuizBlock[];
   celebration: string;
+  styleSpec?: StyleSpec;
 }
 
 export const generateLesson = createServerFn({ method: "POST" })
@@ -83,6 +118,7 @@ Shape:
   "title": string,
   "objective": string,
   "celebration": string,
+  "styleSpec": { "palette": string, "illustrationStyle": string, "vibe": string },
   "blocks": GenBlock[],   // ${targetCount} blocks total (counting the hero)
   "finalQuiz": MiniQuizBlock[]  // exactly 4 questions
 }
@@ -114,6 +150,7 @@ Composition rules:
 - Every imagePrompt must be a vivid 1-sentence English cartoon prompt that mixes the concept with the child's favorite world. NO text inside images.
 - Use the child's interests as the visual and verbal language.
 - Difficulty ${data.difficulty}/4. Adjust vocabulary and depth.
+- styleSpec: pick ONE consistent visual identity for the whole lesson (palette + illustrationStyle + a 3-5 word vibe). Every imagePrompt should match this identity so the lesson feels like a single illustrated book.
 
 Child profile:
 - Name: ${data.childName}
@@ -129,7 +166,7 @@ Return ONLY the JSON.`;
       { role: "system", content: sys },
       { role: "user", content: prompt },
     ], true);
-    let parsed: { title?: string; objective?: string; celebration?: string; blocks?: unknown; finalQuiz?: unknown };
+    let parsed: { title?: string; objective?: string; celebration?: string; styleSpec?: StyleSpec; blocks?: unknown; finalQuiz?: unknown };
     try { parsed = JSON.parse(raw); } catch {
       const m = raw.match(/\{[\s\S]*\}/);
       if (!m) throw new Error("La IA respondió en un formato inesperado.");
@@ -152,6 +189,7 @@ Return ONLY the JSON.`;
       title: String(parsed.title ?? "Misión IGNO"),
       objective: String(parsed.objective ?? ""),
       celebration: String(parsed.celebration ?? "¡Lo lograste!"),
+      styleSpec: parsed.styleSpec && typeof parsed.styleSpec === "object" ? parsed.styleSpec : undefined,
       blocks: ensureIds(safeBlocks, "b"),
       finalQuiz: ensureIds(finalQuizBlocks, "fq") as MiniQuizBlock[],
     };
@@ -235,19 +273,43 @@ export const parentReport = createServerFn({ method: "POST" })
 const imgInput = z.object({
   prompt: z.string().min(1).max(800),
   interests: z.array(z.string()).default([]),
+  styleSpec: z.object({
+    palette: z.string().optional(),
+    illustrationStyle: z.string().optional(),
+    vibe: z.string().optional(),
+  }).optional(),
 });
 
 export const generateHeroImage = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => imgInput.parse(d))
   .handler(async ({ data }): Promise<{ url: string }> => {
     const interestsLine = data.interests.length ? ` Subtly weave in elements the child loves: ${data.interests.join(", ")}.` : "";
-    const fullPrompt = `Friendly, vibrant cartoon illustration for a children's lesson hero banner. ${data.prompt}${interestsLine} Bold flat colors, soft shapes, cheerful lighting, no text, no logos, wide 16:9 composition.`;
-    const { images } = await callAI(
-      [{ role: "user", content: fullPrompt }],
-      false,
-      IMAGE_MODEL,
-      ["image", "text"],
-    );
-    const url = images[0] ?? "";
+    const style = data.styleSpec;
+    const styleLine = style
+      ? ` Visual identity: ${style.illustrationStyle ?? "friendly cartoon"}, palette ${style.palette ?? "bright and cheerful"}, vibe ${style.vibe ?? "playful adventure"}.`
+      : " Bold flat colors, soft shapes, cheerful lighting.";
+    const fullPrompt = `Friendly children's-book illustration. ${data.prompt}${interestsLine}${styleLine} No text, no letters, no logos, wide 16:9 composition.`;
+
+    const tryModel = async (model: string) => {
+      const { images } = await callAI(
+        [{ role: "user", content: fullPrompt }],
+        false,
+        model,
+        ["image", "text"],
+      );
+      return images[0] ?? "";
+    };
+
+    let url = "";
+    try { url = await tryModel(IMAGE_MODEL); } catch (e) {
+      console.warn("[generateHeroImage] primary model failed:", (e as Error).message);
+    }
+    if (!url) {
+      console.warn("[generateHeroImage] empty url from primary, trying fallback");
+      try { url = await tryModel(IMAGE_MODEL_FALLBACK); } catch (e) {
+        console.warn("[generateHeroImage] fallback failed:", (e as Error).message);
+      }
+    }
+    if (!url) console.warn("[generateHeroImage] gateway returned no image for prompt:", data.prompt.slice(0, 80));
     return { url };
   });

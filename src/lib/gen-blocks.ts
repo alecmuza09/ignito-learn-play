@@ -32,6 +32,15 @@ export type GenBlock =
   | HeroBlock | TextBlock | ImageBlock | CompareBlock | StepsBlock
   | CalloutBlock | MascotSays | TryItBlock | MiniQuizBlock | CelebrateBlock;
 
+/** Visual style the AI commits to for a whole lesson — used to keep
+ *  every generated image in the same look, like the "Wizard Green"
+ *  example from Google's generative UI paper. */
+export interface StyleSpec {
+  palette?: string;            // e.g. "vibrant carmine red and gold"
+  illustrationStyle?: string;  // e.g. "Pixar-like 3D cartoon, soft shading"
+  vibe?: string;               // e.g. "Marvel comic book hero adventure"
+}
+
 /** Actions the UI Agent can emit to mutate the live page. */
 export type AgentAction =
   | { kind: "reaction"; payload: { tone: Tone; headline: string; message: string; particles: string[]; intensity: "calm" | "normal" | "epic"; ttlMs: number; reactionKind: "celebrate" | "encourage" | "hint" | "level-up" | "ambient" } }

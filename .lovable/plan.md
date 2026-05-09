@@ -1,125 +1,100 @@
+## Problema confirmado
+
+Inspeccionando la red en vivo, la server function `generateHeroImage` está respondiendo con `url: ""` para **todas** las llamadas (lección y chat). El modelo `google/gemini-2.5-flash-image` ya no está devolviendo `message.images[]` por el gateway. La UI sigue mostrando los placeholders ("🎨 IGNO está dibujando…") indefinidamente.
+
+Además, el sistema actual sigue una receta fija (un único `generateLesson` → `blocks[]`), lo que choca con el principio del paper de Google: **planner + tools + post-processing** con la IA decidiendo composición y assets dinámicamente.
+
+---
+
 ## Objetivo
 
-Llevar IGNOTO al siguiente nivel de **Generative UI**: que la IA no solo rellene plantillas, sino que **decida la composición de la pantalla** — qué bloques renderizar, en qué orden, con qué interactividad — y que el **agente mute la UI en vivo** según los eventos del niño.
-
-Hoy la lección tiene una estructura fija (hero → historia → 3-5 cards → quiz multiple choice). Vamos a romper esa rigidez.
-
----
-
-## 1. Esquema de bloques (contrato IA ↔ UI)
-
-Crear un **schema declarativo** que la IA devuelve y un **renderer** que lo pinta. Cualquier pantalla generativa se vuelve una lista de bloques tipados.
-
-```ts
-type GenBlock =
-  | { type: "hero", title, subtitle, imagePrompt, tone }
-  | { type: "text", body, emphasis?: "normal" | "fact" | "analogy" }
-  | { type: "image", imagePrompt, caption, ratio: "16:9"|"4:3"|"1:1" }
-  | { type: "compare", left:{label,imagePrompt}, right:{label,imagePrompt}, takeaway }
-  | { type: "steps", title, items: {icon, label, body}[] }
-  | { type: "callout", icon, title, body, tone }
-  | { type: "mascotSays", text, mood }
-  | { type: "tryIt", question, kind: "tap"|"sort"|"match"|"input", payload }
-  | { type: "miniQuiz", question, options, answerIndex, explanation }
-  | { type: "celebrate", message, particles }
-```
-
-La IA elige qué bloques usar y en qué orden por lección. Una lección de fracciones con un fan de Spiderman puede ser `hero → mascotSays → compare(media-pizza vs pizza-entera) → tryIt(match) → text → miniQuiz`. Una de historia puede ser `hero → steps → image → callout → miniQuiz`.
-
-## 2. Renderer + componentes nuevos
-
-- `<GenRenderer blocks={...} />` que mapea cada `type` a un componente generativo del design system.
-- Nuevos primitivos en `src/components/gen-ui/`:
-  - `GenCompare` — dos columnas con imágenes IA y un "→ por eso…".
-  - `GenSteps` — timeline numerada con iconos del tema.
-  - `GenCallout` — cita destacada (dato curioso / mini reto / advertencia) con tono adaptativo.
-  - `GenMascotSays` — burbuja de la mascota KawaiiBlob (humor variable).
-  - `GenTryIt` — micro-interacción inline (tap-the-correct, sort 3 items, match pairs, input numérico). Da feedback inmediato sin salir de la lección.
-  - `GenMiniQuiz` — pregunta inline (no es el quiz final, vive entre los bloques).
-
-Imágenes (`hero`, `image`, `compare`) se generan en paralelo con Nano Banana usando el `imagePrompt` que la IA emite, igual que hoy.
-
-## 3. Lección como composición generada
-
-`generateLesson` (en `src/lib/ai.functions.ts`) deja de devolver `{sections, quiz}` rígido y pasa a devolver `{ title, objective, blocks: GenBlock[], finalQuiz: GenBlock[] }`. El prompt instruye a la IA a:
-
-- Variar la composición según materia, dificultad y `style.format` del perfil (video → más imágenes y steps; leer → más text+callout; jugar → más tryIt y miniQuiz).
-- Ajustar densidad según `style.focus` (5 min → 4 bloques; 30 min → 8-10 bloques).
-- Inyectar el `interest` activo en cada bloque visualmente relevante.
-
-## 4. El agente toma control de la UI en vivo
-
-Hoy `decideReaction` solo dispara un overlay efímero (`<GenReaction>`). Lo extendemos a un **mutador de layout**:
-
-```ts
-type AgentAction =
-  | { kind: "reaction", payload: AgentReactionPayload }   // overlay actual
-  | { kind: "insertBlock", at: "after-current"|"end", block: GenBlock }
-  | { kind: "replaceBlock", id: string, block: GenBlock }
-  | { kind: "highlight", blockId: string, tone: Tone }
-  | { kind: "switchTone", tone: Tone }                    // re-tematiza la página
-```
-
-Ejemplos:
-- 2 errores seguidos → agente inserta un `callout` con analogía + un `tryIt` más fácil.
-- 3 aciertos → agente inserta un `celebrate` + un `miniQuiz` bonus de XP.
-- "stuck" (timeout sin responder) → agente inserta `mascotSays` con pista visual.
-- Inicio de sesión muy enérgica → `switchTone` a un acento más vivo.
-
-`useUIAgent` se amplía para aplicar `insertBlock`/`replaceBlock` sobre el array de bloques activos del renderer, con animación de entrada (`animate-pop-in`).
-
-## 5. Chat IGNO también renderiza bloques
-
-El chat ya devuelve `IgnoBlock[]`. Lo unificamos al mismo `GenBlock`/`<GenRenderer>` para que IGNO pueda responder con un `compare`, un `tryIt` o un `miniQuiz` inline — no solo texto+imagen+ejemplo. "Explícame fracciones" devuelve un mini-ejercicio jugable dentro de la burbuja.
-
-## 6. Personalización por perfil aún más visible
-
-- `GenThemeBanner` muestra qué decisiones tomó la IA hoy ("Hoy elegí más imágenes porque te gusta ver", "Modo reto activo").
-- Indicador sutil en cada bloque insertado por el agente: pequeño chip "🤖 IA en vivo" para que el niño *vea* que la página está cambiando para él.
-
-## 7. Fuera de alcance (para no inflar)
-
-- No tocamos registro/dashboard/mapa/padres salvo un mini-banner en dashboard que muestre "tu próxima lección la genera la IA al abrirla".
-- No introducimos drag-and-drop pesado (el `tryIt sort` es tap-para-reordenar, no DnD).
-- No reescribimos la mascota — seguimos con `KawaiiBlob`.
-- No tocamos backend/DB — todo sigue en server functions + localStorage.
+1. **Arreglar la generación de imágenes** (causa inmediata del bug).
+2. **Acercar IGNOTO al modelo Generative UI de Google**: pipeline en 3 etapas (planner → tools → post-process), assets ricos de verdad (no solo texto envuelto en bloques), y estilo visual consistente por sesión.
 
 ---
 
-## Notas técnicas
+## Cambios
 
-- **Tipos**: nuevo archivo `src/lib/gen-blocks.ts` con `GenBlock`, `AgentAction`, validadores Zod (los usamos tanto al parsear la IA como al insertar bloques desde el agente).
-- **Renderer**: `src/components/gen-ui/GenRenderer.tsx` — componente único que `switch`-ea por `type`. Cada bloque recibe un `id` estable (índice + uuid corto) para que el agente pueda referenciarlos.
-- **Server fns**:
-  - `generateLesson` — nueva forma de respuesta basada en bloques.
-  - `decideReaction` → `decideAction` (retro-compatible: si retorna `reaction`, lo envolvemos en `{ kind: "reaction", ... }`).
-- **Imágenes**: una sola pasada por `generateHeroImage` paralelo, agrupando todos los `imagePrompt` de los bloques al cargar la lección, igual que hoy.
-- **Migración**: el cambio en `generateLesson` rompe la respuesta vieja → actualizamos `leccion.$id.tsx` para usar `<GenRenderer>` y borramos el render manual de `sections`/`quiz`. El `quiz` final se modela como una lista de `miniQuiz` consecutivos.
-- **Estado**: `blocks` vive en estado React; el agente lo modifica con `setBlocks`. El renderer hace `key={block.id}` para que la animación de entrada se dispare al insertar.
+### 1. Reparar imágenes (`src/lib/ai.functions.ts`)
 
-```text
-┌─────────────────────────────────────────┐
-│ Profile + Theme + Subject + Difficulty  │
-└──────────────┬──────────────────────────┘
-               ▼
-        generateLesson  ──────►  GenBlock[]
-               │                      │
-               │                      ▼
-               │              <GenRenderer/>
-               │                      ▲
-               │                      │ insertBlock / replaceBlock
-               ▼                      │
-          on event ────►  decideAction (UI Agent)
-        (correct/wrong/                │
-         streak/stuck)                 │
-                                       ▼
-                              reaction overlay
-                              + layout mutation
+- Cambiar `IMAGE_MODEL` a `google/gemini-3.1-flash-image-preview` (Nano Banana 2, rápido + actual).
+- En `callAI`, hacer la extracción de imágenes más robusta: aceptar tanto `message.images[].image_url.url` como `message.content` con partes tipo `image_url`/`b64_json` (los gateways a veces devuelven inlined base64 → convertir a `data:image/png;base64,...`).
+- Si la primera llamada devuelve `url` vacía, **reintentar una vez** con `google/gemini-3-pro-image-preview` como fallback de mayor calidad.
+- Loggear (`console.warn`) cuando el gateway devuelve respuesta sin imagen para que aparezca en server logs.
+- Añadir el **estilo visual de la sesión** al `fullPrompt` (ver §3) para consistencia entre todas las imágenes de la lección.
+
+### 2. Pipeline Generative UI estilo Google (3 etapas)
+
+Refactorizar `generateLesson` para imitar la arquitectura del paper:
+
+**Etapa A — Planner (`planLesson`)**: una llamada rápida a Gemini 3 Flash que **decide la estructura** antes de escribir contenido. Devuelve:
 ```
+{
+  "styleSpec": { "palette": "...", "illustrationStyle": "...", "vibe": "..." },
+  "outline": [ { "type": "hero"|"compare"|..., "intent": "..." }, ... ],
+  "tools": ["image"|"webSearch"|"miniGame"]
+}
+```
+Esto separa "qué experiencia construir" de "cómo redactarla", igual que el paper.
 
-## Criterios de "hecho"
+**Etapa B — Composer**: la llamada actual, pero recibe el `outline` de la etapa A en el prompt (ya no inventa la estructura desde cero). Resultado: composiciones realmente distintas entre lecciones (no solo distinto texto en las mismas tarjetas).
 
-1. Dos lecciones del mismo niño con materias distintas tienen **layouts visiblemente diferentes** (no solo distinto texto en las mismas tarjetas).
-2. Aciertar 3 seguidas hace aparecer un bloque nuevo *dentro de la lección*, no solo un overlay.
-3. Una pregunta al chat sobre un tema visual devuelve un bloque interactivo (`tryIt` o `compare`) jugable.
-4. Niño con `style.focus = "5"` recibe lección notablemente más corta que con `"30"`.
+**Etapa C — Post-process** (`postProcessLesson`):
+- Asegurar `id` únicos.
+- Auto-corregir bloques inválidos (rellena defaults, elimina los que no parsean).
+- Si no hay ningún bloque visual (`hero`/`image`/`compare`), inyectar un `image` derivado del título.
+- Garantizar exactamente 1 `mascotSays` y al menos un `tryIt`.
+- Adjuntar el `styleSpec` al objeto `lesson` para que el frontend lo aplique a toda la sesión.
+
+### 3. Estilo visual consistente por sesión
+
+Como en los ejemplos "Wizard Green" del artículo: todas las imágenes de una lección comparten estilo.
+
+- `LessonShape` gana `styleSpec: { palette, illustrationStyle, vibe }`.
+- `generateHeroImage` recibe ese `styleSpec` opcionalmente y lo concatena al prompt.
+- En `leccion.$id.tsx`, pasar `styleSpec` a cada `genImg(...)`.
+
+### 4. Tools reales para la IA (no solo texto)
+
+Inspirado en el "tool access" del paper. En el `composer` añadir un mini contrato de herramientas:
+- `image(prompt)` → ya existe vía `generateHeroImage`.
+- `simulation(kind, params)` → nuevo bloque `tryIt` `kind: "sim"` (p. ej. fracciones interactivas, balanza, conteo) — empezamos con **una sola simulación**: una `fractionBar` (renderer SVG en frontend).
+- Esto demuestra el principio sin inflar: la IA puede pedir una simulación dinámica, no solo texto e imagen.
+
+Añadir `FractionSimBlock` al `gen-blocks.ts` y a `GenRenderer.tsx` (interactivo, sin librerías nuevas).
+
+### 5. Chat IGNO también arregla imágenes
+
+`src/components/Igno.tsx` ya llama a `generateHeroImage` para `IgnoBlock.image`. Como arreglamos la función raíz, el chat se cura solo. Verificar que el componente sigue inyectando la URL al recibirla.
+
+### 6. Indicadores "IA en vivo"
+
+Pequeño polish para que el usuario *vea* el paradigma:
+- En el `GenThemeBanner`: mostrar el `vibe` del `styleSpec` ("Hoy: estilo cómic Marvel + paleta carmesí").
+- Reintentos de imagen muestran un estado distinto al placeholder (un shimmer en lugar de un emoji estático).
+
+---
+
+## Archivos a tocar
+
+- `src/lib/ai.functions.ts` — modelo de imagen, extracción robusta, fallback, planner/composer/post-process, `styleSpec`.
+- `src/lib/gen-blocks.ts` — añadir `fractionBar` (o `sim`) opcional + tipo `StyleSpec`.
+- `src/components/gen-ui/GenRenderer.tsx` — render del nuevo bloque de simulación, shimmer de imagen.
+- `src/components/gen-ui/primitives.tsx` — `GenThemeBanner` muestra el `vibe`.
+- `src/routes/leccion.$id.tsx` — pasar `styleSpec` al image gen, manejar `lesson.styleSpec`.
+- `src/components/Igno.tsx` — verificación + (si aplica) reintento ante `url` vacía.
+
+## Fuera de alcance
+
+- No tocamos auth, dashboard, mapa, padres, registro.
+- No introducimos drag-and-drop ni librerías nuevas.
+- No cambiamos la mascota ni el sistema de tema base.
+- No tocamos backend/DB.
+
+## Cómo lo verifico
+
+1. Abrir una lección → debe haber imágenes reales en hero, image y compare en menos de ~10s.
+2. Dos lecciones del mismo niño con materias distintas → composición visiblemente diferente (diferente orden, diferentes tipos de bloques).
+3. Chat: pedir "explícame los planetas" → bloque imagen carga.
+4. Server logs no muestran warnings "image gateway returned empty".
+5. Si el modelo flash falla, fallback a pro entrega imagen de todos modos.

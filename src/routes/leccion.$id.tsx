@@ -8,7 +8,7 @@ import { GenButton, GenProgress, GenReaction, GenThemeBanner, useGenTheme } from
 import { GenRenderer, collectImageJobs } from "@/components/gen-ui/GenRenderer";
 import { useUIAgent } from "@/lib/use-ui-agent";
 import { KawaiiBlob } from "@/components/gen-ui/KawaiiBlob";
-import type { GenBlock, MiniQuizBlock, TryItBlock } from "@/lib/gen-blocks";
+import type { GenBlock, MiniQuizBlock, TryItBlock, StyleSpec } from "@/lib/gen-blocks";
 import { newId } from "@/lib/gen-blocks";
 
 export const Route = createFileRoute("/leccion/$id")({
@@ -27,6 +27,7 @@ function Lesson() {
   const [blocks, setBlocks] = useState<GenBlock[] | null>(null);
   const [finalQuiz, setFinalQuiz] = useState<MiniQuizBlock[]>([]);
   const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
+  const [styleSpec, setStyleSpec] = useState<StyleSpec | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
   const [stage, setStage] = useState<"reading" | "quiz" | "done">("reading");
   const [qIdx, setQIdx] = useState(0);
@@ -42,18 +43,19 @@ function Lesson() {
     if (!blocks || !profile) return;
     const jobs = collectImageJobs(blocks).filter((j) => !imageUrls[j.key]);
     jobs.forEach((j) => {
-      genImg({ data: { prompt: j.prompt, interests: profile.interests } })
+      genImg({ data: { prompt: j.prompt, interests: profile.interests, styleSpec } })
         .then((res) => { if (res.url) setImageUrls((prev) => ({ ...prev, [j.key]: res.url })); })
         .catch(() => {});
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [blocks, profile?.interests]);
+  }, [blocks, profile?.interests, styleSpec]);
 
   useEffect(() => {
     if (!profile) return;
     const node = buildCurriculum(profile).find((n) => n.id === id);
     if (!node) { setError("Lección no encontrada"); return; }
     setBlocks(null); setFinalQuiz([]); setImageUrls({}); setError(null);
+    setStyleSpec(undefined);
     setStage("reading"); setQIdx(0); setPicked(null); setCorrect(0); setWrong(0); setStreakRun(0);
     gen({ data: {
       lessonId: id, subject: node.subjectLabel, topic: node.topic,
@@ -65,6 +67,7 @@ function Lesson() {
         setTitle(r.lesson.title);
         setObjective(r.lesson.objective);
         setCelebration(r.lesson.celebration);
+        setStyleSpec(r.lesson.styleSpec);
         setBlocks(r.lesson.blocks);
         setFinalQuiz(r.lesson.finalQuiz);
       })
@@ -148,7 +151,13 @@ function Lesson() {
   return (
     <main className="max-w-2xl mx-auto px-4 py-6 pb-24">
       <GenReaction reaction={reaction} onDone={clear} />
-      <div className="mb-5"><GenThemeBanner subtitle={`Hoy: ${focusLabel} · ${formatLabel} · IA componiendo en vivo`} /></div>
+      <div className="mb-5">
+        <GenThemeBanner subtitle={
+          styleSpec?.vibe
+            ? `Hoy: ${styleSpec.vibe} · ${focusLabel} · ${formatLabel}`
+            : `Hoy: ${focusLabel} · ${formatLabel} · IA componiendo en vivo`
+        } />
+      </div>
 
       {stage === "reading" && (
         <>
