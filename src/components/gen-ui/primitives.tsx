@@ -3,10 +3,17 @@ import { GenTheme, Tone, themeFromInterests, toneClasses } from "@/lib/theme-fro
 import { useProfile } from "@/lib/profile";
 import { Link } from "@tanstack/react-router";
 
-/** Hook: derive the live theme from the active child profile. */
+/** Hook: derive the live theme from the active child profile.
+ *  SSR-safe: returns the default theme until mounted on the client so
+ *  hydration HTML matches. */
 export function useGenTheme(): GenTheme {
   const profile = useProfile();
-  return useMemo(() => themeFromInterests(profile?.interests ?? []), [profile?.interests]);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+  return useMemo(
+    () => (mounted ? themeFromInterests(profile?.interests ?? []) : themeFromInterests([])),
+    [mounted, profile?.interests],
+  );
 }
 
 /** Adaptive surface card. Tone defaults to the theme's secondary. */
@@ -16,7 +23,7 @@ export function GenCard({ children, tone, soft = true, className = "" }: {
   const theme = useGenTheme();
   const t = toneClasses(tone ?? theme.accentTone);
   return (
-    <div className={`rounded-3xl ${soft ? `${t.bgSoft} border-2 ${t.border}/30` : `${t.bg} ${t.text}`} p-5 shadow-soft ${className}`}>
+    <div className={`rounded-3xl ${soft ? `bg-card border ${t.border}/40` : `${t.bg} ${t.text}`} p-5 shadow-soft ${className}`}>
       {children}
     </div>
   );
