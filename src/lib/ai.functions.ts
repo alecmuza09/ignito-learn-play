@@ -286,7 +286,7 @@ export interface IgnoBlock {
   icon?: string;
   title?: string;
   body?: string;
-  kind?: "photosynthesis" | "waterCycle" | "fractionBar" | "logicPath" | "generic";
+  kind?: import("./gen-blocks").SimulationKind;
   steps?: string[];
 }
 
