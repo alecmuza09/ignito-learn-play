@@ -1,34 +1,32 @@
-import { createFileRoute, Link, useNavigate, useParams } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { createFileRoute, Link, useParams } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { generateLesson, generateHeroImage } from "@/lib/ai.functions";
 import { awardXP, markLessonDone, useProfile } from "@/lib/profile";
 import { buildCurriculum } from "@/lib/curriculum";
-import { GenButton, GenCard, GenProgress, GenQuizOption, GenReaction, GenThemeBanner, useGenTheme } from "@/components/gen-ui/primitives";
+import { GenButton, GenProgress, GenReaction, GenThemeBanner, useGenTheme } from "@/components/gen-ui/primitives";
+import { GenRenderer, collectImageJobs } from "@/components/gen-ui/GenRenderer";
 import { useUIAgent } from "@/lib/use-ui-agent";
 import { KawaiiBlob } from "@/components/gen-ui/KawaiiBlob";
+import type { GenBlock, MiniQuizBlock, TryItBlock } from "@/lib/gen-blocks";
+import { newId } from "@/lib/gen-blocks";
 
 export const Route = createFileRoute("/leccion/$id")({
   head: () => ({ meta: [{ title: "Lección — IGNOTO" }] }),
   component: Lesson,
 });
 
-interface LessonShape {
-  title: string; objective: string; story: string; heroImagePrompt: string;
-  sections: { kind: string; title: string; body: string; imagePrompt?: string }[];
-  quiz: { type: string; question: string; options: string[]; answerIndex: number; explanation: string }[];
-  celebration: string;
-}
-
 function Lesson() {
   const { id } = useParams({ from: "/leccion/$id" });
   const profile = useProfile();
-  const nav = useNavigate();
   const gen = useServerFn(generateLesson);
   const genImg = useServerFn(generateHeroImage);
-  const [lesson, setLesson] = useState<LessonShape | null>(null);
-  const [heroUrl, setHeroUrl] = useState<string | null>(null);
-  const [sectionUrls, setSectionUrls] = useState<Record<number, string>>({});
+  const [title, setTitle] = useState<string>("");
+  const [objective, setObjective] = useState<string>("");
+  const [celebration, setCelebration] = useState<string>("");
+  const [blocks, setBlocks] = useState<GenBlock[] | null>(null);
+  const [finalQuiz, setFinalQuiz] = useState<MiniQuizBlock[]>([]);
+  const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [stage, setStage] = useState<"reading" | "quiz" | "done">("reading");
   const [qIdx, setQIdx] = useState(0);
@@ -37,36 +35,53 @@ function Lesson() {
   const [wrong, setWrong] = useState(0);
   const [streakRun, setStreakRun] = useState(0);
   const theme = useGenTheme();
-  const { reaction, emit, clear } = useUIAgent(profile, theme, lesson?.title);
+  const { reaction, action, emit, clear } = useUIAgent(profile, theme, title);
+
+  // Generate images for blocks as they appear.
+  useEffect(() => {
+    if (!blocks || !profile) return;
+    const jobs = collectImageJobs(blocks).filter((j) => !imageUrls[j.key]);
+    jobs.forEach((j) => {
+      genImg({ data: { prompt: j.prompt, interests: profile.interests } })
+        .then((res) => { if (res.url) setImageUrls((prev) => ({ ...prev, [j.key]: res.url })); })
+        .catch(() => {});
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [blocks, profile?.interests]);
 
   useEffect(() => {
     if (!profile) return;
     const node = buildCurriculum(profile).find((n) => n.id === id);
     if (!node) { setError("Lección no encontrada"); return; }
-    setLesson(null); setHeroUrl(null); setError(null); setStage("reading"); setQIdx(0); setPicked(null); setCorrect(0);
+    setBlocks(null); setFinalQuiz([]); setImageUrls({}); setError(null);
+    setStage("reading"); setQIdx(0); setPicked(null); setCorrect(0); setWrong(0); setStreakRun(0);
     gen({ data: {
       lessonId: id, subject: node.subjectLabel, topic: node.topic,
       childName: profile.childName, age: profile.age, level: profile.level,
       interests: profile.interests, difficulty: node.difficulty,
-      language: profile.language,
-    }}).then((r) => {
-        const lsn = r.lesson as LessonShape;
-        setLesson(lsn);
-        setSectionUrls({});
-        const promptText = lsn.heroImagePrompt || `${node.subjectLabel}: ${lsn.title}`;
-        genImg({ data: { prompt: promptText, interests: profile.interests } })
-          .then((res) => { if (res.url) setHeroUrl(res.url); })
-          .catch(() => {});
-        // Generate one illustration per section in parallel so the lesson is mostly visual.
-        lsn.sections.forEach((s, idx) => {
-          const p = s.imagePrompt || `${s.title}: ${s.body.slice(0, 120)}`;
-          genImg({ data: { prompt: p, interests: profile.interests } })
-            .then((res) => { if (res.url) setSectionUrls((prev) => ({ ...prev, [idx]: res.url })); })
-            .catch(() => {});
-        });
+      language: profile.language, style: profile.style,
+    }})
+      .then((r) => {
+        setTitle(r.lesson.title);
+        setObjective(r.lesson.objective);
+        setCelebration(r.lesson.celebration);
+        setBlocks(r.lesson.blocks);
+        setFinalQuiz(r.lesson.finalQuiz);
       })
       .catch((e) => setError(e instanceof Error ? e.message : "Error generando la lección"));
-  }, [id, profile, gen, genImg]);
+  }, [id, profile, gen]);
+
+  // Apply agent layout mutations live.
+  useEffect(() => {
+    if (!action || action.kind !== "insertBlock") return;
+    setBlocks((prev) => {
+      if (!prev) return prev;
+      const block = { ...action.block, id: action.block.id || newId("ag"), agentInserted: true };
+      if (action.at === "end") return [...prev, block];
+      // after-current: insert near end of body for now
+      return [...prev, block];
+    });
+  }, [action]);
 
   if (!profile) return <Loader text="Cargando perfil…" />;
   if (error) return (
@@ -76,122 +91,107 @@ function Lesson() {
       <Link to="/dashboard" className="inline-block mt-5 rounded-full bg-primary text-primary-foreground px-5 py-2.5 font-bold">Volver</Link>
     </main>
   );
-  if (!lesson) return <Loader text={`Personalizando para ${profile.childName}…`} />;
+  if (!blocks) return <Loader text={`Personalizando para ${profile.childName}…`} />;
+
+  const focusLabel = profile.style?.focus === "5" ? "5 min" : profile.style?.focus === "10" ? "10 min" : profile.style?.focus === "15" ? "15 min" : "30 min";
+  const formatLabel =
+    profile.style?.format === "video" ? "más imágenes"
+    : profile.style?.format === "leer" ? "más lectura"
+    : profile.style?.format === "jugar" ? "más mini-retos"
+    : "mezcla";
+
+  function onTryIt(_b: TryItBlock, isCorrect: boolean) {
+    if (isCorrect) {
+      const newRun = streakRun + 1;
+      setStreakRun(newRun);
+      emit(newRun >= 3 ? "streak" : "correct", { correctSoFar: correct, wrongSoFar: wrong, questionIndex: 0, questionTotal: 0 });
+    } else {
+      setStreakRun(0);
+      emit("wrong", { correctSoFar: correct, wrongSoFar: wrong + 1, questionIndex: 0, questionTotal: 0 });
+    }
+  }
 
   function pickAnswer(i: number) {
-    if (!lesson || picked !== null) return;
+    if (picked !== null) return;
+    const q = finalQuiz[qIdx];
+    if (!q) return;
     setPicked(i);
-    const isCorrect = i === lesson.quiz[qIdx].answerIndex;
+    const isCorrect = i === q.answerIndex;
     if (isCorrect) {
       const newCorrect = correct + 1;
       const newRun = streakRun + 1;
       setCorrect(newCorrect); setStreakRun(newRun);
       emit(newRun >= 3 ? "streak" : "correct", {
         correctSoFar: newCorrect, wrongSoFar: wrong,
-        questionIndex: qIdx, questionTotal: lesson.quiz.length,
+        questionIndex: qIdx, questionTotal: finalQuiz.length,
       });
     } else {
       const newWrong = wrong + 1;
       setWrong(newWrong); setStreakRun(0);
       emit("wrong", {
         correctSoFar: correct, wrongSoFar: newWrong,
-        questionIndex: qIdx, questionTotal: lesson.quiz.length,
+        questionIndex: qIdx, questionTotal: finalQuiz.length,
       });
     }
   }
   function nextQ() {
-    if (!lesson) return;
-    if (qIdx + 1 >= lesson.quiz.length) {
-      const xp = 20 + correct * 4 + (picked === lesson.quiz[qIdx].answerIndex ? 4 : 0);
+    const q = finalQuiz[qIdx];
+    if (!q) return;
+    if (qIdx + 1 >= finalQuiz.length) {
+      const xp = 20 + correct * 4 + (picked === q.answerIndex ? 4 : 0);
       awardXP(xp); markLessonDone(id);
       setStage("done");
-      emit("complete", { correctSoFar: correct, wrongSoFar: wrong, questionIndex: qIdx + 1, questionTotal: lesson.quiz.length });
+      emit("complete", { correctSoFar: correct, wrongSoFar: wrong, questionIndex: qIdx + 1, questionTotal: finalQuiz.length });
     } else { setQIdx((i) => i + 1); setPicked(null); }
   }
 
   return (
     <main className="max-w-2xl mx-auto px-4 py-6 pb-24">
       <GenReaction reaction={reaction} onDone={clear} />
-      <div className="mb-5"><GenThemeBanner /></div>
+      <div className="mb-5"><GenThemeBanner subtitle={`Hoy: ${focusLabel} · ${formatLabel} · IA componiendo en vivo`} /></div>
+
       {stage === "reading" && (
-        <article className="space-y-5 animate-pop-in">
-          <div className="rounded-3xl overflow-hidden bg-primary text-primary-foreground shadow-soft">
-            {heroUrl ? (
-              <div className="relative aspect-[16/9] w-full">
-                <img src={heroUrl} alt={lesson.title} className="absolute inset-0 w-full h-full object-cover" />
-                <div className="absolute inset-x-0 bottom-0 h-2/3 bg-primary/70" />
-                <div className="absolute bottom-0 left-0 right-0 p-5">
-                  <div className="text-[10px] font-bold uppercase opacity-90 tracking-wider">Misión</div>
-                  <h1 className="font-display text-2xl md:text-3xl font-bold leading-tight">{lesson.title}</h1>
-                  <p className="mt-1 opacity-90 text-sm">{lesson.objective}</p>
-                </div>
-              </div>
-            ) : (
-              <div className="p-6">
-                <div className="text-xs font-bold uppercase opacity-90 tracking-wider">Misión</div>
-                <h1 className="font-display text-3xl font-bold mt-1">{lesson.title}</h1>
-                <p className="mt-2 opacity-90 text-sm">{lesson.objective}</p>
-                <div className="mt-3 flex items-center gap-2 text-xs opacity-90">
-                  <span className="inline-block w-3 h-3 rounded-full bg-accent animate-pulse" />
-                  IGNO está pintando la portada…
-                </div>
-              </div>
-            )}
-          </div>
-          <div className="rounded-3xl bg-coral text-coral-foreground p-5 shadow-soft">
-            <div className="text-xs font-bold uppercase opacity-90 mb-1">📖 Historia</div>
-            <p className="leading-relaxed">{lesson.story}</p>
-          </div>
-          {lesson.sections.map((s, i) => (
-            <div key={i} className="rounded-3xl bg-card border border-border p-5 animate-pop-in" style={{ animationDelay: `${i * 80}ms` }}>
-              <div className="text-xs font-bold uppercase tracking-wider text-primary mb-1">
-                {s.kind === "funFact" ? "💡 Dato curioso" : s.kind === "analogy" ? "🔗 Analogía" : s.kind === "miniChallenge" ? "⚡ Mini reto" : "📚 Explicación"}
-              </div>
-              <h3 className="font-display text-lg font-bold mb-1">{s.title}</h3>
-              {sectionUrls[i] ? (
-                <div className="rounded-2xl overflow-hidden mb-3 mt-2 aspect-[16/10] bg-muted">
-                  <img src={sectionUrls[i]} alt={s.title} className="w-full h-full object-cover" />
-                </div>
-              ) : (
-                <div className="rounded-2xl mb-3 mt-2 aspect-[16/10] bg-muted/60 grid place-items-center text-xs text-muted-foreground animate-pulse">
-                  IGNO está dibujando…
-                </div>
-              )}
-              <p className="text-sm leading-relaxed text-foreground/90">{s.body}</p>
-            </div>
-          ))}
-          <GenButton onClick={() => { setStage("quiz"); emit("start"); }} className="w-full py-4 text-lg">
-            ¡Al quiz! →
+        <>
+          <GenRenderer blocks={blocks} imageUrls={imageUrls} onTryItDone={onTryIt} />
+          <GenButton onClick={() => { setStage("quiz"); emit("start"); }} className="mt-6 w-full py-4 text-lg">
+            ¡Al quiz final! →
           </GenButton>
-        </article>
+        </>
       )}
 
-      {stage === "quiz" && (
+      {stage === "quiz" && finalQuiz[qIdx] && (
         <div className="animate-pop-in">
-          <div className="text-xs text-muted-foreground font-bold mb-2">Pregunta {qIdx + 1} de {lesson.quiz.length}</div>
-          <div className="mb-6"><GenProgress value={qIdx + 1} max={lesson.quiz.length} /></div>
-          <h2 className="font-display text-2xl font-bold mb-5">{lesson.quiz[qIdx].question}</h2>
+          <div className="text-xs text-muted-foreground font-bold mb-2">Pregunta {qIdx + 1} de {finalQuiz.length}</div>
+          <div className="mb-6"><GenProgress value={qIdx + 1} max={finalQuiz.length} /></div>
+          <h2 className="font-display text-2xl font-bold mb-5">{finalQuiz[qIdx].question}</h2>
           <div className="space-y-2.5">
-            {lesson.quiz[qIdx].options.map((o, i) => {
-              const isAnswer = i === lesson.quiz[qIdx].answerIndex;
+            {finalQuiz[qIdx].options.map((o, i) => {
+              const isAnswer = i === finalQuiz[qIdx].answerIndex;
               const isPick = picked === i;
-              const state: "idle" | "correct" | "picked-wrong" | "muted" =
-                picked === null ? "idle"
-                : isAnswer ? "correct"
-                : isPick ? "picked-wrong"
-                : "muted";
-              return <GenQuizOption key={i} index={i} label={o} state={state}
-                disabled={picked !== null} onPick={() => pickAnswer(i)} />;
+              const cls =
+                picked === null ? "border-border hover:border-primary hover:bg-primary/5"
+                : isAnswer ? "border-mint bg-mint/25"
+                : isPick ? "border-destructive bg-destructive/15"
+                : "border-border opacity-50";
+              return (
+                <button key={i} disabled={picked !== null} onClick={() => pickAnswer(i)}
+                  className={`w-full text-left rounded-2xl border-2 p-4 font-semibold transition ${cls}`}>
+                  <span className="inline-block w-7 h-7 rounded-lg bg-muted text-foreground text-xs grid place-items-center mr-2 align-middle">
+                    {String.fromCharCode(65+i)}
+                  </span>
+                  {o}
+                </button>
+              );
             })}
           </div>
           {picked !== null && (
             <>
-              <GenCard className="mt-4 text-sm" tone={picked === lesson.quiz[qIdx].answerIndex ? "mint" : "accent"}>
-                <div className="font-bold mb-1">{picked === lesson.quiz[qIdx].answerIndex ? "¡Correcto! 🎉" : "Casi… 💭"}</div>
-                <p className="opacity-80">{lesson.quiz[qIdx].explanation}</p>
-              </GenCard>
+              <div className={`mt-4 rounded-2xl p-4 text-sm ${picked === finalQuiz[qIdx].answerIndex ? "bg-mint/20" : "bg-accent/15"}`}>
+                <div className="font-bold mb-1">{picked === finalQuiz[qIdx].answerIndex ? "¡Correcto! 🎉" : "Casi… 💭"}</div>
+                <p className="opacity-80">{finalQuiz[qIdx].explanation}</p>
+              </div>
               <GenButton onClick={nextQ} className="mt-4 w-full py-3.5">
-                {qIdx + 1 >= lesson.quiz.length ? "Terminar" : "Siguiente →"}
+                {qIdx + 1 >= finalQuiz.length ? "Terminar" : "Siguiente →"}
               </GenButton>
             </>
           )}
@@ -201,8 +201,8 @@ function Lesson() {
       {stage === "done" && (
         <div className="text-center py-10 animate-pop-in">
           <div className="text-7xl animate-bounce-slow">🎉</div>
-          <h2 className="font-display text-3xl font-bold mt-4">{lesson.celebration}</h2>
-          <p className="mt-2 text-muted-foreground">Acertaste {correct} de {lesson.quiz.length}</p>
+          <h2 className="font-display text-3xl font-bold mt-4">{celebration}</h2>
+          <p className="mt-2 text-muted-foreground">Acertaste {correct} de {finalQuiz.length}</p>
           <div className="mt-5 inline-flex gap-3">
             <span className="rounded-full bg-accent text-accent-foreground px-4 py-2 font-bold">+{20 + correct * 4} XP</span>
             <span className="rounded-full bg-coral text-coral-foreground px-4 py-2 font-bold">+{Math.floor((20 + correct * 4) / 5)} 🪙</span>
@@ -213,6 +213,9 @@ function Lesson() {
           </div>
         </div>
       )}
+
+      {/* objective hint for screen readers / context preserved */}
+      <span className="sr-only">{objective}</span>
     </main>
   );
 }
