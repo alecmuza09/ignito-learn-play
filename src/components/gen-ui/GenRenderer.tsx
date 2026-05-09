@@ -3,7 +3,7 @@ import type { GenBlock, MiniQuizBlock, TryItBlock } from "@/lib/gen-blocks";
 import { toneClasses } from "@/lib/theme-from-interests";
 import { useGenTheme } from "./primitives";
 import { KawaiiBlob } from "./KawaiiBlob";
-import { AnimatedSimulation, AnimatedVisualFallback } from "./AnimatedSimulation";
+import { AnimatedSimulation, AnimatedVisualFallback, QuizMotif } from "./AnimatedSimulation";
 
 export interface GenRendererProps {
   blocks: GenBlock[];
@@ -228,16 +228,18 @@ function CelebrateBlock({ b }: { b: Extract<GenBlock,{type:"celebrate"}> }) {
 }
 
 function SimulationBlockView({ b }: { b: Extract<GenBlock,{type:"simulation"}> }) {
-  return <AnimatedSimulation kind={b.kind} title={b.title} caption={b.caption} steps={b.steps} />;
+  return <AnimatedSimulation kind={b.kind} title={b.title} caption={b.caption} steps={b.steps} hint={`${b.title} ${b.caption ?? ""} ${(b.steps ?? []).join(" ")}`} />;
 }
 
 function MiniQuizBlockView({ b, onAnswer }: { b: MiniQuizBlock; onAnswer?: (b: MiniQuizBlock, picked: number, correct: boolean) => void }) {
   const [picked, setPicked] = useState<number | null>(null);
   const theme = useGenTheme();
+  const motifText = `${b.question} ${b.options.join(" ")} ${b.explanation ?? ""}`;
   return (
     <div className="rounded-3xl bg-card border-2 border-primary/30 p-5 space-y-3">
       <div className="text-xs font-bold uppercase tracking-wider text-primary">⚡ Mini-pregunta</div>
       <div className="font-display text-lg font-bold">{b.question}</div>
+      <QuizMotif text={motifText} className="border border-border" />
       <div className="space-y-2">
         {b.options.map((o, i) => {
           const isAns = i === b.answerIndex;
@@ -271,10 +273,16 @@ function MiniQuizBlockView({ b, onAnswer }: { b: MiniQuizBlock; onAnswer?: (b: M
 }
 
 function TryItBlockView({ b, onDone }: { b: TryItBlock; onDone?: (b: TryItBlock, correct: boolean) => void }) {
+  const motifText = `${b.question} ${
+    b.payload.kind === "tap" ? b.payload.options.join(" ") :
+    b.payload.kind === "sort" ? b.payload.items.join(" ") :
+    b.payload.answer
+  }`;
   return (
     <div className="rounded-3xl bg-card border-2 border-sky/40 p-5 space-y-3">
       <div className="text-xs font-bold uppercase tracking-wider text-sky-foreground/80">🎯 Pruébalo</div>
       <div className="font-display text-base font-bold">{b.question}</div>
+      <QuizMotif text={motifText} className="border border-border" />
       {b.payload.kind === "tap"   && <TapInteraction b={b} payload={b.payload} onDone={onDone} />}
       {b.payload.kind === "sort"  && <SortInteraction b={b} payload={b.payload} onDone={onDone} />}
       {b.payload.kind === "input" && <InputInteraction b={b} payload={b.payload} onDone={onDone} />}

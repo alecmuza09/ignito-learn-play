@@ -27,7 +27,21 @@ export type TryItBlock     = BlockBase & {
 };
 export type MiniQuizBlock  = BlockBase & { type: "miniQuiz"; question: string; options: string[]; answerIndex: number; explanation?: string };
 export type CelebrateBlock = BlockBase & { type: "celebrate"; message: string; particles?: string[] };
-export type SimulationKind = "photosynthesis" | "waterCycle" | "fractionBar" | "logicPath" | "generic";
+export type SimulationKind =
+  | "photosynthesis" | "waterCycle" | "fractionBar" | "logicPath"
+  | "solarSystem" | "heart" | "atom" | "ecosystem" | "foodChain"
+  | "circuit" | "magnet" | "gravity" | "dna" | "volcano"
+  | "geometry" | "multiplication" | "alphabet" | "timeline"
+  | "musicNotes" | "lifeCycle" | "weather" | "rocket" | "wave"
+  | "generic";
+
+export const SIMULATION_KINDS: SimulationKind[] = [
+  "photosynthesis","waterCycle","fractionBar","logicPath",
+  "solarSystem","heart","atom","ecosystem","foodChain",
+  "circuit","magnet","gravity","dna","volcano",
+  "geometry","multiplication","alphabet","timeline",
+  "musicNotes","lifeCycle","weather","rocket","wave","generic",
+];
 export type SimulationBlock = BlockBase & {
   type: "simulation";
   kind: SimulationKind;
@@ -98,7 +112,14 @@ export const blockZ: z.ZodType<GenBlock> = z.lazy(() => z.discriminatedUnion("ty
     type: z.literal("celebrate"), message: z.string(),
     particles: z.array(z.string()).optional() }),
   z.object({ id: z.string().optional().default(""), agentInserted: z.boolean().optional(),
-    type: z.literal("simulation"), kind: z.enum(["photosynthesis","waterCycle","fractionBar","logicPath","generic"]),
+    type: z.literal("simulation"),
+    kind: z.enum([
+      "photosynthesis","waterCycle","fractionBar","logicPath",
+      "solarSystem","heart","atom","ecosystem","foodChain",
+      "circuit","magnet","gravity","dna","volcano",
+      "geometry","multiplication","alphabet","timeline",
+      "musicNotes","lifeCycle","weather","rocket","wave","generic",
+    ]),
     title: z.string(), caption: z.string().optional(), steps: z.array(z.string()).min(1).max(6).optional() }),
 ])) as z.ZodType<GenBlock>;
 
