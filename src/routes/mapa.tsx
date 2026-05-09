@@ -3,6 +3,24 @@ import { useEffect, useState } from "react";
 import { useProfile } from "@/lib/profile";
 import { buildCurriculum } from "@/lib/curriculum";
 import { SUBJECTS } from "@/lib/profile";
+import { useT } from "@/lib/i18n";
+
+const T = {
+  es: {
+    loading: "Cargando…",
+    h1: "🗺 Mapa de aprendizaje",
+    sub: "Cada materia tiene su propio camino. Elige por dónde aventurarte.",
+    all: "🌈 Todas",
+    completed: "completadas",
+  },
+  en: {
+    loading: "Loading…",
+    h1: "🗺 Learning map",
+    sub: "Each subject has its own path. Pick where to adventure.",
+    all: "🌈 All",
+    completed: "completed",
+  },
+} as const;
 
 export const Route = createFileRoute("/mapa")({
   head: () => ({ meta: [{ title: "Mapa — IGNOTO" }] }),
@@ -12,12 +30,13 @@ export const Route = createFileRoute("/mapa")({
 function Mapa() {
   const profile = useProfile();
   const nav = useNavigate();
+  const t = useT(T);
   const [active, setActive] = useState<string | "todas">("todas");
   useEffect(() => { if (profile === null && typeof window !== "undefined") {
     const t = setTimeout(() => { if (!localStorage.getItem("ignoto.profile.v1")) nav({ to: "/registro" }); }, 250);
     return () => clearTimeout(t);
   }}, [profile, nav]);
-  if (!profile) return <div className="min-h-[60vh] grid place-items-center text-muted-foreground">Cargando…</div>;
+  if (!profile) return <div className="min-h-[60vh] grid place-items-center text-muted-foreground">{t.loading}</div>;
 
   const lessons = buildCurriculum(profile);
   const done = new Set(profile.completedLessons);
@@ -32,13 +51,13 @@ function Mapa() {
 
   return (
     <main className="max-w-3xl mx-auto px-4 py-6 pb-24">
-      <h1 className="font-display text-3xl font-bold mb-2">🗺 Mapa de aprendizaje</h1>
-      <p className="text-muted-foreground mb-5">Cada materia tiene su propio camino. Elige por dónde aventurarte.</p>
+      <h1 className="font-display text-3xl font-bold mb-2">{t.h1}</h1>
+      <p className="text-muted-foreground mb-5">{t.sub}</p>
 
       <div className="flex gap-2 overflow-x-auto pb-2 mb-6 -mx-4 px-4">
         <button onClick={() => setActive("todas")}
           className={`shrink-0 rounded-full px-4 py-2 text-sm font-bold border-2 transition-all ${active === "todas" ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border hover:bg-muted"}`}>
-          🌈 Todas
+          {t.all}
         </button>
         {groups.map((g) => (
           <button key={g.meta.id} onClick={() => setActive(g.meta.id)}
@@ -55,7 +74,7 @@ function Mapa() {
               <div className="w-12 h-12 rounded-2xl bg-gradient-hero text-primary-foreground flex items-center justify-center text-2xl shadow-pop">{g.meta.emoji}</div>
               <div className="flex-1">
                 <h2 className="font-display text-xl font-bold">{g.meta.label}</h2>
-                <div className="text-xs text-muted-foreground font-bold">{g.completed}/{g.list.length} completadas</div>
+                <div className="text-xs text-muted-foreground font-bold">{g.completed}/{g.list.length} {t.completed}</div>
                 <div className="h-1.5 mt-1 rounded-full bg-muted overflow-hidden">
                   <div className="h-full bg-gradient-hero" style={{ width: `${g.list.length ? (g.completed / g.list.length) * 100 : 0}%` }} />
                 </div>

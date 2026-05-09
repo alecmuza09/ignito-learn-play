@@ -1,10 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
 import { KawaiiBlob } from "@/components/KawaiiBlob";
+import { useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/")({ component: Landing });
-
-type Lang = "es" | "en";
 
 const T = {
   es: {
@@ -118,26 +116,9 @@ const T = {
 } as const;
 
 function Landing() {
-  const [lang, setLang] = useState<Lang>("es");
-  const t = T[lang];
+  const t = useT(T);
   return (
     <main className="min-h-screen">
-      {/* TOP BAR */}
-      <div className="max-w-6xl mx-auto px-5 pt-5 flex justify-end">
-        <div className="inline-flex rounded-full border-2 border-border bg-card p-1 shadow-soft" role="group" aria-label="Language">
-          {(["es", "en"] as Lang[]).map((l) => (
-            <button
-              key={l}
-              onClick={() => setLang(l)}
-              className={`px-3 py-1 text-xs font-bold rounded-full transition-colors ${lang === l ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}
-              aria-pressed={lang === l}
-            >
-              {l === "es" ? "ES" : "EN"}
-            </button>
-          ))}
-        </div>
-      </div>
-
       {/* HERO */}
       <section className="relative overflow-hidden">
         <div className="max-w-6xl mx-auto px-5 pt-6 pb-16 md:pt-12 md:pb-28 grid md:grid-cols-2 gap-10 items-center">
