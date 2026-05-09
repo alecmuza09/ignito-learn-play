@@ -5,7 +5,7 @@ import { generateLesson, generateHeroImage } from "@/lib/ai.functions";
 import { awardXP, markLessonDone, useProfile } from "@/lib/profile";
 import { buildCurriculum } from "@/lib/curriculum";
 import { IgnoOwl } from "@/components/Igno";
-import { GenButton, GenCard, GenReaction, useGenTheme } from "@/components/gen-ui/primitives";
+import { GenButton, GenCard, GenProgress, GenQuizOption, GenReaction, GenThemeBanner, useGenTheme } from "@/components/gen-ui/primitives";
 import { useUIAgent } from "@/lib/use-ui-agent";
 
 export const Route = createFileRoute("/leccion/$id")({
@@ -67,7 +67,7 @@ function Lesson() {
       <Link to="/dashboard" className="inline-block mt-5 rounded-full bg-primary text-primary-foreground px-5 py-2.5 font-bold">Volver</Link>
     </main>
   );
-  if (!lesson) return <Loader text="IGNO está creando tu lección…" />;
+  if (!lesson) return <Loader text={`Personalizando para ${profile.childName}…`} />;
 
   function pickAnswer(i: number) {
     if (!lesson || picked !== null) return;
@@ -103,6 +103,7 @@ function Lesson() {
   return (
     <main className="max-w-2xl mx-auto px-4 py-6 pb-24">
       <GenReaction reaction={reaction} onDone={clear} />
+      <div className="mb-5"><GenThemeBanner /></div>
       {stage === "reading" && (
         <article className="space-y-5 animate-pop-in">
           <div className="rounded-3xl overflow-hidden bg-gradient-hero text-primary-foreground shadow-soft">
@@ -150,23 +151,19 @@ function Lesson() {
       {stage === "quiz" && (
         <div className="animate-pop-in">
           <div className="text-xs text-muted-foreground font-bold mb-2">Pregunta {qIdx + 1} de {lesson.quiz.length}</div>
-          <div className="h-2 bg-muted rounded-full mb-5 overflow-hidden"><div className="h-full bg-gradient-hero transition-all" style={{ width: `${((qIdx + 1) / lesson.quiz.length) * 100}%` }} /></div>
+          <div className="mb-6"><GenProgress value={qIdx + 1} max={lesson.quiz.length} /></div>
           <h2 className="font-display text-2xl font-bold mb-5">{lesson.quiz[qIdx].question}</h2>
           <div className="space-y-2.5">
             {lesson.quiz[qIdx].options.map((o, i) => {
               const isAnswer = i === lesson.quiz[qIdx].answerIndex;
               const isPick = picked === i;
-              const cls = picked === null
-                ? "border-border hover:border-primary hover:bg-primary/5"
-                : isAnswer ? "border-mint bg-mint/20"
-                : isPick ? "border-destructive bg-destructive/10"
-                : "border-border opacity-60";
-              return (
-                <button key={i} onClick={() => pickAnswer(i)} disabled={picked !== null}
-                  className={`w-full text-left rounded-2xl border-2 p-4 font-semibold transition-all ${cls}`}>
-                  {o} {picked !== null && isAnswer && <span className="float-right">✓</span>}
-                </button>
-              );
+              const state: "idle" | "correct" | "picked-wrong" | "muted" =
+                picked === null ? "idle"
+                : isAnswer ? "correct"
+                : isPick ? "picked-wrong"
+                : "muted";
+              return <GenQuizOption key={i} index={i} label={o} state={state}
+                disabled={picked !== null} onPick={() => pickAnswer(i)} />;
             })}
           </div>
           {picked !== null && (
@@ -203,12 +200,20 @@ function Lesson() {
 }
 
 function Loader({ text }: { text: string }) {
+  const theme = useGenTheme();
   return (
-    <main className="min-h-[70vh] grid place-items-center text-center px-4">
+    <main className="min-h-[70vh] grid place-items-center text-center px-4 relative overflow-hidden">
+      <div aria-hidden className="absolute inset-0 pointer-events-none">
+        {theme.motifs.concat(theme.motifs).map((m, i) => (
+          <span key={i} className="absolute text-4xl opacity-30 animate-bounce-slow"
+            style={{ top: `${(i * 19 + 5) % 90}%`, left: `${(i * 31 + 9) % 90}%`, animationDelay: `${i * 0.25}s` }}>{m}</span>
+        ))}
+      </div>
       <div>
         <div className="animate-bounce-slow"><IgnoOwl size={120} /></div>
         <p className="mt-4 font-display text-lg font-bold">{text}</p>
-        <p className="text-sm text-muted-foreground mt-1">IGNO está mezclando tus intereses con la magia de la IA…</p>
+        <p className="text-sm text-muted-foreground mt-1">Mezclando tu mundo de <span className="font-bold text-primary">{theme.label}</span> con la IA…</p>
+        <div className="mt-3 text-2xl tracking-widest">{theme.motifs.join(" ")}</div>
       </div>
     </main>
   );

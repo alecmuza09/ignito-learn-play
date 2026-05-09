@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { useProfile } from "@/lib/profile";
 import { dailyMission, weeklyPlan } from "@/lib/curriculum";
 import { LevelBadge } from "@/components/AppHeader";
+import { GenThemeBanner } from "@/components/gen-ui/primitives";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({ meta: [{ title: "Inicio — IGNOTO" }] }),
@@ -23,6 +24,7 @@ function Dashboard() {
 
   return (
     <main className="max-w-6xl mx-auto px-4 py-6 pb-24 space-y-6">
+      <GenThemeBanner />
       <section className="rounded-3xl bg-gradient-hero p-6 text-primary-foreground shadow-soft relative overflow-hidden">
         <div className="absolute -top-4 -right-4 text-8xl opacity-25">{profile.avatar}</div>
         <p className="text-sm opacity-90">¡Hola de nuevo,</p>
