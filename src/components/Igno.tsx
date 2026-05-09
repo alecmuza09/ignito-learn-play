@@ -32,7 +32,8 @@ type RuntimeMessage = {
 const VISUAL_ACTIONS = [
   {
     name: "presentSimulation",
-    description: "Muestra una animación SVG educativa relacionada con el tema. Elige el kind MÁS específico posible.",
+    description:
+      "Muestra una animación SVG educativa relacionada con el tema. Elige el kind MÁS específico posible.",
     jsonSchema: JSON.stringify({
       type: "object",
       properties: {
@@ -88,7 +89,8 @@ const VISUAL_ACTIONS = [
 ];
 
 function makeId(prefix: string) {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) return `${prefix}-${crypto.randomUUID()}`;
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto)
+    return `${prefix}-${crypto.randomUUID()}`;
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
 }
 
@@ -102,12 +104,16 @@ function parseToolArgs(value: RuntimeMessage["arguments"]): Record<string, unkno
   if (typeof raw === "string") {
     try {
       const parsed = JSON.parse(raw) as unknown;
-      return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as Record<string, unknown> : {};
+      return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+        ? (parsed as Record<string, unknown>)
+        : {};
     } catch {
       return {};
     }
   }
-  return raw && typeof raw === "object" && !Array.isArray(raw) ? raw as Record<string, unknown> : {};
+  return raw && typeof raw === "object" && !Array.isArray(raw)
+    ? (raw as Record<string, unknown>)
+    : {};
 }
 
 function isSimulationKind(kind: unknown): kind is SimulationKind {
@@ -117,14 +123,25 @@ function isSimulationKind(kind: unknown): kind is SimulationKind {
 function normalizeResponseMessages(messages: RuntimeMessage[], fallbackText: string): ChatEntry[] {
   const entries = messages.flatMap((message) => {
     if (message.__typename === "ActionExecutionMessageOutput" || message.name) {
-      return [{ id: makeId("tool"), role: "assistant" as const, tool: { name: message.name ?? "presentSimulation", args: parseToolArgs(message.arguments) } }];
+      return [
+        {
+          id: makeId("tool"),
+          role: "assistant" as const,
+          tool: {
+            name: message.name ?? "presentSimulation",
+            args: parseToolArgs(message.arguments),
+          },
+        },
+      ];
     }
     const text = asText(message.content).trim();
     if (text) return [{ id: makeId("assistant"), role: "assistant" as const, text }];
     return [];
   });
 
-  return entries.length ? entries : [{ id: makeId("assistant"), role: "assistant", text: fallbackText }];
+  return entries.length
+    ? entries
+    : [{ id: makeId("assistant"), role: "assistant", text: fallbackText }];
 }
 
 export function IgnoFloating() {
@@ -154,9 +171,12 @@ export function IgnoFloating() {
     setEntries((current) => [...current, userEntry, pendingEntry]);
 
     try {
-      const recent = entries.filter((entry) => entry.text).slice(-6).map((entry) => ({
-        textMessage: { role: entry.role, content: entry.text ?? "" },
-      }));
+      const recent = entries
+        .filter((entry) => entry.text)
+        .slice(-6)
+        .map((entry) => ({
+          textMessage: { role: entry.role, content: entry.text ?? "" },
+        }));
 
       const response = await fetch("/api/copilotkit", {
         method: "POST",
@@ -189,19 +209,33 @@ export function IgnoFloating() {
       });
 
       if (!response.ok) throw new Error("IGNO no pudo responder ahora.");
-      const payload = await response.json() as { data?: { generateCopilotResponse?: { messages?: RuntimeMessage[] } }; errors?: Array<{ message?: string }> };
-      if (payload.errors?.length) throw new Error(payload.errors[0]?.message ?? "Respuesta inválida");
+      const payload = (await response.json()) as {
+        data?: { generateCopilotResponse?: { messages?: RuntimeMessage[] } };
+        errors?: Array<{ message?: string }>;
+      };
+      if (payload.errors?.length)
+        throw new Error(payload.errors[0]?.message ?? "Respuesta inválida");
 
       const messages = payload.data?.generateCopilotResponse?.messages ?? [];
-      const assistantEntries = normalizeResponseMessages(messages, "¡Mira esta idea en movimiento! ¿Qué parte quieres explorar ahora?");
-      setEntries((current) => current.filter((entry) => entry.id !== pendingEntry.id).concat(assistantEntries));
+      const assistantEntries = normalizeResponseMessages(
+        messages,
+        "¡Mira esta idea en movimiento! ¿Qué parte quieres explorar ahora?",
+      );
+      setEntries((current) =>
+        current.filter((entry) => entry.id !== pendingEntry.id).concat(assistantEntries),
+      );
     } catch (error) {
-      const message = error instanceof Error ? error.message : "IGNO se quedó pensando. Inténtalo otra vez.";
-      setEntries((current) => current.filter((entry) => entry.id !== pendingEntry.id).concat({
-        id: makeId("error"),
-        role: "assistant",
-        text: `🦉 ${message}`,
-      }));
+      const message =
+        error instanceof Error ? error.message : "IGNO se quedó pensando. Inténtalo otra vez.";
+      setEntries((current) =>
+        current
+          .filter((entry) => entry.id !== pendingEntry.id)
+          .concat({
+            id: makeId("error"),
+            role: "assistant",
+            text: `🦉 ${message}`,
+          }),
+      );
     } finally {
       setSending(false);
     }
@@ -226,13 +260,21 @@ export function IgnoFloating() {
               <h3 className="font-display font-bold leading-tight">IGNO</h3>
               <p className="text-xs opacity-90">Tu tutor con superpoderes</p>
             </div>
-            <button type="button" onClick={() => setOpen(false)} className="text-2xl leading-none opacity-80 hover:opacity-100" aria-label="Cerrar chat">×</button>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="text-2xl leading-none opacity-80 hover:opacity-100"
+              aria-label="Cerrar chat"
+            >
+              ×
+            </button>
           </div>
 
           <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-muted/30">
             {entries.length === 0 && (
               <div className="rounded-2xl bg-card border border-border p-3 text-sm leading-relaxed">
-                ¡Hola {profile.childName}! Pregúntame lo que sea — te respondo con animaciones, quizzes y retos ✨
+                ¡Hola {profile.childName}! Pregúntame lo que sea — te respondo con animaciones,
+                quizzes y retos ✨
               </div>
             )}
             {entries.map((entry) => (
@@ -277,7 +319,9 @@ function ChatBubble({ entry }: { entry: ChatEntry }) {
   const mine = entry.role === "user";
   return (
     <div className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-      <div className={`max-w-[86%] rounded-2xl px-3 py-2 text-sm leading-relaxed ${mine ? "bg-primary text-primary-foreground" : "bg-card border border-border"}`}>
+      <div
+        className={`max-w-[86%] rounded-2xl px-3 py-2 text-sm leading-relaxed ${mine ? "bg-primary text-primary-foreground" : "bg-card border border-border"}`}
+      >
         {entry.text}
       </div>
     </div>
@@ -321,7 +365,9 @@ function ToolRenderer({ tool }: { tool: ToolCall }) {
   const rawKind = args.kind;
   const title = String(args.title ?? "Animación");
   const caption = typeof args.caption === "string" ? args.caption : undefined;
-  const safeKind = isSimulationKind(rawKind) ? rawKind : inferSimulationKind(`${title} ${caption ?? ""}`);
+  const safeKind = isSimulationKind(rawKind)
+    ? rawKind
+    : inferSimulationKind(`${title} ${caption ?? ""}`);
   return (
     <AnimatedSimulation
       kind={safeKind}
@@ -336,7 +382,17 @@ function ToolRenderer({ tool }: { tool: ToolCall }) {
 
 // ============= GEN-UI CARDS =============
 
-function QuizCard({ question, options, answerIndex, explanation }: { question: string; options: string[]; answerIndex: number; explanation?: string }) {
+function QuizCard({
+  question,
+  options,
+  answerIndex,
+  explanation,
+}: {
+  question: string;
+  options: string[];
+  answerIndex: number;
+  explanation?: string;
+}) {
   const [picked, setPicked] = useState<number | null>(null);
   return (
     <div className="rounded-2xl bg-card border-2 border-primary/30 p-3 my-2 animate-pop-in">
@@ -347,25 +403,39 @@ function QuizCard({ question, options, answerIndex, explanation }: { question: s
           const isCorrect = i === answerIndex;
           const showState = picked !== null;
           let cls = "text-left text-sm rounded-xl px-3 py-2 border-2 transition ";
-          if (!showState) cls += "border-border bg-muted hover:bg-primary/10 hover:border-primary/40";
+          if (!showState)
+            cls += "border-border bg-muted hover:bg-primary/10 hover:border-primary/40";
           else if (isCorrect) cls += "border-mint bg-mint/20 text-mint-foreground font-semibold";
           else if (isPicked) cls += "border-destructive bg-destructive/10 text-destructive";
           else cls += "border-border bg-muted opacity-60";
           return (
             <button key={i} disabled={picked !== null} onClick={() => setPicked(i)} className={cls}>
-              {showState && (isCorrect ? "✅ " : isPicked ? "❌ " : "")}{opt}
+              {showState && (isCorrect ? "✅ " : isPicked ? "❌ " : "")}
+              {opt}
             </button>
           );
         })}
       </div>
       {picked !== null && explanation && (
-        <p className="mt-2 text-xs bg-accent/15 border border-accent/30 rounded-lg px-2 py-1.5">💡 {explanation}</p>
+        <p className="mt-2 text-xs bg-accent/15 border border-accent/30 rounded-lg px-2 py-1.5">
+          💡 {explanation}
+        </p>
       )}
     </div>
   );
 }
 
-function TryItCard({ question, answer, hint, explanation }: { question: string; answer: string; hint?: string; explanation?: string }) {
+function TryItCard({
+  question,
+  answer,
+  hint,
+  explanation,
+}: {
+  question: string;
+  answer: string;
+  hint?: string;
+  explanation?: string;
+}) {
   const [val, setVal] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
@@ -374,38 +444,71 @@ function TryItCard({ question, answer, hint, explanation }: { question: string; 
     <div className="rounded-2xl bg-card border-2 border-secondary/30 p-3 my-2 animate-pop-in">
       <p className="font-bold text-sm mb-2">✏️ {question}</p>
       {hint && <p className="text-xs text-muted-foreground mb-1.5">Pista: {hint}</p>}
-      <form onSubmit={(e) => { e.preventDefault(); setSubmitted(true); }} className="flex gap-1.5">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          setSubmitted(true);
+        }}
+        className="flex gap-1.5"
+      >
         <input
           value={val}
-          onChange={(e) => { setVal(e.target.value); setSubmitted(false); }}
+          onChange={(e) => {
+            setVal(e.target.value);
+            setSubmitted(false);
+          }}
           className="flex-1 rounded-lg bg-muted px-2.5 py-1.5 text-sm outline-none focus:ring-2 ring-primary"
           placeholder="Tu respuesta…"
         />
-        <button type="submit" className="rounded-lg bg-primary text-primary-foreground px-3 text-sm font-bold">OK</button>
+        <button
+          type="submit"
+          className="rounded-lg bg-primary text-primary-foreground px-3 text-sm font-bold"
+        >
+          OK
+        </button>
       </form>
       {submitted && (
-        <p className={`mt-2 text-xs rounded-lg px-2 py-1.5 ${correct ? "bg-mint/20 text-mint-foreground" : "bg-destructive/10 text-destructive"}`}>
-          {correct ? `✅ ¡Correcto! ${explanation ?? ""}` : `❌ Casi… la respuesta es "${answer}". ${explanation ?? ""}`}
+        <p
+          className={`mt-2 text-xs rounded-lg px-2 py-1.5 ${correct ? "bg-mint/20 text-mint-foreground" : "bg-destructive/10 text-destructive"}`}
+        >
+          {correct
+            ? `✅ ¡Correcto! ${explanation ?? ""}`
+            : `❌ Casi… la respuesta es "${answer}". ${explanation ?? ""}`}
         </p>
       )}
     </div>
   );
 }
 
-function StoryStepsCard({ title, steps, emoji }: { title: string; steps: string[]; emoji: string }) {
+function StoryStepsCard({
+  title,
+  steps,
+  emoji,
+}: {
+  title: string;
+  steps: string[];
+  emoji: string;
+}) {
   const [idx, setIdx] = useState(0);
   const last = idx >= steps.length - 1;
   return (
     <div className="rounded-2xl bg-card border-2 border-accent/30 p-3 my-2 animate-pop-in">
-      <p className="font-bold text-sm mb-2">{emoji} {title}</p>
+      <p className="font-bold text-sm mb-2">
+        {emoji} {title}
+      </p>
       <div className="bg-muted rounded-xl p-2.5 text-sm min-h-[3rem]">
-        <span className="text-xs text-muted-foreground font-mono mr-1">{Math.min(idx + 1, Math.max(steps.length, 1))}/{Math.max(steps.length, 1)}</span>
+        <span className="text-xs text-muted-foreground font-mono mr-1">
+          {Math.min(idx + 1, Math.max(steps.length, 1))}/{Math.max(steps.length, 1)}
+        </span>
         {steps[idx] ?? "Listo para empezar"}
       </div>
       <div className="mt-2 flex justify-between items-center">
         <div className="flex gap-1">
           {steps.map((_, i) => (
-            <span key={i} className={`w-1.5 h-1.5 rounded-full ${i <= idx ? "bg-primary" : "bg-muted"}`} />
+            <span
+              key={i}
+              className={`w-1.5 h-1.5 rounded-full ${i <= idx ? "bg-primary" : "bg-muted"}`}
+            />
           ))}
         </div>
         <button
