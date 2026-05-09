@@ -198,7 +198,7 @@ GenBlock union (pick the best for each beat — order matters, must start with a
         { "kind": "sort",  "items": [string in CORRECT order], "explanation": string }
         { "kind": "input", "answer": string (short), "hint": string, "explanation": string } }
   { "type": "miniQuiz", "question": string, "options": [string,string,string?,string?], "answerIndex": number, "explanation": string }
-  { "type": "simulation", "kind": "photosynthesis"|"waterCycle"|"fractionBar"|"logicPath"|"solarSystem"|"heart"|"atom"|"ecosystem"|"foodChain"|"circuit"|"magnet"|"gravity"|"dna"|"volcano"|"geometry"|"multiplication"|"alphabet"|"timeline"|"musicNotes"|"lifeCycle"|"weather"|"rocket"|"wave"|"generic", "title": string, "caption": string, "steps": [string,string?,string?,string?] }
+  { "type": "simulation", "kind": "photosynthesis"|"waterCycle"|"fractionBar"|"logicPath"|"solarSystem"|"heart"|"atom"|"ecosystem"|"foodChain"|"circuit"|"magnet"|"gravity"|"dna"|"volcano"|"geometry"|"multiplication"|"alphabet"|"timeline"|"musicNotes"|"lifeCycle"|"weather"|"rocket"|"wave"|"digestion"|"respiration"|"seasons"|"phaseChange"|"pendulum"|"additionBlocks"|"mapRoute"|"generic", "title": string, "caption": string, "steps": [string,string?,string?,string?] }
 
 MiniQuizBlock = the same as the miniQuiz shape above.
 
@@ -303,12 +303,12 @@ Responde como STRICT JSON (sin markdown fences) con esta forma:
     { "type": "text", "text": string (1-3 frases cortas, puedes usar **negritas** y emojis) },
     // opcionales:
     { "type": "image", "imagePrompt": string (frase EN inglés para una ilustración cartoon kid-friendly que mezcle el concepto con el mundo favorito del niño; sin texto en la imagen), "caption": string (en ${lang}) },
-    { "type": "simulation", "kind": "photosynthesis"|"waterCycle"|"fractionBar"|"logicPath"|"solarSystem"|"heart"|"atom"|"ecosystem"|"foodChain"|"circuit"|"magnet"|"gravity"|"dna"|"volcano"|"geometry"|"multiplication"|"alphabet"|"timeline"|"musicNotes"|"lifeCycle"|"weather"|"rocket"|"wave"|"generic", "title": string, "caption": string, "steps": [string,string?,string?,string?] },
+    { "type": "simulation", "kind": "photosynthesis"|"waterCycle"|"fractionBar"|"logicPath"|"solarSystem"|"heart"|"atom"|"ecosystem"|"foodChain"|"circuit"|"magnet"|"gravity"|"dna"|"volcano"|"geometry"|"multiplication"|"alphabet"|"timeline"|"musicNotes"|"lifeCycle"|"weather"|"rocket"|"wave"|"digestion"|"respiration"|"seasons"|"phaseChange"|"pendulum"|"additionBlocks"|"mapRoute"|"generic", "title": string, "caption": string, "steps": [string,string?,string?,string?] },
     { "type": "example", "icon": string (1 emoji), "title": string (3-6 palabras), "body": string (1-2 frases con un ejemplo concreto del mundo del niño) },
     { "type": "tip", "icon": string (1 emoji), "text": string (un mini consejo accionable) }
   ]
 }
-Reglas: 2 a 4 bloques en total. SIEMPRE incluye al menos 1 "text". Para procesos visibles (ej: fotosíntesis, ciclo del agua, fracciones, rutas lógicas) prefiere "simulation" porque aparece al instante con SVG animado. Incluye "image" solo si una ilustración libre aporta más que una simulación. Si das un ejemplo concreto, usa "example". Devuelve SOLO el JSON.`;
+Reglas: 2 a 4 bloques en total. SIEMPRE incluye 1 "text" Y SIEMPRE incluye exactamente 1 "simulation" con el "kind" más específico que aplique al tema (NUNCA uses "generic" si hay otro que encaje). El "title" y "caption" deben ser muy breves (máx 6 palabras cada uno). Si das un ejemplo concreto, usa "example". Devuelve SOLO el JSON.`;
     const { text: raw } = await callAI([
       { role: "system", content: sys },
       { role: "user", content: user },
