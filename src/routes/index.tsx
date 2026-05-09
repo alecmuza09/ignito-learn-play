@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { IgnoOwl } from "@/components/Igno";
+import { KawaiiBlob } from "@/components/KawaiiBlob";
 
 export const Route = createFileRoute("/")({ component: Landing });
 
@@ -12,7 +12,7 @@ function Landing() {
           <div className="space-y-6 animate-pop-in">
             <span className="inline-block rounded-full bg-accent text-accent-foreground px-3 py-1 text-xs font-bold uppercase tracking-wider">⚡ Aprendizaje con IA</span>
             <h1 className="font-display text-5xl md:text-7xl font-bold leading-[0.95] text-balance">
-              Aprender es <span className="bg-gradient-hero bg-clip-text text-transparent">épico</span> con IGNOTO.
+              Aprender es <span className="text-primary">épico</span> con IGNOTO.
             </h1>
             <p className="text-lg text-muted-foreground max-w-md">
               Lecciones generadas por IA, niveladas a tu hijo, conectadas con sus intereses. Como un videojuego que enseña de verdad.
@@ -32,14 +32,15 @@ function Landing() {
               <span>+1,000 niños ya están aprendiendo así</span>
             </div>
           </div>
-          <div className="relative flex justify-center">
-            <div className="absolute -top-6 -right-4 w-24 h-24 rounded-full bg-accent animate-float" />
-            <div className="absolute bottom-10 -left-6 w-16 h-16 rounded-3xl bg-coral animate-float" style={{ animationDelay: "1s" }} />
-            <div className="absolute top-1/3 -right-10 w-12 h-12 rounded-full bg-mint animate-float" style={{ animationDelay: "0.5s" }} />
-            <div className="relative bg-gradient-hero rounded-[2.5rem] p-10 shadow-soft">
-              <IgnoOwl size={240} />
-              <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 bg-card rounded-full px-4 py-2 shadow-pop border-2 border-border whitespace-nowrap text-sm font-bold">
-                ¡Hola! Soy IGNO 🦉
+          <div className="relative flex justify-center items-center min-h-[360px]">
+            <div className="absolute top-4 left-2 animate-float"><KawaiiBlob shape="pentagon" color="var(--sky)" size={88} mood="happy" /></div>
+            <div className="absolute top-2 right-4 animate-float" style={{ animationDelay: "0.4s" }}><KawaiiBlob shape="circle" color="var(--coral)" size={96} mood="wink" /></div>
+            <div className="absolute bottom-6 left-10 animate-float" style={{ animationDelay: "0.8s" }}><KawaiiBlob shape="triangle" color="var(--mint)" size={84} mood="sleepy" /></div>
+            <div className="absolute bottom-2 right-6 animate-float" style={{ animationDelay: "1.2s" }}><KawaiiBlob shape="square" color="var(--accent)" size={92} mood="smile" /></div>
+            <div className="relative animate-float">
+              <KawaiiBlob shape="blob" color="var(--primary)" size={200} mood="star" />
+              <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-card rounded-full px-4 py-2 shadow-pop border-2 border-border whitespace-nowrap text-sm font-bold">
+                ¡Hola! Soy IGNO
               </div>
             </div>
           </div>
@@ -72,8 +73,8 @@ function Landing() {
             { n: 2, t: "Recibe su plan", d: "IGNOTO arma un plan semanal y un mapa de aprendizaje único." },
             { n: 3, t: "A jugar y aprender", d: "Cada lección es una historia con quizz, recompensas y celebración." },
           ].map((s) => (
-            <div key={s.n} className="rounded-3xl bg-gradient-hero p-1 shadow-soft">
-              <div className="rounded-[1.4rem] bg-card p-6 h-full">
+            <div key={s.n} className="rounded-3xl bg-card border-2 border-border p-6 shadow-soft hover:-translate-y-1 transition-transform">
+              <div className="h-full">
                 <div className="w-12 h-12 rounded-full bg-accent text-accent-foreground font-display font-bold text-xl flex items-center justify-center shadow-pop mb-4">{s.n}</div>
                 <h3 className="font-display text-2xl font-bold mb-2">{s.t}</h3>
                 <p className="text-muted-foreground">{s.d}</p>
@@ -85,9 +86,9 @@ function Landing() {
 
       {/* CTA */}
       <section className="px-5 pb-20">
-        <div className="max-w-5xl mx-auto rounded-[2.5rem] bg-gradient-hero p-10 md:p-16 text-center shadow-soft text-primary-foreground relative overflow-hidden">
-          <div className="absolute top-6 left-8 text-5xl animate-float">⭐</div>
-          <div className="absolute bottom-6 right-10 text-5xl animate-float" style={{ animationDelay: "1s" }}>🚀</div>
+        <div className="max-w-5xl mx-auto rounded-[2.5rem] bg-primary p-10 md:p-16 text-center shadow-soft text-primary-foreground relative overflow-hidden">
+          <div className="absolute top-6 left-8 animate-float"><KawaiiBlob shape="circle" color="var(--accent)" size={64} mood="happy" /></div>
+          <div className="absolute bottom-6 right-10 animate-float" style={{ animationDelay: "1s" }}><KawaiiBlob shape="drop" color="var(--coral)" size={64} mood="wink" /></div>
           <h2 className="font-display text-4xl md:text-5xl font-bold mb-4">Tu aventura empieza hoy</h2>
           <p className="opacity-90 max-w-xl mx-auto mb-8">Sin contraseñas para los más pequeños. Sin fricciones. Solo aprendizaje real, divertido y personalizado.</p>
           <Link to="/registro" className="inline-block rounded-full bg-accent text-accent-foreground px-8 py-4 font-bold text-lg shadow-pop hover:translate-y-0.5 hover:shadow-none transition-all">
