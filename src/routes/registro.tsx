@@ -32,7 +32,7 @@ function Registro() {
   function back() { setStep((s) => Math.max(1, s - 1)); }
 
   function pickInterest(id: string) {
-    setData((d) => ({ ...d, interests: [id] }));
+    setData((d) => ({ ...d, interests: id ? [id] : [] }));
   }
   function addCustomInterest() {
     const v = customInput.trim();
