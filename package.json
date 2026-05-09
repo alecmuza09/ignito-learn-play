@@ -13,6 +13,10 @@
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.25.5",
+    "@copilotkit/react-core": "^1.57.1",
+    "@copilotkit/react-ui": "^1.57.1",
+    "@copilotkit/runtime": "^1.57.1",
+    "@google/generative-ai": "^0.24.1",
     "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",

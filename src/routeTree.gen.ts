@@ -17,6 +17,7 @@ import { Route as LogrosRouteImport } from './routes/logros'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LeccionIdRouteImport } from './routes/leccion.$id'
+import { Route as ApiCopilotkitRouteImport } from './routes/api/copilotkit'
 
 const RegistroRoute = RegistroRouteImport.update({
   id: '/registro',
@@ -58,6 +59,11 @@ const LeccionIdRoute = LeccionIdRouteImport.update({
   path: '/leccion/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCopilotkitRoute = ApiCopilotkitRouteImport.update({
+  id: '/api/copilotkit',
+  path: '/api/copilotkit',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -67,6 +73,7 @@ export interface FileRoutesByFullPath {
   '/padres': typeof PadresRoute
   '/perfil': typeof PerfilRoute
   '/registro': typeof RegistroRoute
+  '/api/copilotkit': typeof ApiCopilotkitRoute
   '/leccion/$id': typeof LeccionIdRoute
 }
 export interface FileRoutesByTo {
@@ -77,6 +84,7 @@ export interface FileRoutesByTo {
   '/padres': typeof PadresRoute
   '/perfil': typeof PerfilRoute
   '/registro': typeof RegistroRoute
+  '/api/copilotkit': typeof ApiCopilotkitRoute
   '/leccion/$id': typeof LeccionIdRoute
 }
 export interface FileRoutesById {
@@ -88,6 +96,7 @@ export interface FileRoutesById {
   '/padres': typeof PadresRoute
   '/perfil': typeof PerfilRoute
   '/registro': typeof RegistroRoute
+  '/api/copilotkit': typeof ApiCopilotkitRoute
   '/leccion/$id': typeof LeccionIdRoute
 }
 export interface FileRouteTypes {
@@ -100,6 +109,7 @@ export interface FileRouteTypes {
     | '/padres'
     | '/perfil'
     | '/registro'
+    | '/api/copilotkit'
     | '/leccion/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -110,6 +120,7 @@ export interface FileRouteTypes {
     | '/padres'
     | '/perfil'
     | '/registro'
+    | '/api/copilotkit'
     | '/leccion/$id'
   id:
     | '__root__'
@@ -120,6 +131,7 @@ export interface FileRouteTypes {
     | '/padres'
     | '/perfil'
     | '/registro'
+    | '/api/copilotkit'
     | '/leccion/$id'
   fileRoutesById: FileRoutesById
 }
@@ -131,6 +143,7 @@ export interface RootRouteChildren {
   PadresRoute: typeof PadresRoute
   PerfilRoute: typeof PerfilRoute
   RegistroRoute: typeof RegistroRoute
+  ApiCopilotkitRoute: typeof ApiCopilotkitRoute
   LeccionIdRoute: typeof LeccionIdRoute
 }
 
@@ -192,6 +205,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LeccionIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/copilotkit': {
+      id: '/api/copilotkit'
+      path: '/api/copilotkit'
+      fullPath: '/api/copilotkit'
+      preLoaderRoute: typeof ApiCopilotkitRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -203,6 +223,7 @@ const rootRouteChildren: RootRouteChildren = {
   PadresRoute: PadresRoute,
   PerfilRoute: PerfilRoute,
   RegistroRoute: RegistroRoute,
+  ApiCopilotkitRoute: ApiCopilotkitRoute,
   LeccionIdRoute: LeccionIdRoute,
 }
 export const routeTree = rootRouteImport
