@@ -43,9 +43,8 @@ export function IgnoFloating() {
         interests: profile.interests,
         language: profile.language,
       }});
-      const idx = Math.random();
       const blocks = res.blocks.map((b) => ({ ...b }));
-      setMessages((m) => [...m, { role: "igno", blocks, _idx: idx } as ChatMsg]);
+      setMessages((m) => [...m, { role: "igno", blocks }]);
       // generate images for any image blocks in parallel
       blocks.forEach((b, bi) => {
         if (b.type === "image" && b.imagePrompt) {
