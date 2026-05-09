@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { askIgno, generateHeroImage, type IgnoBlock } from "@/lib/ai.functions";
 import { useProfile } from "@/lib/profile";
 import { KawaiiBlob } from "./KawaiiBlob";
-import { AnimatedSimulation, AnimatedVisualFallback } from "./gen-ui/AnimatedSimulation";
+import { AnimatedSimulation, AnimatedVisualFallback, inferSimulationKind } from "./gen-ui/AnimatedSimulation";
+import type { SimulationKind } from "@/lib/gen-blocks";
 
 export function IgnoOwl({ size = 64, animate = true }: { size?: number; animate?: boolean }) {
   return (
@@ -27,6 +28,9 @@ export function IgnoFloating() {
   const [loading, setLoading] = useState(false);
   const ask = useServerFn(askIgno);
   const genImg = useServerFn(generateHeroImage);
+  const lastKindRef = useRef<SimulationKind | null>(null);
+  const rotationRef = useRef(0);
+  const ROTATION_POOL: SimulationKind[] = ["wave","atom","solarSystem","musicNotes","geometry","lifeCycle","timeline","phaseChange","pendulum","mapRoute"];
 
   if (!profile) return null;
 
@@ -44,7 +48,33 @@ export function IgnoFloating() {
         interests: profile.interests,
         language: profile.language,
       }});
-      const blocks = res.blocks.map((b) => ({ ...b }));
+      let blocks = res.blocks.map((b) => ({ ...b }));
+      // --- Garantizar 1 simulación contextual y sin repetirse ---
+      const allText = blocks.map((b) => `${b.text ?? ""} ${b.title ?? ""} ${b.body ?? ""} ${b.caption ?? ""}`).join(" ");
+      let simIndex = blocks.findIndex((b) => b.type === "simulation");
+      const inferred = inferSimulationKind(`${question} ${allText}`);
+      const pickKind = (preferred: SimulationKind): SimulationKind => {
+        let k = preferred;
+        if (k === "generic" || k === lastKindRef.current) {
+          // si es genérico o repite la anterior, rotar pool
+          for (let i = 0; i < ROTATION_POOL.length; i++) {
+            const c = ROTATION_POOL[(rotationRef.current + i) % ROTATION_POOL.length];
+            if (c !== lastKindRef.current) { k = c; rotationRef.current = (rotationRef.current + i + 1) % ROTATION_POOL.length; break; }
+          }
+        }
+        return k;
+      };
+      if (simIndex === -1) {
+        const kind = pickKind(inferred);
+        const insertAt = Math.min(blocks.findIndex((b) => b.type === "text") + 1 || 1, blocks.length);
+        blocks.splice(insertAt, 0, { type: "simulation", kind, title: "Visual rápido", caption: "Animación generada para tu pregunta.", steps: undefined });
+        lastKindRef.current = kind;
+      } else {
+        const cur = blocks[simIndex];
+        const newKind = pickKind((cur.kind as SimulationKind) ?? inferred);
+        blocks[simIndex] = { ...cur, kind: newKind };
+        lastKindRef.current = newKind;
+      }
       setMessages((m) => [...m, { role: "igno", blocks }]);
       // AI images can be slow, so only enrich the first image block; SVG simulations render instantly.
       blocks.map((b, bi) => ({ b, bi })).filter(({ b }) => b.type === "image" && b.imagePrompt).slice(0, 1).forEach(({ b, bi }) => {
