@@ -200,12 +200,20 @@ function Lesson() {
 }
 
 function Loader({ text }: { text: string }) {
+  const theme = useGenTheme();
   return (
-    <main className="min-h-[70vh] grid place-items-center text-center px-4">
+    <main className="min-h-[70vh] grid place-items-center text-center px-4 relative overflow-hidden">
+      <div aria-hidden className="absolute inset-0 pointer-events-none">
+        {theme.motifs.concat(theme.motifs).map((m, i) => (
+          <span key={i} className="absolute text-4xl opacity-30 animate-bounce-slow"
+            style={{ top: `${(i * 19 + 5) % 90}%`, left: `${(i * 31 + 9) % 90}%`, animationDelay: `${i * 0.25}s` }}>{m}</span>
+        ))}
+      </div>
       <div>
         <div className="animate-bounce-slow"><IgnoOwl size={120} /></div>
         <p className="mt-4 font-display text-lg font-bold">{text}</p>
-        <p className="text-sm text-muted-foreground mt-1">IGNO está mezclando tus intereses con la magia de la IA…</p>
+        <p className="text-sm text-muted-foreground mt-1">Mezclando tu mundo de <span className="font-bold text-primary">{theme.label}</span> con la IA…</p>
+        <div className="mt-3 text-2xl tracking-widest">{theme.motifs.join(" ")}</div>
       </div>
     </main>
   );
