@@ -206,13 +206,15 @@ const ignoInput = z.object({
 });
 
 export interface IgnoBlock {
-  type: "text" | "image" | "example" | "tip";
+  type: "text" | "image" | "example" | "tip" | "simulation";
   text?: string;
   imagePrompt?: string;
   caption?: string;
   icon?: string;
   title?: string;
   body?: string;
+  kind?: "photosynthesis" | "waterCycle" | "fractionBar" | "logicPath" | "generic";
+  steps?: string[];
 }
 
 export const askIgno = createServerFn({ method: "POST" })
