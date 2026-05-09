@@ -110,7 +110,8 @@ function parseModelJson(content?: string | null) {
 }
 
 async function callModel(data: NonNullable<CopilotRequestPayload["variables"]>["data"]) {
-  if (process.env.GEMINI_API_KEY) {
+  const geminiKey = process.env.GEMINI_API_KEY ?? process.env.GOOGLE_API_KEY;
+  if (geminiKey) {
     const promptMessages = asPromptMessages(data);
     const system = promptMessages.find((message) => message.role === "system")?.content ?? "";
     const contents = promptMessages
@@ -120,7 +121,7 @@ async function callModel(data: NonNullable<CopilotRequestPayload["variables"]>["
         parts: [{ text: message.content }],
       }));
 
-    const response = await fetch(`${GEMINI_BASE}/${GEMINI_MODEL}:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+    const response = await fetch(`${GEMINI_BASE}/${GEMINI_MODEL}:generateContent?key=${geminiKey}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
