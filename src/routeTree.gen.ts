@@ -10,7 +10,10 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as RegistroRouteImport } from './routes/registro'
+import { Route as PerfilRouteImport } from './routes/perfil'
+import { Route as PadresRouteImport } from './routes/padres'
 import { Route as MapaRouteImport } from './routes/mapa'
+import { Route as LogrosRouteImport } from './routes/logros'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LeccionIdRouteImport } from './routes/leccion.$id'
@@ -20,9 +23,24 @@ const RegistroRoute = RegistroRouteImport.update({
   path: '/registro',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PerfilRoute = PerfilRouteImport.update({
+  id: '/perfil',
+  path: '/perfil',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PadresRoute = PadresRouteImport.update({
+  id: '/padres',
+  path: '/padres',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MapaRoute = MapaRouteImport.update({
   id: '/mapa',
   path: '/mapa',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LogrosRoute = LogrosRouteImport.update({
+  id: '/logros',
+  path: '/logros',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -44,14 +62,20 @@ const LeccionIdRoute = LeccionIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/logros': typeof LogrosRoute
   '/mapa': typeof MapaRoute
+  '/padres': typeof PadresRoute
+  '/perfil': typeof PerfilRoute
   '/registro': typeof RegistroRoute
   '/leccion/$id': typeof LeccionIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/logros': typeof LogrosRoute
   '/mapa': typeof MapaRoute
+  '/padres': typeof PadresRoute
+  '/perfil': typeof PerfilRoute
   '/registro': typeof RegistroRoute
   '/leccion/$id': typeof LeccionIdRoute
 }
@@ -59,22 +83,53 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/logros': typeof LogrosRoute
   '/mapa': typeof MapaRoute
+  '/padres': typeof PadresRoute
+  '/perfil': typeof PerfilRoute
   '/registro': typeof RegistroRoute
   '/leccion/$id': typeof LeccionIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dashboard' | '/mapa' | '/registro' | '/leccion/$id'
+  fullPaths:
+    | '/'
+    | '/dashboard'
+    | '/logros'
+    | '/mapa'
+    | '/padres'
+    | '/perfil'
+    | '/registro'
+    | '/leccion/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/mapa' | '/registro' | '/leccion/$id'
-  id: '__root__' | '/' | '/dashboard' | '/mapa' | '/registro' | '/leccion/$id'
+  to:
+    | '/'
+    | '/dashboard'
+    | '/logros'
+    | '/mapa'
+    | '/padres'
+    | '/perfil'
+    | '/registro'
+    | '/leccion/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/dashboard'
+    | '/logros'
+    | '/mapa'
+    | '/padres'
+    | '/perfil'
+    | '/registro'
+    | '/leccion/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRoute
+  LogrosRoute: typeof LogrosRoute
   MapaRoute: typeof MapaRoute
+  PadresRoute: typeof PadresRoute
+  PerfilRoute: typeof PerfilRoute
   RegistroRoute: typeof RegistroRoute
   LeccionIdRoute: typeof LeccionIdRoute
 }
@@ -88,11 +143,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RegistroRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/perfil': {
+      id: '/perfil'
+      path: '/perfil'
+      fullPath: '/perfil'
+      preLoaderRoute: typeof PerfilRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/padres': {
+      id: '/padres'
+      path: '/padres'
+      fullPath: '/padres'
+      preLoaderRoute: typeof PadresRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/mapa': {
       id: '/mapa'
       path: '/mapa'
       fullPath: '/mapa'
       preLoaderRoute: typeof MapaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/logros': {
+      id: '/logros'
+      path: '/logros'
+      fullPath: '/logros'
+      preLoaderRoute: typeof LogrosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -122,7 +198,10 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
+  LogrosRoute: LogrosRoute,
   MapaRoute: MapaRoute,
+  PadresRoute: PadresRoute,
+  PerfilRoute: PerfilRoute,
   RegistroRoute: RegistroRoute,
   LeccionIdRoute: LeccionIdRoute,
 }
