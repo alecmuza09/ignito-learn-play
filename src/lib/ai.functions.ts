@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { blockZ, ensureIds, type GenBlock, type MiniQuizBlock } from "./gen-blocks";
 
 const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const MODEL = "google/gemini-3-flash-preview";
@@ -49,15 +50,14 @@ const lessonInput = z.object({
   interests: z.array(z.string()),
   difficulty: z.number().min(1).max(4),
   language: z.string(),
+  style: z.object({ format: z.string().optional(), focus: z.string().optional(), mode: z.string().optional() }).optional(),
 });
 
 export interface LessonShape {
   title: string;
   objective: string;
-  story: string;
-  heroImagePrompt: string;
-  sections: { kind: string; title: string; body: string; imagePrompt: string }[];
-  quiz: { type: string; question: string; options: string[]; answerIndex: number; explanation: string }[];
+  blocks: GenBlock[];
+  finalQuiz: MiniQuizBlock[];
   celebration: string;
 }
 
@@ -65,39 +65,97 @@ export const generateLesson = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => lessonInput.parse(d))
   .handler(async ({ data }): Promise<{ lessonId: string; lesson: LessonShape }> => {
     const lang = data.language === "en" ? "English" : "Spanish";
-    const sys = `You are IGNO, a playful, expert tutor for kids on the IGNOTO platform. Always reply in ${lang}, with energy and warmth. Use the child's interests as the metaphor backbone of every explanation. NEVER sound like a textbook. Sound like a video-game cutscene. Use emojis sparingly but joyfully.`;
-    const prompt = `Create ONE adaptive lesson as STRICT JSON (no markdown fences) with this shape:
+    const focus = data.style?.focus ?? "";
+    const format = data.style?.format ?? "";
+    const mode = data.style?.mode ?? "";
+    const targetCount = focus === "5" ? "4-5" : focus === "10" ? "5-7" : focus === "15" ? "7-9" : "8-10";
+    const formatHint =
+      format === "video"  ? "Lean heavily on hero/image/compare/steps blocks (very visual)."
+      : format === "leer" ? "Lean on text(emphasis fact|analogy)/callout/steps blocks."
+      : format === "jugar"? "Lean heavily on tryIt and miniQuiz blocks scattered through the lesson."
+      : "Mix block types freely.";
+
+    const sys = `You are IGNO, a playful, expert tutor on IGNOTO. Always reply in ${lang}, with energy and warmth. Use the child's interests as the metaphor backbone of every explanation. NEVER sound like a textbook — sound like a video-game cutscene. Emojis sparingly but joyfully. You output a Generative UI block tree the frontend renders.`;
+    const prompt = `Compose ONE adaptive lesson as STRICT JSON (no markdown fences). The body is a list of typed UI blocks the frontend will render. Choose a composition that fits the topic and the child's preferred format. Vary it from a default template.
+
+Shape:
 {
- "title": string (catchy, age-appropriate),
- "objective": string (1 sentence learning goal),
- "story": string (2-4 sentence story hook connecting the topic to the child's interests),
- "heroImagePrompt": string (vivid English prompt, 1-2 sentences, for a colorful kid-friendly cartoon illustration that mixes the topic with the child's interests; no text in image),
- "sections": [ { "kind": "explanation"|"funFact"|"analogy"|"miniChallenge", "title": string, "body": string, "imagePrompt": string } ] (3 to 5 items, mixed kinds; imagePrompt is a 1-sentence English prompt for a kid-friendly cartoon illustration that VISUALIZES this section's concept blended with the child's favorite world; no text in image),
- "quiz": [ { "type": "multiple"|"truefalse", "question": string, "options": string[], "answerIndex": number, "explanation": string } ] (exactly 5 items),
- "celebration": string (1 hyped sentence for finishing)
+  "title": string,
+  "objective": string,
+  "celebration": string,
+  "blocks": GenBlock[],   // ${targetCount} blocks total (counting the hero)
+  "finalQuiz": MiniQuizBlock[]  // exactly 4 questions
 }
+
+GenBlock union (pick the best for each beat — order matters, must start with a "hero"):
+  { "type": "hero", "title": string, "subtitle": string, "imagePrompt": <english cartoon prompt no text> }
+  { "type": "text", "body": string, "emphasis": "normal"|"fact"|"analogy" }
+  { "type": "image", "imagePrompt": <english cartoon prompt no text>, "caption": string, "ratio": "16:9"|"4:3"|"1:1" }
+  { "type": "compare", "left":  { "label": string, "imagePrompt": <english> },
+                       "right": { "label": string, "imagePrompt": <english> },
+                       "takeaway": string }
+  { "type": "steps", "title": string, "items": [ { "icon": "1 emoji", "label": string, "body": string } ] (2-5 items) }
+  { "type": "callout", "icon": "1 emoji", "title": string, "body": string }
+  { "type": "mascotSays", "text": string, "mood": "happy"|"wink"|"wow"|"calm" }
+  { "type": "tryIt", "question": string, "kind": "tap"|"sort"|"input",
+      "payload": one of:
+        { "kind": "tap",   "options": [string,string,string?,string?], "answerIndex": number, "explanation": string }
+        { "kind": "sort",  "items": [string in CORRECT order], "explanation": string }
+        { "kind": "input", "answer": string (short), "hint": string, "explanation": string } }
+  { "type": "miniQuiz", "question": string, "options": [string,string,string?,string?], "answerIndex": number, "explanation": string }
+
+MiniQuizBlock = the same as the miniQuiz shape above.
+
+Composition rules:
+- ${formatHint}
+- Density: ${targetCount} body blocks (excluding finalQuiz).
+- Always include at least one of: compare OR steps OR tryIt — to break the monotony.
+- Sprinkle exactly one mascotSays somewhere mid-lesson with a warm, in-character message.
+- Every imagePrompt must be a vivid 1-sentence English cartoon prompt that mixes the concept with the child's favorite world. NO text inside images.
+- Use the child's interests as the visual and verbal language.
+- Difficulty ${data.difficulty}/4. Adjust vocabulary and depth.
 
 Child profile:
 - Name: ${data.childName}
 - Age: ${data.age}
 - School level: ${data.level}
-- Interests: ${data.interests.join(", ")}
+- Interests: ${data.interests.join(", ") || "general kid"}
 - Subject: ${data.subject}
-- Topic preference: ${data.topic ?? "choose an engaging topic appropriate for the level"}
-- Difficulty (1 easy, 4 hard): ${data.difficulty}
+- Topic: ${data.topic ?? "(choose a great topic for this level)"}
+- Learning mode: ${mode || "default"}
 
-Return ONLY the JSON object.`;
+Return ONLY the JSON.`;
     const { text: raw } = await callAI([
       { role: "system", content: sys },
       { role: "user", content: prompt },
     ], true);
-    let parsed: unknown;
+    let parsed: { title?: string; objective?: string; celebration?: string; blocks?: unknown; finalQuiz?: unknown };
     try { parsed = JSON.parse(raw); } catch {
       const m = raw.match(/\{[\s\S]*\}/);
       if (!m) throw new Error("La IA respondió en un formato inesperado.");
       parsed = JSON.parse(m[0]);
     }
-    return { lessonId: data.lessonId, lesson: parsed as LessonShape };
+    const rawBlocks = Array.isArray(parsed.blocks) ? (parsed.blocks as unknown[]) : [];
+    const safeBlocks: GenBlock[] = [];
+    for (const x of rawBlocks) {
+      const r = blockZ.safeParse(x);
+      if (r.success) safeBlocks.push(r.data);
+    }
+    const rawFinal = Array.isArray(parsed.finalQuiz) ? (parsed.finalQuiz as unknown[]) : [];
+    const finalQuizBlocks: MiniQuizBlock[] = [];
+    for (const x of rawFinal) {
+      const withType = { ...(x as object), type: "miniQuiz" } as unknown;
+      const r = blockZ.safeParse(withType);
+      if (r.success && r.data.type === "miniQuiz") finalQuizBlocks.push(r.data);
+    }
+    const lesson: LessonShape = {
+      title: String(parsed.title ?? "Misión IGNO"),
+      objective: String(parsed.objective ?? ""),
+      celebration: String(parsed.celebration ?? "¡Lo lograste!"),
+      blocks: ensureIds(safeBlocks, "b"),
+      finalQuiz: ensureIds(finalQuizBlocks, "fq") as MiniQuizBlock[],
+    };
+    return { lessonId: data.lessonId, lesson };
   });
 
 const ignoInput = z.object({
