@@ -12,20 +12,24 @@ async function callAI(
   jsonMode = false,
   modelOverride?: string,
   modalities?: string[],
+  timeoutMs?: number,
 ): Promise<{ text: string; images: string[] }> {
   const key = process.env.LOVABLE_API_KEY;
   if (!key) throw new Error("Falta LOVABLE_API_KEY");
   const body: Record<string, unknown> = { model: modelOverride ?? MODEL, messages };
   if (jsonMode) body.response_format = { type: "json_object" };
   if (modalities) (body as { modalities?: string[] }).modalities = modalities;
+  const controller = timeoutMs ? new AbortController() : undefined;
+  const timeout = timeoutMs ? setTimeout(() => controller?.abort(), timeoutMs) : undefined;
   const res = await fetch(GATEWAY_URL, {
     method: "POST",
+    signal: controller?.signal,
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${key}`,
     },
     body: JSON.stringify(body),
-  });
+  }).finally(() => { if (timeout) clearTimeout(timeout); });
   if (!res.ok) {
     const txt = await res.text();
     if (res.status === 429) throw new Error("Demasiadas solicitudes. Intenta en un momento.");
