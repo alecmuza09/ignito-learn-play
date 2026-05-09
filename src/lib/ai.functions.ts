@@ -139,6 +139,7 @@ GenBlock union (pick the best for each beat — order matters, must start with a
         { "kind": "sort",  "items": [string in CORRECT order], "explanation": string }
         { "kind": "input", "answer": string (short), "hint": string, "explanation": string } }
   { "type": "miniQuiz", "question": string, "options": [string,string,string?,string?], "answerIndex": number, "explanation": string }
+  { "type": "simulation", "kind": "photosynthesis"|"waterCycle"|"fractionBar"|"logicPath"|"generic", "title": string, "caption": string, "steps": [string,string?,string?,string?] }
 
 MiniQuizBlock = the same as the miniQuiz shape above.
 
@@ -146,6 +147,7 @@ Composition rules:
 - ${formatHint}
 - Density: ${targetCount} body blocks (excluding finalQuiz).
 - Always include at least one of: compare OR steps OR tryIt — to break the monotony.
+- Prefer a "simulation" block for visible processes, cycles, flows, systems, fractions or logic paths. Example: photosynthesis MUST use kind "photosynthesis" so the frontend renders an instant animated SVG instead of waiting for an AI image.
 - Sprinkle exactly one mascotSays somewhere mid-lesson with a warm, in-character message.
 - Every imagePrompt must be a vivid 1-sentence English cartoon prompt that mixes the concept with the child's favorite world. NO text inside images.
 - Use the child's interests as the visual and verbal language.
