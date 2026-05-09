@@ -72,12 +72,12 @@ export function GenBackdrop() {
   const t = toneClasses(theme.tone);
   return (
     <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-      <div className={`absolute inset-0 ${t.gradient} opacity-[0.07]`} />
+      <div className={`absolute inset-0 ${t.gradient} opacity-[0.04]`} />
       {motifs.map((m, i) => (
         <span key={i} className="absolute select-none"
           style={{
             top: `${m.top}%`, left: `${m.left}%`,
-            fontSize: `${m.size}rem`, opacity: 0.18,
+            fontSize: `${m.size}rem`, opacity: 0.09,
             animation: `gen-drift ${m.dur}s ease-in-out ${m.delay}s infinite alternate`,
             ["--spin" as string]: `${m.spin}deg`,
           } as React.CSSProperties}>{m.char}</span>
