@@ -5,6 +5,38 @@ import { parentReport } from "@/lib/ai.functions";
 import { useProfile } from "@/lib/profile";
 import { SUBJECTS } from "@/lib/profile";
 import { buildCurriculum } from "@/lib/curriculum";
+import { useT } from "@/lib/i18n";
+
+const T = {
+  es: {
+    loading: "Cargando…",
+    h1: "👨‍👩‍👧 Vista para padres",
+    follow: (n: string) => `Sigue el progreso de ${n}.`,
+    lessons: "Lecciones",
+    xp: "XP total",
+    streak: "Racha",
+    bySubject: "Progreso por materia",
+    difficulty: "dificultad",
+    weekly: "📝 Reporte semanal",
+    generate: "Generar con IA",
+    generating: "Generando…",
+    placeholder: "IGNO escribirá un resumen personalizado del progreso.",
+  },
+  en: {
+    loading: "Loading…",
+    h1: "👨‍👩‍👧 Parent view",
+    follow: (n: string) => `Follow ${n}'s progress.`,
+    lessons: "Lessons",
+    xp: "Total XP",
+    streak: "Streak",
+    bySubject: "Progress by subject",
+    difficulty: "difficulty",
+    weekly: "📝 Weekly report",
+    generate: "Generate with AI",
+    generating: "Generating…",
+    placeholder: "IGNO will write a personalized summary of progress.",
+  },
+} as const;
 
 export const Route = createFileRoute("/padres")({
   head: () => ({ meta: [{ title: "Padres y tutores — IGNOTO" }] }),
@@ -13,11 +45,12 @@ export const Route = createFileRoute("/padres")({
 
 function Padres() {
   const profile = useProfile();
+  const t = useT(T);
   const ask = useServerFn(parentReport);
   const [report, setReport] = useState<string>("");
   const [loading, setLoading] = useState(false);
 
-  if (!profile) return <div className="min-h-[60vh] grid place-items-center text-muted-foreground">Cargando…</div>;
+  if (!profile) return <div className="min-h-[60vh] grid place-items-center text-muted-foreground">{t.loading}</div>;
 
   const all = buildCurriculum(profile);
   const bySubject = profile.subjects.map((s) => {
@@ -46,24 +79,24 @@ function Padres() {
   return (
     <main className="max-w-3xl mx-auto px-4 py-6 pb-24 space-y-6">
       <header>
-        <h1 className="font-display text-3xl font-bold">👨‍👩‍👧 Vista para padres</h1>
-        <p className="text-muted-foreground mt-1">Sigue el progreso de {profile.childName}.</p>
+        <h1 className="font-display text-3xl font-bold">{t.h1}</h1>
+        <p className="text-muted-foreground mt-1">{t.follow(profile.childName)}</p>
       </header>
 
       <section className="grid grid-cols-3 gap-3">
-        <Stat label="Lecciones" value={profile.completedLessons.length} accent="primary" />
-        <Stat label="XP total" value={profile.xp} accent="accent" />
-        <Stat label="Racha" value={`${profile.streak}🔥`} accent="coral" />
+        <Stat label={t.lessons} value={profile.completedLessons.length} accent="primary" />
+        <Stat label={t.xp} value={profile.xp} accent="accent" />
+        <Stat label={t.streak} value={`${profile.streak}🔥`} accent="coral" />
       </section>
 
       <section className="rounded-3xl bg-card border border-border p-5 shadow-soft">
-        <h2 className="font-display text-xl font-bold mb-3">Progreso por materia</h2>
+        <h2 className="font-display text-xl font-bold mb-3">{t.bySubject}</h2>
         <div className="space-y-3">
           {bySubject.map((s) => (
             <div key={s.id}>
               <div className="flex items-center justify-between text-sm mb-1">
                 <span className="font-bold">{s.emoji} {s.label}</span>
-                <span className="text-muted-foreground">{s.done}/{s.total} · dificultad {s.difficulty}/4</span>
+                <span className="text-muted-foreground">{s.done}/{s.total} · {t.difficulty} {s.difficulty}/4</span>
               </div>
               <div className="h-2.5 rounded-full bg-muted overflow-hidden"><div className="h-full bg-gradient-hero" style={{ width: `${s.pct}%` }} /></div>
             </div>
@@ -73,15 +106,15 @@ function Padres() {
 
       <section className="rounded-3xl bg-card border border-border p-5 shadow-soft">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="font-display text-xl font-bold">📝 Reporte semanal</h2>
+          <h2 className="font-display text-xl font-bold">{t.weekly}</h2>
           <button onClick={generate} disabled={loading} className="rounded-full bg-primary text-primary-foreground px-4 py-2 text-sm font-bold disabled:opacity-50">
-            {loading ? "Generando…" : "Generar con IA"}
+            {loading ? t.generating : t.generate}
           </button>
         </div>
         {report ? (
           <div className="prose prose-sm max-w-none whitespace-pre-wrap text-sm leading-relaxed">{report}</div>
         ) : (
-          <p className="text-sm text-muted-foreground">IGNO escribirá un resumen personalizado del progreso.</p>
+          <p className="text-sm text-muted-foreground">{t.placeholder}</p>
         )}
       </section>
     </main>
