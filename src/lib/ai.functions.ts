@@ -198,7 +198,7 @@ GenBlock union (pick the best for each beat — order matters, must start with a
         { "kind": "sort",  "items": [string in CORRECT order], "explanation": string }
         { "kind": "input", "answer": string (short), "hint": string, "explanation": string } }
   { "type": "miniQuiz", "question": string, "options": [string,string,string?,string?], "answerIndex": number, "explanation": string }
-  { "type": "simulation", "kind": "photosynthesis"|"waterCycle"|"fractionBar"|"logicPath"|"generic", "title": string, "caption": string, "steps": [string,string?,string?,string?] }
+  { "type": "simulation", "kind": "photosynthesis"|"waterCycle"|"fractionBar"|"logicPath"|"solarSystem"|"heart"|"atom"|"ecosystem"|"foodChain"|"circuit"|"magnet"|"gravity"|"dna"|"volcano"|"geometry"|"multiplication"|"alphabet"|"timeline"|"musicNotes"|"lifeCycle"|"weather"|"rocket"|"wave"|"generic", "title": string, "caption": string, "steps": [string,string?,string?,string?] }
 
 MiniQuizBlock = the same as the miniQuiz shape above.
 
@@ -206,7 +206,8 @@ Composition rules:
 - ${formatHint}
 - Density: ${targetCount} body blocks (excluding finalQuiz).
 - Always include at least one of: compare OR steps OR tryIt — to break the monotony.
-- Prefer a "simulation" block for visible processes, cycles, flows, systems, fractions or logic paths. Example: photosynthesis MUST use kind "photosynthesis" so the frontend renders an instant animated SVG instead of waiting for an AI image.
+- Prefer a "simulation" block for visible processes — pick the MOST SPECIFIC kind that matches the topic (e.g. "heart" for circulation, "solarSystem" for planets, "circuit" for electricity, "dna" for genetics, "volcano", "lifeCycle" for metamorphosis, "multiplication" for tables, "geometry" for shapes, "timeline" for history, "atom" for chemistry, "wave" for sound). Avoid "generic" unless nothing fits — every simulation in the lesson should use a DIFFERENT kind so visuals never repeat.
+- Across all simulation/tryIt/miniQuiz blocks try to pair each with a distinct visual kind so animations stay varied.
 - Sprinkle exactly one mascotSays somewhere mid-lesson with a warm, in-character message.
 - Every imagePrompt must be a vivid 1-sentence English cartoon prompt that mixes the concept with the child's favorite world. NO text inside images.
 - Use the child's interests as the visual and verbal language.
@@ -302,7 +303,7 @@ Responde como STRICT JSON (sin markdown fences) con esta forma:
     { "type": "text", "text": string (1-3 frases cortas, puedes usar **negritas** y emojis) },
     // opcionales:
     { "type": "image", "imagePrompt": string (frase EN inglés para una ilustración cartoon kid-friendly que mezcle el concepto con el mundo favorito del niño; sin texto en la imagen), "caption": string (en ${lang}) },
-    { "type": "simulation", "kind": "photosynthesis"|"waterCycle"|"fractionBar"|"logicPath"|"generic", "title": string, "caption": string, "steps": [string,string?,string?,string?] },
+    { "type": "simulation", "kind": "photosynthesis"|"waterCycle"|"fractionBar"|"logicPath"|"solarSystem"|"heart"|"atom"|"ecosystem"|"foodChain"|"circuit"|"magnet"|"gravity"|"dna"|"volcano"|"geometry"|"multiplication"|"alphabet"|"timeline"|"musicNotes"|"lifeCycle"|"weather"|"rocket"|"wave"|"generic", "title": string, "caption": string, "steps": [string,string?,string?,string?] },
     { "type": "example", "icon": string (1 emoji), "title": string (3-6 palabras), "body": string (1-2 frases con un ejemplo concreto del mundo del niño) },
     { "type": "tip", "icon": string (1 emoji), "text": string (un mini consejo accionable) }
   ]
