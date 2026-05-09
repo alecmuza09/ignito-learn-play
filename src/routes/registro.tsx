@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState, type KeyboardEvent } from "react";
 import { AVATARS, LEVELS, SUBJECTS, interestsForAge, saveProfile, type Difficulty, type Subject, type LearningLevel, type IgnotoProfile } from "@/lib/profile";
-import { IgnoOwl } from "@/components/Igno";
+import { KawaiiBlob } from "@/components/KawaiiBlob";
 
 export const Route = createFileRoute("/registro")({
   head: () => ({ meta: [{ title: "Registro — IGNOTO" }, { name: "description", content: "Crea el perfil de aprendizaje de tu hijo en 5 pasos." }] }),
@@ -31,28 +31,21 @@ function Registro() {
   function next() { setStep((s) => Math.min(totalSteps, s + 1)); }
   function back() { setStep((s) => Math.max(1, s - 1)); }
 
-  function toggleInterest(id: string) {
-    setData((d) => {
-      const has = d.interests.includes(id);
-      const list = has ? d.interests.filter((x) => x !== id) : [...d.interests, id];
-      if (list.length > 12) return d;
-      return { ...d, interests: list };
-    });
+  function pickInterest(id: string) {
+    setData((d) => ({ ...d, interests: id ? [id] : [] }));
   }
   function addCustomInterest() {
     const v = customInput.trim();
     if (!v) return;
-    setData((d) => {
-      if (d.interests.includes(v) || d.interests.length >= 12) return d;
-      return { ...d, interests: [...d.interests, v] };
-    });
+    setData((d) => ({ ...d, interests: [v] }));
     setCustomInput("");
   }
   function onCustomKey(e: KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Enter" || e.key === ",") { e.preventDefault(); addCustomInterest(); }
   }
   const presetIds = new Set(interests.map((i) => i.id));
-  const customSelected = data.interests.filter((i) => !presetIds.has(i));
+  const currentInterest = data.interests[0] ?? "";
+  const isCustom = currentInterest && !presetIds.has(currentInterest);
   function toggleSubject(id: Subject) {
     setData((d) => {
       const has = d.subjects.find((s) => s.id === id);
@@ -66,7 +59,7 @@ function Registro() {
   function canContinue() {
     if (step === 1) return data.childName.trim().length > 0;
     if (step === 2) return true;
-    if (step === 3) return data.interests.length >= 3;
+    if (step === 3) return data.interests.length === 1;
     if (step === 4) return data.subjects.length >= 1;
     return true;
   }
@@ -85,7 +78,7 @@ function Registro() {
   return (
     <main className="min-h-screen px-4 py-8 max-w-2xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
-        <IgnoOwl size={48} />
+        <KawaiiBlob size={48} shape="blob" color="var(--primary)" mood="happy" />
         <div className="flex-1">
           <div className="text-xs text-muted-foreground font-bold">Paso {step} de {totalSteps}</div>
           <div className="h-2 mt-1 rounded-full bg-muted overflow-hidden">
@@ -151,13 +144,13 @@ function Registro() {
 
         {step === 3 && (
           <>
-            <h2 className="font-display text-3xl font-bold mb-1">¿Qué te apasiona?</h2>
-            <p className="text-muted-foreground mb-5">Elige al menos 3 — y añade los tuyos (Spiderman, Roblox, dinosaurios, princesas…). {data.interests.length} seleccionados.</p>
+            <h2 className="font-display text-3xl font-bold mb-1">¿Qué te apasiona hoy?</h2>
+            <p className="text-muted-foreground mb-5">Elige <b>un</b> mundo favorito — toda tu sesión se personalizará en torno a él (Spiderman, Roblox, dinosaurios, princesas…).</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
               {interests.map((it) => {
-                const sel = data.interests.includes(it.id);
+                const sel = currentInterest === it.id;
                 return (
-                  <button key={it.id} onClick={() => toggleInterest(it.id)}
+                  <button key={it.id} onClick={() => pickInterest(it.id)}
                     className={`rounded-2xl p-4 text-center border-2 transition-all ${sel ? "border-accent bg-accent/15 scale-105" : "border-border hover:bg-muted"}`}>
                     <div className="text-3xl">{it.emoji}</div>
                     <div className="text-xs font-bold mt-1.5">{it.label}</div>
@@ -166,7 +159,7 @@ function Registro() {
               })}
             </div>
             <div className="mt-5">
-              <label className="block text-sm font-bold mb-2">✨ Añade los tuyos</label>
+              <label className="block text-sm font-bold mb-2">✨ O escribe el tuyo</label>
               <div className="flex gap-2">
                 <input
                   value={customInput}
@@ -180,14 +173,12 @@ function Registro() {
                   +
                 </button>
               </div>
-              {customSelected.length > 0 && (
+              {isCustom && (
                 <div className="flex flex-wrap gap-2 mt-3">
-                  {customSelected.map((c) => (
-                    <span key={c} className="inline-flex items-center gap-1.5 rounded-full bg-coral text-coral-foreground px-3 py-1 text-xs font-bold">
-                      {c}
-                      <button onClick={() => toggleInterest(c)} aria-label={`Quitar ${c}`} className="opacity-80 hover:opacity-100">✕</button>
-                    </span>
-                  ))}
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-coral text-coral-foreground px-3 py-1 text-xs font-bold">
+                    {currentInterest}
+                    <button onClick={() => pickInterest("")} aria-label="Quitar" className="opacity-80 hover:opacity-100">✕</button>
+                  </span>
                 </div>
               )}
             </div>
