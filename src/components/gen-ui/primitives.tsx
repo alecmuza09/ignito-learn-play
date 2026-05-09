@@ -3,10 +3,17 @@ import { GenTheme, Tone, themeFromInterests, toneClasses } from "@/lib/theme-fro
 import { useProfile } from "@/lib/profile";
 import { Link } from "@tanstack/react-router";
 
-/** Hook: derive the live theme from the active child profile. */
+/** Hook: derive the live theme from the active child profile.
+ *  SSR-safe: returns the default theme until mounted on the client so
+ *  hydration HTML matches. */
 export function useGenTheme(): GenTheme {
   const profile = useProfile();
-  return useMemo(() => themeFromInterests(profile?.interests ?? []), [profile?.interests]);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+  return useMemo(
+    () => (mounted ? themeFromInterests(profile?.interests ?? []) : themeFromInterests([])),
+    [mounted, profile?.interests],
+  );
 }
 
 /** Adaptive surface card. Tone defaults to the theme's secondary. */
@@ -16,7 +23,7 @@ export function GenCard({ children, tone, soft = true, className = "" }: {
   const theme = useGenTheme();
   const t = toneClasses(tone ?? theme.accentTone);
   return (
-    <div className={`rounded-3xl ${soft ? `${t.bgSoft} border-2 ${t.border}/30` : `${t.bg} ${t.text}`} p-5 shadow-soft ${className}`}>
+    <div className={`rounded-3xl ${soft ? `bg-card border ${t.border}/40` : `${t.bg} ${t.text}`} p-5 shadow-soft ${className}`}>
       {children}
     </div>
   );
@@ -65,12 +72,12 @@ export function GenBackdrop() {
   const t = toneClasses(theme.tone);
   return (
     <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-      <div className={`absolute inset-0 ${t.gradient} opacity-[0.07]`} />
+      <div className={`absolute inset-0 ${t.gradient} opacity-[0.04]`} />
       {motifs.map((m, i) => (
         <span key={i} className="absolute select-none"
           style={{
             top: `${m.top}%`, left: `${m.left}%`,
-            fontSize: `${m.size}rem`, opacity: 0.18,
+            fontSize: `${m.size}rem`, opacity: 0.09,
             animation: `gen-drift ${m.dur}s ease-in-out ${m.delay}s infinite alternate`,
             ["--spin" as string]: `${m.spin}deg`,
           } as React.CSSProperties}>{m.char}</span>
@@ -92,32 +99,34 @@ export function GenThemeBanner({ subtitle, compact = false }: { subtitle?: strin
   const profile = useProfile();
   const t = toneClasses(theme.tone);
   return (
-    <Link to="/perfil" className={`relative block overflow-hidden rounded-3xl ${t.gradient} ${t.text} shadow-soft animate-pop-in ${compact ? "px-4 py-2.5" : "px-5 py-4"}`}>
+    <Link to="/perfil" className={`relative block overflow-hidden rounded-3xl bg-card border border-border shadow-soft animate-pop-in ${compact ? "px-4 py-2.5" : "px-5 py-4"}`}>
       {/* drifting motifs inside the banner itself */}
       <div aria-hidden className="absolute inset-0 pointer-events-none">
         {theme.motifs.concat(theme.motifs).map((m, i) => (
           <span key={i} className="absolute select-none"
             style={{
               top: `${(i * 23) % 90}%`, left: `${(i * 41 + 7) % 95}%`,
-              fontSize: `${1 + (i % 3) * 0.4}rem`, opacity: 0.35,
+              fontSize: `${1 + (i % 3) * 0.4}rem`, opacity: 0.18,
               animation: `gen-banner-float ${4 + (i % 3)}s ease-in-out ${i * 0.2}s infinite alternate`,
             }}>{m}</span>
         ))}
       </div>
       <div className="relative flex items-center gap-3">
-        <div className={`text-3xl ${compact ? "text-2xl" : ""} animate-bounce-slow`}>{theme.motifs[0]}</div>
+        <div className={`shrink-0 grid place-items-center rounded-2xl ${t.bgSoft} ${compact ? "w-10 h-10 text-xl" : "w-14 h-14 text-2xl"} animate-float`}>
+          {theme.motifs[0]}
+        </div>
         <div className="flex-1 min-w-0">
-          <div className="text-[10px] font-bold uppercase tracking-[0.18em] opacity-90">Modo personalizado</div>
-          <div className={`font-display font-bold leading-tight truncate ${compact ? "text-base" : "text-xl"}`}>
+          <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Modo personalizado</div>
+          <div className={`font-display font-bold leading-tight truncate ${compact ? "text-base" : "text-xl"} tracking-tight`}>
             {theme.label.toUpperCase()}
           </div>
           {!compact && (
-            <div className="text-xs opacity-90 mt-0.5">
+            <div className="text-xs text-muted-foreground mt-0.5">
               {subtitle ?? `IA adaptando todo para ${profile?.childName ?? "ti"} · toca para cambiar tu mundo`}
             </div>
           )}
         </div>
-        <div className="flex gap-1 text-xl opacity-90">
+        <div className="flex gap-1 text-lg opacity-80">
           {theme.motifs.slice(1, 4).map((m, i) => <span key={i}>{m}</span>)}
         </div>
       </div>

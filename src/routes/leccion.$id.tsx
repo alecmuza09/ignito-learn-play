@@ -4,9 +4,9 @@ import { useServerFn } from "@tanstack/react-start";
 import { generateLesson, generateHeroImage } from "@/lib/ai.functions";
 import { awardXP, markLessonDone, useProfile } from "@/lib/profile";
 import { buildCurriculum } from "@/lib/curriculum";
-import { IgnoOwl } from "@/components/Igno";
 import { GenButton, GenCard, GenProgress, GenQuizOption, GenReaction, GenThemeBanner, useGenTheme } from "@/components/gen-ui/primitives";
 import { useUIAgent } from "@/lib/use-ui-agent";
+import { KawaiiBlob } from "@/components/gen-ui/KawaiiBlob";
 
 export const Route = createFileRoute("/leccion/$id")({
   head: () => ({ meta: [{ title: "Lección — IGNOTO" }] }),
@@ -203,17 +203,10 @@ function Loader({ text }: { text: string }) {
   const theme = useGenTheme();
   return (
     <main className="min-h-[70vh] grid place-items-center text-center px-4 relative overflow-hidden">
-      <div aria-hidden className="absolute inset-0 pointer-events-none">
-        {theme.motifs.concat(theme.motifs).map((m, i) => (
-          <span key={i} className="absolute text-4xl opacity-30 animate-bounce-slow"
-            style={{ top: `${(i * 19 + 5) % 90}%`, left: `${(i * 31 + 9) % 90}%`, animationDelay: `${i * 0.25}s` }}>{m}</span>
-        ))}
-      </div>
       <div>
-        <div className="animate-bounce-slow"><IgnoOwl size={120} /></div>
-        <p className="mt-4 font-display text-lg font-bold">{text}</p>
-        <p className="text-sm text-muted-foreground mt-1">Mezclando tu mundo de <span className="font-bold text-primary">{theme.label}</span> con la IA…</p>
-        <div className="mt-3 text-2xl tracking-widest">{theme.motifs.join(" ")}</div>
+        <div className="animate-bounce-slow"><KawaiiBlob size={140} mood="wow" /></div>
+        <p className="mt-5 font-display text-2xl font-bold tracking-tight">{text}</p>
+        <p className="text-sm text-muted-foreground mt-1">Mezclando tu mundo de <span className="font-bold text-foreground">{theme.label}</span> con la IA…</p>
       </div>
     </main>
   );
