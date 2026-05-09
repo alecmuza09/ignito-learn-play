@@ -77,7 +77,7 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   return (
     <QueryClientProvider client={queryClient}>
-      <CopilotKit runtimeUrl="/api/copilotkit" agent="igno">
+      <CopilotKit runtimeUrl="/api/copilotkit">
         <AppHeader />
         <Outlet />
         <IgnoFloating />
