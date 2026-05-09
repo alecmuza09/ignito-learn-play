@@ -1,5 +1,13 @@
 import { useGenTheme } from "./primitives";
-import { toneClasses, type Tone } from "@/lib/theme-from-interests";
+import { type Tone } from "@/lib/theme-from-interests";
+
+const TONE_VAR: Record<Tone, string> = {
+  primary: "var(--primary)",
+  coral:   "var(--coral)",
+  mint:    "var(--mint)",
+  sky:     "var(--sky)",
+  accent:  "var(--accent)",
+};
 
 /**
  * Kawaii blob mascot — soft pastel shape with a tiny smile.
@@ -12,7 +20,11 @@ export function KawaiiBlob({ size = 120, mood = "happy", tone, className = "" }:
   className?: string;
 }) {
   const theme = useGenTheme();
-  const t = toneClasses(tone ?? theme.tone);
+  const fill = TONE_VAR[tone ?? theme.tone];
+  // High-contrast facial features. We use a near-white "ink" so faces always read
+  // against the colored blob (the previous near-black ink disappeared on dark fills).
+  const ink = "oklch(0.99 0 0)";
+  const cheek = "oklch(0.78 0.10 20 / 0.55)";
   // pick a shape variant by theme id so each "world" gets its own silhouette
   const variant = SHAPES[theme.id as keyof typeof SHAPES] ?? SHAPES.default;
 
@@ -22,45 +34,45 @@ export function KawaiiBlob({ size = 120, mood = "happy", tone, className = "" }:
         {/* soft drop shadow */}
         <ellipse cx="60" cy="112" rx="36" ry="4" fill="oklch(0.2 0.05 280 / 0.12)" />
         {/* main blob */}
-        <path d={variant.path} className={`${t.bg.replace("bg-", "fill-")}`} fill="currentColor" />
+        <path d={variant.path} fill={fill} />
         {/* highlight */}
-        <ellipse cx={variant.hl.cx} cy={variant.hl.cy} rx="9" ry="6" fill="white" opacity="0.55" />
+        <ellipse cx={variant.hl.cx} cy={variant.hl.cy} rx="9" ry="6" fill="white" opacity="0.45" />
         {/* eyes */}
-        <Eye cx={variant.eyes.l.x} cy={variant.eyes.l.y} mood={mood} side="l" />
-        <Eye cx={variant.eyes.r.x} cy={variant.eyes.r.y} mood={mood} side="r" />
+        <Eye cx={variant.eyes.l.x} cy={variant.eyes.l.y} mood={mood} side="l" ink={ink} />
+        <Eye cx={variant.eyes.r.x} cy={variant.eyes.r.y} mood={mood} side="r" ink={ink} />
         {/* mouth */}
-        <Mouth cx={variant.mouth.x} cy={variant.mouth.y} mood={mood} />
+        <Mouth cx={variant.mouth.x} cy={variant.mouth.y} mood={mood} ink={ink} />
         {/* cheeks */}
-        <circle cx={variant.eyes.l.x - 6} cy={variant.eyes.l.y + 8} r="3.2" fill="oklch(0.78 0.10 20 / 0.5)" />
-        <circle cx={variant.eyes.r.x + 6} cy={variant.eyes.r.y + 8} r="3.2" fill="oklch(0.78 0.10 20 / 0.5)" />
+        <circle cx={variant.eyes.l.x - 6} cy={variant.eyes.l.y + 8} r="3.2" fill={cheek} />
+        <circle cx={variant.eyes.r.x + 6} cy={variant.eyes.r.y + 8} r="3.2" fill={cheek} />
       </svg>
     </div>
   );
 }
 
-function Eye({ cx, cy, mood, side }: { cx: number; cy: number; mood: string; side: "l" | "r" }) {
+function Eye({ cx, cy, mood, side, ink }: { cx: number; cy: number; mood: string; side: "l" | "r"; ink: string }) {
   if (mood === "wink" && side === "l") {
-    return <path d={`M ${cx - 4} ${cy} Q ${cx} ${cy + 3} ${cx + 4} ${cy}`} stroke="black" strokeWidth="2" fill="none" strokeLinecap="round" />;
+    return <path d={`M ${cx - 4} ${cy} Q ${cx} ${cy + 3} ${cx + 4} ${cy}`} stroke={ink} strokeWidth="2.4" fill="none" strokeLinecap="round" />;
   }
   if (mood === "wow") {
-    return <ellipse cx={cx} cy={cy} rx="3" ry="4.5" fill="black" />;
+    return <ellipse cx={cx} cy={cy} rx="3" ry="4.5" fill={ink} />;
   }
   if (mood === "calm") {
-    return <path d={`M ${cx - 4} ${cy + 1} Q ${cx} ${cy - 2} ${cx + 4} ${cy + 1}`} stroke="black" strokeWidth="2.2" fill="none" strokeLinecap="round" />;
+    return <path d={`M ${cx - 4} ${cy + 1} Q ${cx} ${cy - 2} ${cx + 4} ${cy + 1}`} stroke={ink} strokeWidth="2.4" fill="none" strokeLinecap="round" />;
   }
   return (
     <>
-      <circle cx={cx} cy={cy} r="3.2" fill="black" />
-      <circle cx={cx + 1} cy={cy - 1} r="1" fill="white" />
+      <circle cx={cx} cy={cy} r="3.4" fill={ink} />
+      <circle cx={cx + 1} cy={cy - 1} r="1.1" fill="oklch(0.2 0.05 280)" />
     </>
   );
 }
 
-function Mouth({ cx, cy, mood }: { cx: number; cy: number; mood: string }) {
+function Mouth({ cx, cy, mood, ink }: { cx: number; cy: number; mood: string; ink: string }) {
   if (mood === "wow") {
-    return <ellipse cx={cx} cy={cy} rx="3" ry="4" fill="black" />;
+    return <ellipse cx={cx} cy={cy} rx="3" ry="4" fill={ink} />;
   }
-  return <path d={`M ${cx - 5} ${cy} Q ${cx} ${cy + 5} ${cx + 5} ${cy}`} stroke="black" strokeWidth="2.4" fill="none" strokeLinecap="round" />;
+  return <path d={`M ${cx - 5} ${cy} Q ${cx} ${cy + 5} ${cx + 5} ${cy}`} stroke={ink} strokeWidth="2.6" fill="none" strokeLinecap="round" />;
 }
 
 const BLOB_SOFT = "M 60 12 C 88 12 108 32 108 60 C 108 88 88 108 60 108 C 32 108 12 88 12 60 C 12 32 32 12 60 12 Z";
