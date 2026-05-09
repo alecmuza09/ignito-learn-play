@@ -3,7 +3,9 @@ import { createFileRoute } from "@tanstack/react-router";
 
 const COPILOTKIT_VERSION = "1.57.1";
 const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 const MODEL = "google/gemini-3-flash-preview";
+const GEMINI_MODEL = "gemini-2.5-flash";
 const SIMULATION_KINDS = [
   "photosynthesis", "waterCycle", "fractionBar", "logicPath", "solarSystem", "heart", "atom",
   "ecosystem", "foodChain", "circuit", "magnet", "gravity", "dna", "volcano", "geometry",
@@ -27,6 +29,7 @@ type CopilotActionInput = {
 
 type CopilotRequestPayload = {
   operationName?: string;
+  query?: string;
   variables?: {
     data?: {
       messages?: CopilotMessageInput[];
@@ -73,7 +76,7 @@ function asPromptMessages(data: NonNullable<CopilotRequestPayload["variables"]>[
       return [{ role, content: message.textMessage.content ?? "" }];
     }
     if (message.resultMessage) {
-      return [{ role: "tool", content: message.resultMessage.result ?? "" }];
+      return [{ role: "user", content: `Resultado de la actividad visual: ${message.resultMessage.result ?? ""}` }];
     }
     return [];
   });
