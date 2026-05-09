@@ -7,6 +7,50 @@ const MODEL = "google/gemini-3-flash-preview";
 const IMAGE_MODEL = "google/gemini-3.1-flash-image-preview"; // Nano Banana 2
 const IMAGE_MODEL_FALLBACK = "google/gemini-3-pro-image-preview";
 
+const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
+const GEMINI_TEXT_MODEL = "gemini-2.5-flash";
+const GEMINI_IMAGE_MODEL = "gemini-2.5-flash-image-preview";
+
+/** Call Google Gemini directly using the user-supplied GEMINI_API_KEY.
+ *  Used for both text (JSON) and image generation, bypassing the Lovable gateway. */
+async function callGemini(
+  model: string,
+  contents: unknown,
+  opts: { json?: boolean; image?: boolean; timeoutMs?: number; system?: string } = {},
+): Promise<{ text: string; images: string[] }> {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) throw new Error("Falta GEMINI_API_KEY");
+  const body: Record<string, unknown> = { contents };
+  if (opts.system) body.systemInstruction = { role: "system", parts: [{ text: opts.system }] };
+  const generationConfig: Record<string, unknown> = {};
+  if (opts.json) generationConfig.responseMimeType = "application/json";
+  if (opts.image) generationConfig.responseModalities = ["IMAGE", "TEXT"];
+  if (Object.keys(generationConfig).length) body.generationConfig = generationConfig;
+
+  const controller = opts.timeoutMs ? new AbortController() : undefined;
+  const t = opts.timeoutMs ? setTimeout(() => controller?.abort(), opts.timeoutMs) : undefined;
+  const res = await fetch(`${GEMINI_BASE}/${model}:generateContent?key=${key}`, {
+    method: "POST",
+    signal: controller?.signal,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  }).finally(() => { if (t) clearTimeout(t); });
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error(`Gemini ${res.status}: ${txt.slice(0, 240)}`);
+  }
+  const data = await res.json();
+  const parts = data?.candidates?.[0]?.content?.parts ?? [];
+  let text = "";
+  const images: string[] = [];
+  for (const p of parts) {
+    if (typeof p?.text === "string") text += p.text;
+    const inline = p?.inlineData ?? p?.inline_data;
+    if (inline?.data) images.push(`data:${inline.mimeType ?? inline.mime_type ?? "image/png"};base64,${inline.data}`);
+  }
+  return { text, images };
+}
+
 async function callAI(
   messages: { role: string; content: string }[],
   jsonMode = false,
@@ -14,8 +58,18 @@ async function callAI(
   modalities?: string[],
   timeoutMs?: number,
 ): Promise<{ text: string; images: string[] }> {
+  // Prefer the user-supplied Gemini API key (no Lovable credits required).
+  if (process.env.GEMINI_API_KEY && !modalities) {
+    const sysParts = messages.filter((m) => m.role === "system").map((m) => m.content).join("\n\n");
+    const userParts = messages.filter((m) => m.role !== "system");
+    const contents = userParts.map((m) => ({
+      role: m.role === "assistant" ? "model" : "user",
+      parts: [{ text: m.content }],
+    }));
+    return await callGemini(GEMINI_TEXT_MODEL, contents, { json: jsonMode, system: sysParts || undefined, timeoutMs });
+  }
   const key = process.env.LOVABLE_API_KEY;
-  if (!key) throw new Error("Falta LOVABLE_API_KEY");
+  if (!key) throw new Error("Falta GEMINI_API_KEY o LOVABLE_API_KEY");
   const body: Record<string, unknown> = { model: modelOverride ?? MODEL, messages };
   if (jsonMode) body.response_format = { type: "json_object" };
   if (modalities) (body as { modalities?: string[] }).modalities = modalities;
@@ -310,6 +364,20 @@ export const generateHeroImage = createServerFn({ method: "POST" })
       ? ` Visual identity: ${style.illustrationStyle ?? "friendly cartoon"}, palette ${style.palette ?? "bright and cheerful"}, vibe ${style.vibe ?? "playful adventure"}.`
       : " Bold flat colors, soft shapes, cheerful lighting.";
     const fullPrompt = `Friendly children's-book illustration. ${data.prompt}${interestsLine}${styleLine} No text, no letters, no logos, wide 16:9 composition.`;
+
+    // Prefer direct Gemini call when the user-provided key is set (no Lovable credits required).
+    if (process.env.GEMINI_API_KEY) {
+      try {
+        const { images } = await callGemini(
+          GEMINI_IMAGE_MODEL,
+          [{ role: "user", parts: [{ text: fullPrompt }] }],
+          { image: true, timeoutMs: 25000 },
+        );
+        if (images[0]) return { url: images[0] };
+      } catch (e) {
+        console.warn("[generateHeroImage] direct Gemini failed:", (e as Error).message);
+      }
+    }
 
     const tryModel = async (model: string) => {
       const { images } = await callAI(
