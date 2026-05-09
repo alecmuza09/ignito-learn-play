@@ -1,6 +1,48 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, type KeyboardEvent } from "react";
 import { AVATARS, clearProfile, updateProfile, useProfile, SUBJECTS, interestsForAge, type Subject, type Difficulty } from "@/lib/profile";
+import { useT, useLang } from "@/lib/i18n";
+
+const T = {
+  es: {
+    loading: "Cargando…",
+    h1: "👤 Tu perfil",
+    years: "años",
+    changeAvatar: "Cambia tu avatar",
+    stats: "Estadísticas",
+    xp: "XP",
+    coins: "Monedas",
+    streak: "Racha",
+    passions: "✨ Lo que me apasiona",
+    passionsSub: "Esto guía las historias e imágenes de cada lección.",
+    placeholder: "Spiderman, Roblox, dinosaurios…",
+    remove: (c: string) => `Quitar ${c}`,
+    subjects: "📚 Materias para seguir aprendiendo",
+    subjectsSub: "Activa o ajusta dificultad cuando quieras.",
+    difficulty: "Dificultad:",
+    reset: "Reiniciar perfil",
+    confirmReset: "¿Borrar tu perfil y empezar de nuevo?",
+  },
+  en: {
+    loading: "Loading…",
+    h1: "👤 Your profile",
+    years: "years old",
+    changeAvatar: "Change your avatar",
+    stats: "Stats",
+    xp: "XP",
+    coins: "Coins",
+    streak: "Streak",
+    passions: "✨ What I love",
+    passionsSub: "This guides the stories and images of each lesson.",
+    placeholder: "Spiderman, Roblox, dinosaurs…",
+    remove: (c: string) => `Remove ${c}`,
+    subjects: "📚 Subjects to keep learning",
+    subjectsSub: "Toggle or adjust difficulty anytime.",
+    difficulty: "Difficulty:",
+    reset: "Reset profile",
+    confirmReset: "Delete your profile and start over?",
+  },
+} as const;
 
 export const Route = createFileRoute("/perfil")({
   head: () => ({ meta: [{ title: "Perfil — IGNOTO" }] }),
@@ -10,8 +52,10 @@ export const Route = createFileRoute("/perfil")({
 function Perfil() {
   const profile = useProfile();
   const nav = useNavigate();
+  const t = useT(T);
+  const { lang } = useLang();
   const [newInterest, setNewInterest] = useState("");
-  if (!profile) return <div className="min-h-[60vh] grid place-items-center text-muted-foreground">Cargando…</div>;
+  if (!profile) return <div className="min-h-[60vh] grid place-items-center text-muted-foreground">{t.loading}</div>;
   const presets = interestsForAge(profile.age);
   const presetIds = new Set(presets.map((p) => p.id));
   const customInterests = profile.interests.filter((i) => !presetIds.has(i));
@@ -41,18 +85,18 @@ function Perfil() {
 
   return (
     <main className="max-w-2xl mx-auto px-4 py-6 pb-24 space-y-6">
-      <h1 className="font-display text-3xl font-bold">👤 Tu perfil</h1>
+      <h1 className="font-display text-3xl font-bold">{t.h1}</h1>
 
       <section className="rounded-3xl bg-card border border-border p-5 shadow-soft">
         <div className="flex items-center gap-4">
           <div className="text-6xl">{profile.avatar}</div>
           <div>
             <div className="font-display text-xl font-bold">{profile.childName}</div>
-            <div className="text-sm text-muted-foreground">{profile.age} años</div>
+            <div className="text-sm text-muted-foreground">{profile.age} {t.years}</div>
           </div>
         </div>
         <div className="mt-5">
-          <div className="text-sm font-bold mb-2">Cambia tu avatar</div>
+          <div className="text-sm font-bold mb-2">{t.changeAvatar}</div>
           <div className="grid grid-cols-6 gap-2">
             {AVATARS.map((a) => (
               <button key={a} onClick={() => updateProfile({ avatar: a })}
@@ -63,17 +107,17 @@ function Perfil() {
       </section>
 
       <section className="rounded-3xl bg-card border border-border p-5 shadow-soft">
-        <h2 className="font-display text-xl font-bold mb-3">Estadísticas</h2>
+        <h2 className="font-display text-xl font-bold mb-3">{t.stats}</h2>
         <div className="grid grid-cols-3 gap-3 text-center">
-          <Stat label="XP" value={profile.xp} />
-          <Stat label="Monedas" value={profile.coins} />
-          <Stat label="Racha" value={`${profile.streak}🔥`} />
+          <Stat label={t.xp} value={profile.xp} />
+          <Stat label={t.coins} value={profile.coins} />
+          <Stat label={t.streak} value={`${profile.streak}🔥`} />
         </div>
       </section>
 
       <section className="rounded-3xl bg-card border border-border p-5 shadow-soft">
-        <h2 className="font-display text-xl font-bold mb-1">✨ Lo que me apasiona</h2>
-        <p className="text-sm text-muted-foreground mb-4">Esto guía las historias e imágenes de cada lección.</p>
+        <h2 className="font-display text-xl font-bold mb-1">{t.passions}</h2>
+        <p className="text-sm text-muted-foreground mb-4">{t.passionsSub}</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
           {presets.map((it) => {
             const sel = profile.interests.includes(it.id);
@@ -88,7 +132,7 @@ function Perfil() {
         </div>
         <div className="flex gap-2">
           <input value={newInterest} onChange={(e) => setNewInterest(e.target.value)} onKeyDown={onKey}
-            placeholder="Spiderman, Roblox, dinosaurios…" maxLength={40}
+            placeholder={t.placeholder} maxLength={40}
             className="flex-1 rounded-2xl bg-muted px-4 py-2.5 outline-none focus:ring-2 ring-primary text-sm" />
           <button onClick={addCustom} className="rounded-2xl bg-primary text-primary-foreground px-4 font-bold shadow-pop">+</button>
         </div>
@@ -97,7 +141,7 @@ function Perfil() {
             {customInterests.map((c) => (
               <span key={c} className="inline-flex items-center gap-1.5 rounded-full bg-coral text-coral-foreground px-3 py-1 text-xs font-bold">
                 {c}
-                <button onClick={() => toggleInterest(c)} aria-label={`Quitar ${c}`}>✕</button>
+                <button onClick={() => toggleInterest(c)} aria-label={t.remove(c)}>✕</button>
               </span>
             ))}
           </div>
@@ -105,8 +149,8 @@ function Perfil() {
       </section>
 
       <section className="rounded-3xl bg-card border border-border p-5 shadow-soft">
-        <h2 className="font-display text-xl font-bold mb-1">📚 Materias para seguir aprendiendo</h2>
-        <p className="text-sm text-muted-foreground mb-4">Activa o ajusta dificultad cuando quieras.</p>
+        <h2 className="font-display text-xl font-bold mb-1">{t.subjects}</h2>
+        <p className="text-sm text-muted-foreground mb-4">{t.subjectsSub}</p>
         <div className="space-y-2">
           {SUBJECTS.map((s) => {
             const sel = profile.subjects.find((x) => x.id === s.id);
@@ -119,7 +163,7 @@ function Perfil() {
                 </button>
                 {sel && (
                   <div className="px-3 pb-3 flex items-center gap-2 bg-primary/5">
-                    <span className="text-[11px] font-bold text-muted-foreground">Dificultad:</span>
+                    <span className="text-[11px] font-bold text-muted-foreground">{t.difficulty}</span>
                     {(["😟","😐","😊","🔥"] as const).map((face, i) => {
                       const d = (i + 1) as Difficulty;
                       return (
@@ -135,9 +179,9 @@ function Perfil() {
         </div>
       </section>
 
-      <button onClick={() => { if (confirm("¿Borrar tu perfil y empezar de nuevo?")) { clearProfile(); nav({ to: "/" }); } }}
+      <button onClick={() => { if (confirm(t.confirmReset)) { clearProfile(); nav({ to: "/" }); } }}
         className="w-full rounded-full bg-destructive text-destructive-foreground py-3 font-bold">
-        Reiniciar perfil
+        {t.reset}
       </button>
     </main>
   );
