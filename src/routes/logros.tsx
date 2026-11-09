@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useRequireLearner } from "@/lib/use-guard";
 import { useProfile, levelTitle } from "@/lib/profile";
 import { useT } from "@/lib/i18n";
 
@@ -43,7 +44,7 @@ const T = {
 } as const;
 
 function Logros() {
-  const profile = useProfile();
+  const profile = useRequireLearner();
   const t = useT(T);
   if (!profile) return <div className="min-h-[60vh] grid place-items-center text-muted-foreground">{t.loading}</div>;
   const earned = new Set(profile.badges);

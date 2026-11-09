@@ -1,8 +1,10 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
+import { useRequireLearner } from "@/lib/use-guard";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { generateLesson, generateHeroImage } from "@/lib/ai.functions";
-import { awardXP, markLessonDone, useProfile } from "@/lib/profile";
+import { awardXP, markLessonDone, uiModeFor, useProfile } from "@/lib/profile";
+import { reactCompanion } from "@/components/companion/bus";
 import { buildCurriculum } from "@/lib/curriculum";
 import { GenButton, GenProgress, GenReaction, GenThemeBanner, useGenTheme } from "@/components/gen-ui/primitives";
 import { GenRenderer, collectImageJobs } from "@/components/gen-ui/GenRenderer";
@@ -18,7 +20,7 @@ export const Route = createFileRoute("/leccion/$id")({
 
 function Lesson() {
   const { id } = useParams({ from: "/leccion/$id" });
-  const profile = useProfile();
+  const profile = useRequireLearner();
   const gen = useServerFn(generateLesson);
   const genImg = useServerFn(generateHeroImage);
   const [title, setTitle] = useState<string>("");
@@ -61,7 +63,7 @@ function Lesson() {
       lessonId: id, subject: node.subjectLabel, topic: node.topic,
       childName: profile.childName, age: profile.age, level: profile.level,
       interests: profile.interests, difficulty: node.difficulty,
-      language: profile.language, style: profile.style,
+      language: profile.language, style: profile.style, audience: uiModeFor(profile),
     }})
       .then((r) => {
         setTitle(r.lesson.title);
@@ -124,6 +126,7 @@ function Lesson() {
       const newCorrect = correct + 1;
       const newRun = streakRun + 1;
       setCorrect(newCorrect); setStreakRun(newRun);
+      reactCompanion({ state: newRun >= 3 ? "celebrate" : "happy", say: newRun >= 3 ? `¡${newRun} seguidas! 🔥` : undefined, ms: 1600 });
       emit(newRun >= 3 ? "streak" : "correct", {
         correctSoFar: newCorrect, wrongSoFar: wrong,
         questionIndex: qIdx, questionTotal: finalQuiz.length,
@@ -131,6 +134,7 @@ function Lesson() {
     } else {
       const newWrong = wrong + 1;
       setWrong(newWrong); setStreakRun(0);
+      reactCompanion({ state: "sad", say: "¡Tú puedes! Lee la explicación 💡", ms: 2000 });
       emit("wrong", {
         correctSoFar: correct, wrongSoFar: newWrong,
         questionIndex: qIdx, questionTotal: finalQuiz.length,
@@ -144,6 +148,7 @@ function Lesson() {
       const xp = 20 + correct * 4 + (picked === q.answerIndex ? 4 : 0);
       awardXP(xp); markLessonDone(id);
       setStage("done");
+      reactCompanion({ state: "celebrate", say: `¡Lección completa! +${xp} XP 🎉`, ms: 3500 });
       emit("complete", { correctSoFar: correct, wrongSoFar: wrong, questionIndex: qIdx + 1, questionTotal: finalQuiz.length });
     } else { setQIdx((i) => i + 1); setPicked(null); }
   }

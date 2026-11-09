@@ -1,15 +1,20 @@
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
-import { useProfile } from "@/lib/profile";
-import { KawaiiBlob } from "./KawaiiBlob";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useLocation } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { Mic, Volume2, VolumeX } from "lucide-react";
+import { logActivity, uiModeFor, updateProfile, useProfile } from "@/lib/profile";
+import { useT } from "@/lib/i18n";
+import { ignoSpeak } from "@/lib/voice.functions";
+import { useCompanionVoice, useSpeechInput } from "@/lib/voice";
+import { Companion, type CompanionState } from "./companion/Companion";
+import { CHARACTERS } from "./companion/characters";
+import { onCompanionReaction, reactCompanion, type CompanionReaction } from "./companion/bus";
 import { AnimatedSimulation, inferSimulationKind } from "./gen-ui/AnimatedSimulation";
 import { SIMULATION_KINDS, type SimulationKind } from "@/lib/gen-blocks";
 
-export function IgnoOwl({ size = 64, animate = true }: { size?: number; animate?: boolean }) {
-  return (
-    <div className={animate ? "animate-float" : ""}>
-      <KawaiiBlob size={size} shape="blob" color="var(--primary)" mood="happy" />
-    </div>
-  );
+export function IgnoOwl({ size = 64 }: { size?: number; animate?: boolean }) {
+  const profile = useProfile();
+  return <Companion id={profile?.companion ?? "igno"} size={size} />;
 }
 
 type ToolCall = { name: string; args: Record<string, unknown> };
@@ -121,7 +126,7 @@ function isSimulationKind(kind: unknown): kind is SimulationKind {
 }
 
 function normalizeResponseMessages(messages: RuntimeMessage[], fallbackText: string): ChatEntry[] {
-  const entries = messages.flatMap((message) => {
+  const entries = messages.flatMap<ChatEntry>((message) => {
     if (message.__typename === "ActionExecutionMessageOutput" || message.name) {
       return [
         {
@@ -144,31 +149,105 @@ function normalizeResponseMessages(messages: RuntimeMessage[], fallbackText: str
     : [{ id: makeId("assistant"), role: "assistant", text: fallbackText }];
 }
 
+const STATUS = {
+  es: { idle: "Listo para aprender contigo", listening: "Te escucho…", thinking: "Pensando…", speaking: "Hablando", kidsSub: "Tu compañero con superpoderes", adultSub: "Tu mentor de IA", placeholder: "¿Qué quieres aprender hoy?", send: "Enviar", mic: "Hablar", voiceOn: "Silenciar voz", voiceOff: "Activar voz", close: "Cerrar chat", open: (n: string) => `Hablar con ${n}`, drawing: (n: string) => `${n} está preparando una idea…`, greet: (n: string) => `¡Hola ${n}! ¿Jugamos a aprender algo?`, hello: (n: string, c: string) => `¡Hola ${n}! Soy ${c}. Pregúntame lo que sea — te respondo con animaciones, quizzes y retos ✨`, helloAdult: (n: string, c: string) => `Hola ${n}, soy ${c}. Pregúntame cualquier tema y te lo explico con ejemplos y ejercicios.` },
+  en: { idle: "Ready to learn with you", listening: "Listening…", thinking: "Thinking…", speaking: "Speaking", kidsSub: "Your superpowered buddy", adultSub: "Your AI mentor", placeholder: "What do you want to learn today?", send: "Send", mic: "Talk", voiceOn: "Mute voice", voiceOff: "Turn voice on", close: "Close chat", open: (n: string) => `Talk to ${n}`, drawing: (n: string) => `${n} is preparing an idea…`, greet: (n: string) => `Hi ${n}! Want to learn something fun?`, hello: (n: string, c: string) => `Hi ${n}! I'm ${c}. Ask me anything — I answer with animations, quizzes and challenges ✨`, helloAdult: (n: string, c: string) => `Hi ${n}, I'm ${c}. Ask me about any topic and I'll explain it with examples and exercises.` },
+} as const;
+
 export function IgnoFloating() {
   const profile = useProfile();
+  const loc = useLocation();
+  const t = useT(STATUS);
+  const speakFn = useServerFn(ignoSpeak);
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [entries, setEntries] = useState<ChatEntry[]>([]);
   const [sending, setSending] = useState(false);
+  const [reaction, setReaction] = useState<CompanionReaction | null>(null);
+  const [peek, setPeek] = useState<string | null>(null);
+  const [lastInteraction, setLastInteraction] = useState(() => Date.now());
+  const [now, setNow] = useState(() => Date.now());
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const threadId = useMemo(() => makeId("thread"), []);
+
+  const companionId = profile?.companion ?? "igno";
+  const spec = CHARACTERS[companionId];
+  const audience = uiModeFor(profile);
+  const voiceOn = profile?.voiceEnabled ?? true;
+
+  const fetchAudio = useCallback(
+    async (text: string) => {
+      const r = await speakFn({ data: { text, voice: spec.voice, audience, language: profile?.language ?? "es" } });
+      return "audio" in r ? r : null;
+    },
+    [speakFn, spec.voice, audience, profile?.language],
+  );
+  const voice = useCompanionVoice(fetchAudio, profile?.language ?? "es");
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [entries, sending, open]);
 
-  if (!profile) return null;
+  // Temporary reactions coming from quizzes, lessons, etc.
+  useEffect(
+    () =>
+      onCompanionReaction((r) => {
+        setReaction(r);
+        setLastInteraction(Date.now());
+        if (r.say) setPeek(r.say);
+        setTimeout(() => {
+          setReaction((cur) => (cur === r ? null : cur));
+          setPeek((cur) => (cur === r.say ? null : cur));
+        }, r.ms ?? 2200);
+      }),
+    [],
+  );
 
-  const sendMessage = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const text = input.trim();
-    if (!text || sending) return;
+  // Greets once per session, then dozes off when ignored for a while.
+  useEffect(() => {
+    if (!profile || typeof window === "undefined" || sessionStorage.getItem("ignoto.greeted")) return;
+    const id = setTimeout(() => {
+      sessionStorage.setItem("ignoto.greeted", "1");
+      reactCompanion({ state: "happy", say: t.greet(profile.childName), ms: 4500 });
+    }, 1800);
+    return () => clearTimeout(id);
+  }, [profile, t]);
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 15_000);
+    return () => clearInterval(id);
+  }, []);
+
+  const speech = useSpeechInput(profile?.language ?? "es", (text) => void send(text));
+
+  if (!profile || loc.pathname.startsWith("/admin") || loc.pathname.startsWith("/auth")) return null;
+
+  const state: CompanionState = speech.listening
+    ? "listening"
+    : sending
+      ? "thinking"
+      : voice.speaking
+        ? "speaking"
+        : reaction
+          ? reaction.state
+          : input.trim()
+            ? "listening"
+            : !open && now - lastInteraction > 90_000
+              ? "sleepy"
+              : "idle";
+
+  async function send(raw: string) {
+    const p = profile;
+    const text = raw.trim();
+    if (!text || sending || !p) return;
+    voice.stop();
+    setLastInteraction(Date.now());
 
     const userEntry: ChatEntry = { id: makeId("user"), role: "user", text };
     const pendingEntry: ChatEntry = { id: makeId("pending"), role: "assistant", pending: true };
     setInput("");
     setSending(true);
     setEntries((current) => [...current, userEntry, pendingEntry]);
+    void logActivity("chat", { chars: text.length });
 
     try {
       const recent = entries
@@ -190,17 +269,22 @@ export function IgnoFloating() {
               frontend: { actions: VISUAL_ACTIONS },
               context: [
                 {
-                  description: "Perfil del niño que está usando IGNO",
+                  description: audience === "adult" ? "Perfil del adulto que está aprendiendo" : "Perfil del niño que está usando IGNO",
                   value: JSON.stringify({
-                    childName: profile.childName,
-                    age: profile.age,
-                    interests: profile.interests,
-                    language: profile.language,
+                    name: p.childName,
+                    age: p.age,
+                    audience,
+                    interests: p.interests,
+                    language: p.language,
                   }),
                 },
                 {
+                  description: "Personaje",
+                  value: `Te llamas ${spec.name} (${spec.tagline.es}). Habla en primera persona con esa personalidad.`,
+                },
+                {
                   description: "Reglas visuales de IGNO",
-                  value: `Cada respuesta debe crear contenido muy dinámico: una animación SVG, quiz, reto o pasos directamente relacionados con la pregunta. Conecta el tema con estos gustos del niño: ${profile.interests.join(", ") || "intereses generales"}. Evita visuales genéricos.`,
+                  value: `Cada respuesta debe crear contenido muy dinámico: una animación SVG, quiz, reto o pasos directamente relacionados con la pregunta. Conecta el tema con estos gustos: ${p.interests.join(", ") || "intereses generales"}. Evita visuales genéricos.`,
                 },
               ],
             },
@@ -208,7 +292,7 @@ export function IgnoFloating() {
         }),
       });
 
-      if (!response.ok) throw new Error("IGNO no pudo responder ahora.");
+      if (!response.ok) throw new Error(`${spec.name} no pudo responder ahora.`);
       const payload = (await response.json()) as {
         data?: { generateCopilotResponse?: { messages?: RuntimeMessage[] } };
         errors?: Array<{ message?: string }>;
@@ -224,71 +308,128 @@ export function IgnoFloating() {
       setEntries((current) =>
         current.filter((entry) => entry.id !== pendingEntry.id).concat(assistantEntries),
       );
+      const said = assistantEntries.map((e) => e.text).filter(Boolean).join(" ");
+      if (voiceOn && said) void voice.speak(said);
+      else reactCompanion({ state: "happy", ms: 1200 });
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "IGNO se quedó pensando. Inténtalo otra vez.";
+        error instanceof Error ? error.message : `${spec.name} se quedó pensando. Inténtalo otra vez.`;
+      reactCompanion({ state: "sad", ms: 1800 });
       setEntries((current) =>
         current
           .filter((entry) => entry.id !== pendingEntry.id)
           .concat({
             id: makeId("error"),
             role: "assistant",
-            text: `🦉 ${message}`,
+            text: message,
           }),
       );
     } finally {
       setSending(false);
     }
+  }
+
+  const onSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    void send(input);
   };
+
+  const status =
+    state === "listening" ? t.listening : state === "thinking" ? t.thinking : state === "speaking" ? t.speaking : t.idle;
 
   return (
     <>
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="fixed bottom-5 right-5 z-50 rounded-full bg-card border-4 border-primary shadow-soft p-2 hover:scale-110 transition-transform"
-        aria-label="Hablar con IGNO"
-      >
-        <KawaiiBlob size={48} shape="blob" color="var(--primary)" mood="happy" />
-      </button>
+      {!open && (
+        <div className="fixed bottom-4 right-4 z-50 flex items-end gap-2">
+          {peek && (
+            <div className="mb-14 max-w-[220px] rounded-2xl rounded-br-sm bg-card border-2 border-primary/30 px-3 py-2 text-sm font-semibold shadow-soft animate-pop-in">
+              {peek}
+            </div>
+          )}
+          <button
+            onClick={() => {
+              setOpen(true);
+              setPeek(null);
+              setLastInteraction(Date.now());
+            }}
+            className="companion-launcher rounded-full p-1 transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-4 ring-primary/40"
+            aria-label={t.open(spec.name)}
+          >
+            <Companion id={companionId} size={92} state={state} interactive={false} />
+          </button>
+        </div>
+      )}
       {open && (
-        <div className="fixed bottom-28 right-5 z-50 w-[min(420px,calc(100vw-2rem))] h-[min(620px,calc(100vh-10rem))] bg-card rounded-3xl shadow-soft border-2 border-primary/20 overflow-hidden animate-pop-in flex flex-col">
-          <div className="bg-primary p-3 text-primary-foreground flex items-center gap-3 flex-shrink-0">
-            <div className="bg-primary-foreground/15 rounded-full p-1">
-              <KawaiiBlob size={32} shape="blob" color="var(--primary-foreground)" mood="wink" />
+        <div className="fixed bottom-4 right-4 z-50 w-[min(430px,calc(100vw-2rem))] h-[min(680px,calc(100vh-6rem))] bg-card rounded-3xl shadow-soft border-2 border-primary/20 overflow-hidden animate-pop-in flex flex-col">
+          <div className="companion-stage relative flex items-center gap-3 px-4 pt-3 pb-2 flex-shrink-0">
+            <Companion id={companionId} size={104} state={state} getLevel={voice.getLevel} label={spec.name} />
+            <div className="flex-1 min-w-0">
+              <h3 className="font-display text-xl font-bold leading-tight">{spec.name}</h3>
+              <p className="text-xs text-muted-foreground">{audience === "adult" ? t.adultSub : t.kidsSub}</p>
+              <p className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-card/80 px-2 py-0.5 text-[11px] font-bold">
+                <span className={`h-2 w-2 rounded-full ${state === "idle" ? "bg-mint" : "bg-primary animate-pulse"}`} />
+                {status}
+              </p>
             </div>
-            <div className="flex-1">
-              <h3 className="font-display font-bold leading-tight">IGNO</h3>
-              <p className="text-xs opacity-90">Tu tutor con superpoderes</p>
+            <div className="flex flex-col gap-1 self-start">
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="h-9 w-9 rounded-full bg-card/80 text-xl leading-none hover:bg-card"
+                aria-label={t.close}
+              >
+                ×
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (voiceOn) voice.stop();
+                  updateProfile({ voiceEnabled: !voiceOn });
+                }}
+                className="h-9 w-9 rounded-full bg-card/80 hover:bg-card"
+                aria-label={voiceOn ? t.voiceOn : t.voiceOff}
+                aria-pressed={voiceOn}
+              >
+                {voiceOn ? <Volume2 className="mx-auto h-4 w-4" /> : <VolumeX className="mx-auto h-4 w-4" />}
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="text-2xl leading-none opacity-80 hover:opacity-100"
-              aria-label="Cerrar chat"
-            >
-              ×
-            </button>
           </div>
 
           <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-muted/30">
             {entries.length === 0 && (
-              <div className="rounded-2xl bg-card border border-border p-3 text-sm leading-relaxed">
-                ¡Hola {profile.childName}! Pregúntame lo que sea — te respondo con animaciones,
-                quizzes y retos ✨
+              <div className="rounded-2xl bg-card border border-border p-3 text-sm leading-relaxed animate-pop-in">
+                {audience === "adult" ? t.helloAdult(profile.childName, spec.name) : t.hello(profile.childName, spec.name)}
               </div>
             )}
             {entries.map((entry) => (
-              <ChatBubble key={entry.id} entry={entry} />
+              <ChatBubble key={entry.id} entry={entry} pendingText={t.drawing(spec.name)} />
             ))}
+            {speech.listening && speech.interim && (
+              <div className="flex justify-end">
+                <div className="max-w-[86%] rounded-2xl px-3 py-2 text-sm bg-primary/60 text-primary-foreground italic">{speech.interim}</div>
+              </div>
+            )}
             <div ref={bottomRef} />
           </div>
 
-          <form onSubmit={sendMessage} className="flex gap-2 border-t border-border bg-card p-3">
+          <form onSubmit={onSubmit} className="flex gap-2 border-t border-border bg-card p-3">
+            {speech.supported && (
+              <button
+                type="button"
+                onClick={() => (speech.listening ? speech.stop() : (voice.stop(), speech.start()))}
+                disabled={sending}
+                className={`grid h-10 w-10 flex-shrink-0 place-items-center rounded-2xl transition-colors ${speech.listening ? "bg-coral text-coral-foreground animate-pulse" : "bg-muted hover:bg-secondary"}`}
+                aria-label={t.mic}
+                aria-pressed={speech.listening}
+              >
+                <Mic className="h-4 w-4" />
+              </button>
+            )}
             <input
               value={input}
               onChange={(event) => setInput(event.target.value)}
               className="min-w-0 flex-1 rounded-2xl bg-muted px-3 py-2 text-sm outline-none focus:ring-2 ring-primary"
-              placeholder="¿Qué quieres aprender hoy?"
+              placeholder={t.placeholder}
               disabled={sending}
             />
             <button
@@ -296,7 +437,7 @@ export function IgnoFloating() {
               disabled={sending || !input.trim()}
               className="rounded-2xl bg-primary text-primary-foreground px-4 py-2 text-sm font-bold disabled:opacity-50"
             >
-              {sending ? "…" : "Enviar"}
+              {sending ? "…" : t.send}
             </button>
           </form>
         </div>
@@ -305,11 +446,11 @@ export function IgnoFloating() {
   );
 }
 
-function ChatBubble({ entry }: { entry: ChatEntry }) {
+function ChatBubble({ entry, pendingText }: { entry: ChatEntry; pendingText: string }) {
   if (entry.pending) {
     return (
       <div className="max-w-[86%] rounded-2xl bg-card border border-border px-3 py-2 text-sm animate-pulse">
-        IGNO está dibujando una idea…
+        {pendingText}
       </div>
     );
   }
@@ -409,7 +550,15 @@ function QuizCard({
           else if (isPicked) cls += "border-destructive bg-destructive/10 text-destructive";
           else cls += "border-border bg-muted opacity-60";
           return (
-            <button key={i} disabled={picked !== null} onClick={() => setPicked(i)} className={cls}>
+            <button
+              key={i}
+              disabled={picked !== null}
+              onClick={() => {
+                setPicked(i);
+                reactCompanion(i === answerIndex ? { state: "celebrate", say: "¡Bien hecho! 🎉" } : { state: "sad", say: "¡Casi! Intentemos otra 💪" });
+              }}
+              className={cls}
+            >
               {showState && (isCorrect ? "✅ " : isPicked ? "❌ " : "")}
               {opt}
             </button>
@@ -448,6 +597,7 @@ function TryItCard({
         onSubmit={(e) => {
           e.preventDefault();
           setSubmitted(true);
+          reactCompanion(norm(val) === norm(answer) ? { state: "celebrate", say: "¡Correcto! 🎉" } : { state: "surprised", say: "¡Uy! Mira la respuesta 👀" });
         }}
         className="flex gap-1.5"
       >

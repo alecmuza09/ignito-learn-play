@@ -14,7 +14,10 @@ import { Route as PerfilRouteImport } from './routes/perfil'
 import { Route as PadresRouteImport } from './routes/padres'
 import { Route as MapaRouteImport } from './routes/mapa'
 import { Route as LogrosRouteImport } from './routes/logros'
+import { Route as FamiliaRouteImport } from './routes/familia'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LeccionIdRouteImport } from './routes/leccion.$id'
 import { Route as ApiCopilotkitRouteImport } from './routes/api/copilotkit'
@@ -44,9 +47,24 @@ const LogrosRoute = LogrosRouteImport.update({
   path: '/logros',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FamiliaRoute = FamiliaRouteImport.update({
+  id: '/familia',
+  path: '/familia',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -67,7 +85,10 @@ const ApiCopilotkitRoute = ApiCopilotkitRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRoute
+  '/familia': typeof FamiliaRoute
   '/logros': typeof LogrosRoute
   '/mapa': typeof MapaRoute
   '/padres': typeof PadresRoute
@@ -78,7 +99,10 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRoute
+  '/familia': typeof FamiliaRoute
   '/logros': typeof LogrosRoute
   '/mapa': typeof MapaRoute
   '/padres': typeof PadresRoute
@@ -90,7 +114,10 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRoute
+  '/familia': typeof FamiliaRoute
   '/logros': typeof LogrosRoute
   '/mapa': typeof MapaRoute
   '/padres': typeof PadresRoute
@@ -103,7 +130,10 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
+    | '/auth'
     | '/dashboard'
+    | '/familia'
     | '/logros'
     | '/mapa'
     | '/padres'
@@ -114,7 +144,10 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/admin'
+    | '/auth'
     | '/dashboard'
+    | '/familia'
     | '/logros'
     | '/mapa'
     | '/padres'
@@ -125,7 +158,10 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/admin'
+    | '/auth'
     | '/dashboard'
+    | '/familia'
     | '/logros'
     | '/mapa'
     | '/padres'
@@ -137,7 +173,10 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRoute
+  AuthRoute: typeof AuthRoute
   DashboardRoute: typeof DashboardRoute
+  FamiliaRoute: typeof FamiliaRoute
   LogrosRoute: typeof LogrosRoute
   MapaRoute: typeof MapaRoute
   PadresRoute: typeof PadresRoute
@@ -184,11 +223,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LogrosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/familia': {
+      id: '/familia'
+      path: '/familia'
+      fullPath: '/familia'
+      preLoaderRoute: typeof FamiliaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dashboard': {
       id: '/dashboard'
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -217,7 +277,10 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRoute,
+  AuthRoute: AuthRoute,
   DashboardRoute: DashboardRoute,
+  FamiliaRoute: FamiliaRoute,
   LogrosRoute: LogrosRoute,
   MapaRoute: MapaRoute,
   PadresRoute: PadresRoute,

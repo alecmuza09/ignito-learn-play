@@ -1,6 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useRequireLearner } from "@/lib/use-guard";
 import { useState, type KeyboardEvent } from "react";
-import { AVATARS, clearProfile, updateProfile, useProfile, SUBJECTS, interestsForAge, type Subject, type Difficulty } from "@/lib/profile";
+import { AVATARS, deleteLearner, updateProfile, SUBJECTS, interestsForAge, type Subject, type Difficulty } from "@/lib/profile";
+import { Companion } from "@/components/companion/Companion";
+import { CHARACTER_LIST } from "@/components/companion/characters";
 import { useT } from "@/lib/i18n";
 
 const T = {
@@ -20,8 +23,11 @@ const T = {
     subjects: "📚 Materias para seguir aprendiendo",
     subjectsSub: "Activa o ajusta dificultad cuando quieras.",
     difficulty: "Dificultad:",
-    reset: "Reiniciar perfil",
-    confirmReset: "¿Borrar tu perfil y empezar de nuevo?",
+    reset: "Borrar este perfil",
+    confirmReset: "¿Borrar este perfil y todo su progreso? Esto no se puede deshacer.",
+    companion: "Tu compañero",
+    voice: "Voz del compañero",
+    voiceSub: "Tu compañero lee sus respuestas en voz alta.",
   },
   en: {
     loading: "Loading…",
@@ -39,8 +45,11 @@ const T = {
     subjects: "📚 Subjects to keep learning",
     subjectsSub: "Toggle or adjust difficulty anytime.",
     difficulty: "Difficulty:",
-    reset: "Reset profile",
-    confirmReset: "Delete your profile and start over?",
+    reset: "Delete this profile",
+    confirmReset: "Delete this profile and all its progress? This can't be undone.",
+    companion: "Your companion",
+    voice: "Companion voice",
+    voiceSub: "Your companion reads its answers out loud.",
   },
 } as const;
 
@@ -50,7 +59,7 @@ export const Route = createFileRoute("/perfil")({
 });
 
 function Perfil() {
-  const profile = useProfile();
+  const profile = useRequireLearner();
   const nav = useNavigate();
   const t = useT(T);
   const [newInterest, setNewInterest] = useState("");
@@ -88,7 +97,8 @@ function Perfil() {
 
       <section className="rounded-3xl bg-card border border-border p-5 shadow-soft">
         <div className="flex items-center gap-4">
-          <div className="text-6xl">{profile.avatar}</div>
+          <Companion id={profile.companion} size={96} state="happy" />
+          <div className="text-4xl">{profile.avatar}</div>
           <div>
             <div className="font-display text-xl font-bold">{profile.childName}</div>
             <div className="text-sm text-muted-foreground">{profile.age} {t.years}</div>
@@ -103,6 +113,27 @@ function Perfil() {
             ))}
           </div>
         </div>
+      </section>
+
+      <section className="rounded-3xl bg-card border border-border p-5 shadow-soft">
+        <h2 className="font-display text-xl font-bold mb-3">{t.companion}</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {CHARACTER_LIST.map((c) => (
+            <button key={c.id} onClick={() => updateProfile({ companion: c.id })}
+              className={`rounded-2xl p-2 border-2 transition-all ${profile.companion === c.id ? "border-primary bg-primary/10" : "border-border hover:bg-muted"}`}>
+              <div className="flex justify-center"><Companion id={c.id} size={80} state={profile.companion === c.id ? "happy" : "idle"} interactive={false} /></div>
+              <div className="text-sm font-bold">{c.name}</div>
+            </button>
+          ))}
+        </div>
+        <label className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-muted px-4 py-3 cursor-pointer">
+          <span>
+            <span className="block font-bold text-sm">{t.voice}</span>
+            <span className="block text-xs text-muted-foreground">{t.voiceSub}</span>
+          </span>
+          <input type="checkbox" className="h-5 w-5 accent-primary" checked={profile.voiceEnabled}
+            onChange={(e) => updateProfile({ voiceEnabled: e.target.checked })} />
+        </label>
       </section>
 
       <section className="rounded-3xl bg-card border border-border p-5 shadow-soft">
@@ -178,7 +209,7 @@ function Perfil() {
         </div>
       </section>
 
-      <button onClick={() => { if (confirm(t.confirmReset)) { clearProfile(); nav({ to: "/" }); } }}
+      <button onClick={async () => { if (profile.id && confirm(t.confirmReset)) { await deleteLearner(profile.id); nav({ to: "/familia" }); } }}
         className="w-full rounded-full bg-destructive text-destructive-foreground py-3 font-bold">
         {t.reset}
       </button>

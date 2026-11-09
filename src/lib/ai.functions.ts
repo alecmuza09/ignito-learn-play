@@ -1,25 +1,21 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { blockZ, ensureIds, type GenBlock, type MiniQuizBlock, type StyleSpec } from "./gen-blocks";
+import { IMAGE_MODELS, TEXT_MODELS, geminiGenerate } from "./gemini-models";
 
 const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const MODEL = "google/gemini-3-flash-preview";
 const IMAGE_MODEL = "google/gemini-3.1-flash-image-preview"; // Nano Banana 2
 const IMAGE_MODEL_FALLBACK = "google/gemini-3-pro-image-preview";
 
-const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
-const GEMINI_TEXT_MODEL = "gemini-2.5-flash";
-const GEMINI_IMAGE_MODEL = "gemini-2.5-flash-image-preview";
 
 /** Call Google Gemini directly using the user-supplied GEMINI_API_KEY.
  *  Used for both text (JSON) and image generation, bypassing the Lovable gateway. */
 async function callGemini(
-  model: string,
+  models: string[],
   contents: unknown,
   opts: { json?: boolean; image?: boolean; timeoutMs?: number; system?: string } = {},
 ): Promise<{ text: string; images: string[] }> {
-  const key = process.env.GEMINI_API_KEY;
-  if (!key) throw new Error("Falta GEMINI_API_KEY");
   const body: Record<string, unknown> = { contents };
   if (opts.system) body.systemInstruction = { role: "system", parts: [{ text: opts.system }] };
   const generationConfig: Record<string, unknown> = {};
@@ -27,19 +23,10 @@ async function callGemini(
   if (opts.image) generationConfig.responseModalities = ["IMAGE", "TEXT"];
   if (Object.keys(generationConfig).length) body.generationConfig = generationConfig;
 
-  const controller = opts.timeoutMs ? new AbortController() : undefined;
-  const t = opts.timeoutMs ? setTimeout(() => controller?.abort(), opts.timeoutMs) : undefined;
-  const res = await fetch(`${GEMINI_BASE}/${model}:generateContent?key=${key}`, {
-    method: "POST",
-    signal: controller?.signal,
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  }).finally(() => { if (t) clearTimeout(t); });
-  if (!res.ok) {
-    const txt = await res.text();
-    throw new Error(`Gemini ${res.status}: ${txt.slice(0, 240)}`);
-  }
-  const data = await res.json();
+  const signal = opts.timeoutMs ? AbortSignal.timeout(opts.timeoutMs) : undefined;
+  const data = (await geminiGenerate(models, body, { signal })) as {
+    candidates?: Array<{ content?: { parts?: Array<{ text?: string; inlineData?: { data?: string; mimeType?: string; mime_type?: string }; inline_data?: { data?: string; mimeType?: string; mime_type?: string } }> } }>;
+  };
   const parts = data?.candidates?.[0]?.content?.parts ?? [];
   let text = "";
   const images: string[] = [];
@@ -66,7 +53,7 @@ async function callAI(
       role: m.role === "assistant" ? "model" : "user",
       parts: [{ text: m.content }],
     }));
-    return await callGemini(GEMINI_TEXT_MODEL, contents, { json: jsonMode, system: sysParts || undefined, timeoutMs });
+    return await callGemini(TEXT_MODELS, contents, { json: jsonMode, system: sysParts || undefined, timeoutMs });
   }
   const key = process.env.LOVABLE_API_KEY;
   if (!key) throw new Error("Falta GEMINI_API_KEY o LOVABLE_API_KEY");
@@ -143,7 +130,10 @@ const lessonInput = z.object({
   difficulty: z.number().min(1).max(4),
   language: z.string(),
   style: z.object({ format: z.string().optional(), focus: z.string().optional(), mode: z.string().optional() }).optional(),
+  audience: z.enum(["kids", "adult"]).default("kids"),
 });
+
+const ADULT_OVERRIDE = `\n\nIMPORTANT OVERRIDE: the learner is an ADULT. Ignore any instruction to sound childish. Be an expert mentor: precise, respectful, practical, with real-world applications and professional examples. Use their interests as context, not as cartoon metaphors. imagePrompts must be clean modern editorial illustrations (not children's-book style). Keep the same JSON shape.`;
 
 export interface LessonShape {
   title: string;
@@ -169,7 +159,7 @@ export const generateLesson = createServerFn({ method: "POST" })
       : format === "jugar"? "Lean heavily on tryIt and miniQuiz blocks scattered through the lesson."
       : "Mix block types freely.";
 
-    const sys = `You are IGNO, a playful, expert tutor on IGNOTO. Always reply in ${lang}, with energy and warmth. Use the child's interests as the metaphor backbone of every explanation. NEVER sound like a textbook — sound like a video-game cutscene. Emojis sparingly but joyfully. You output a Generative UI block tree the frontend renders.`;
+    const sys = `You are IGNO, a playful, expert tutor on IGNOTO. Always reply in ${lang}, with energy and warmth. Use the child's interests as the metaphor backbone of every explanation. NEVER sound like a textbook — sound like a video-game cutscene. Emojis sparingly but joyfully. You output a Generative UI block tree the frontend renders.${data.audience === "adult" ? ADULT_OVERRIDE : ""}`;
     const prompt = `Compose ONE adaptive lesson as STRICT JSON (no markdown fences). The body is a list of typed UI blocks the frontend will render. Choose a composition that fits the topic and the child's preferred format. Vary it from a default template.
 
 Shape:
@@ -372,7 +362,7 @@ export const generateHeroImage = createServerFn({ method: "POST" })
     if (process.env.GEMINI_API_KEY) {
       try {
         const { images } = await callGemini(
-          GEMINI_IMAGE_MODEL,
+          IMAGE_MODELS,
           [{ role: "user", parts: [{ text: fullPrompt }] }],
           { image: true, timeoutMs: 25000 },
         );

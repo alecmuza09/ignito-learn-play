@@ -11,6 +11,9 @@ import appCss from "../styles.css?url";
 import { AppHeader } from "@/components/AppHeader";
 import { IgnoFloating } from "@/components/Igno";
 import { LanguageProvider } from "@/lib/i18n";
+import { AuthProvider } from "@/lib/auth";
+import { uiModeFor, useProfile } from "@/lib/profile";
+import { useEffect } from "react";
 
 function NotFound() {
   return (
@@ -94,7 +97,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap",
       },
     ],
   }),
@@ -106,7 +109,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es">
+    <html lang="es" data-mode="kids">
       <head>
         <HeadContent />
       </head>
@@ -122,11 +125,43 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   return (
     <QueryClientProvider client={queryClient}>
-      <LanguageProvider>
-        <AppHeader />
-        <Outlet />
-        <IgnoFloating />
-      </LanguageProvider>
+      <AuthProvider>
+        <LanguageProvider>
+          <UiModeSync />
+          <KidsBackdrop />
+          <AppHeader />
+          <Outlet />
+          <IgnoFloating />
+        </LanguageProvider>
+      </AuthProvider>
     </QueryClientProvider>
+  );
+}
+
+/** Kids get the playful theme; adult learners get a calmer, denser one. */
+function UiModeSync() {
+  const profile = useProfile();
+  const mode = uiModeFor(profile);
+  useEffect(() => {
+    document.documentElement.dataset.mode = mode;
+  }, [mode]);
+  return null;
+}
+
+const BLOBS = [
+  { top: "8%", left: "4%", size: 180, color: "var(--primary)", delay: "0s" },
+  { top: "60%", left: "2%", size: 120, color: "var(--mint)", delay: "-4s" },
+  { top: "20%", left: "82%", size: 150, color: "var(--accent)", delay: "-8s" },
+  { top: "75%", left: "78%", size: 200, color: "var(--coral)", delay: "-12s" },
+  { top: "42%", left: "45%", size: 90, color: "var(--sky)", delay: "-6s" },
+];
+
+function KidsBackdrop() {
+  return (
+    <div className="kids-backdrop" aria-hidden>
+      {BLOBS.map((b, i) => (
+        <span key={i} style={{ top: b.top, left: b.left, width: b.size, height: b.size, background: b.color, animationDelay: b.delay }} />
+      ))}
+    </div>
   );
 }

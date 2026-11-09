@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { useProfile } from "@/lib/profile";
+import { useRequireLearner } from "@/lib/use-guard";
 import { buildCurriculum } from "@/lib/curriculum";
 import { SUBJECTS } from "@/lib/profile";
 import { useT } from "@/lib/i18n";
@@ -28,14 +28,9 @@ export const Route = createFileRoute("/mapa")({
 });
 
 function Mapa() {
-  const profile = useProfile();
-  const nav = useNavigate();
+  const profile = useRequireLearner();
   const t = useT(T);
   const [active, setActive] = useState<string | "todas">("todas");
-  useEffect(() => { if (profile === null && typeof window !== "undefined") {
-    const t = setTimeout(() => { if (!localStorage.getItem("ignoto.profile.v1")) nav({ to: "/registro" }); }, 250);
-    return () => clearTimeout(t);
-  }}, [profile, nav]);
   if (!profile) return <div className="min-h-[60vh] grid place-items-center text-muted-foreground">{t.loading}</div>;
 
   const lessons = buildCurriculum(profile);

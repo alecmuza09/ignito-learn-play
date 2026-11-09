@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { blockZ, type GenBlock } from "@/lib/gen-blocks";
+import { FAST_MODELS, geminiGenerate, geminiKey } from "@/lib/gemini-models";
 
 const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const MODEL = "google/gemini-3-flash-preview";
@@ -43,8 +44,6 @@ export interface AgentLayoutAction {
 export const decideReaction = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => reactionInput.parse(d))
   .handler(async ({ data }): Promise<{ reaction: AgentReactionPayload; layout: AgentLayoutAction }> => {
-    const key = process.env.LOVABLE_API_KEY;
-    if (!key) throw new Error("Falta LOVABLE_API_KEY");
     const lang = data.language === "en" ? "English" : "Spanish";
 
     const sys = `You are the IGNOTO UI Agent in charge of GENERATIVE UI. You react to in-app events for ${data.childName} (age ${data.age}) by 1) emitting a quick reaction overlay AND 2) optionally INJECTING a new UI block into the live lesson. Always respond in ${lang}. Keep it short. Use the child's interests as the emotional language: ${data.interests.join(", ") || "general kid"}. Active visual theme: ${data.themeId}.`;
@@ -76,26 +75,38 @@ When to set insertBlock:
 Allowed insert block types: "callout" | "mascotSays" | "celebrate".
 Use ONLY the fields shown above. The frontend renders it immediately and tags it as "🤖 IA en vivo".`;
 
-    const res = await fetch(GATEWAY_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-      body: JSON.stringify({
-        model: MODEL,
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: sys },
-          { role: "user", content: prompt },
-        ],
-      }),
-    });
-    if (!res.ok) {
-      const txt = await res.text();
-      if (res.status === 429) throw new Error("Demasiadas solicitudes.");
-      if (res.status === 402) throw new Error("Sin créditos de IA.");
-      throw new Error(`AI error ${res.status}: ${txt.slice(0, 200)}`);
+    let raw = "";
+    if (geminiKey()) {
+      const out = (await geminiGenerate(FAST_MODELS, {
+        systemInstruction: { role: "system", parts: [{ text: sys }] },
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        generationConfig: { responseMimeType: "application/json" },
+      })) as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
+      raw = out.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
+    } else {
+      const key = process.env.LOVABLE_API_KEY;
+      if (!key) throw new Error("Falta GEMINI_API_KEY o LOVABLE_API_KEY");
+      const res = await fetch(GATEWAY_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+        body: JSON.stringify({
+          model: MODEL,
+          response_format: { type: "json_object" },
+          messages: [
+            { role: "system", content: sys },
+            { role: "user", content: prompt },
+          ],
+        }),
+      });
+      if (!res.ok) {
+        const txt = await res.text();
+        if (res.status === 429) throw new Error("Demasiadas solicitudes.");
+        if (res.status === 402) throw new Error("Sin créditos de IA.");
+        throw new Error(`AI error ${res.status}: ${txt.slice(0, 200)}`);
+      }
+      const data2 = await res.json();
+      raw = data2.choices?.[0]?.message?.content ?? "";
     }
-    const data2 = await res.json();
-    const raw: string = data2.choices?.[0]?.message?.content ?? "";
     let outer: { reaction?: AgentReactionPayload; insertBlock?: unknown };
     try { outer = JSON.parse(raw); }
     catch {

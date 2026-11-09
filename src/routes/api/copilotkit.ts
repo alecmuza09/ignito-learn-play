@@ -1,11 +1,10 @@
 import "@tanstack/react-start";
 import { createFileRoute } from "@tanstack/react-router";
+import { TEXT_MODELS, geminiGenerate, geminiKey } from "@/lib/gemini-models";
 
 const COPILOTKIT_VERSION = "1.57.1";
 const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
-const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 const MODEL = "google/gemini-3-flash-preview";
-const GEMINI_MODEL = "gemini-2.5-flash";
 const SIMULATION_KINDS = [
   "photosynthesis", "waterCycle", "fractionBar", "logicPath", "solarSystem", "heart", "atom",
   "ecosystem", "foodChain", "circuit", "magnet", "gravity", "dna", "volcano", "geometry",
@@ -56,7 +55,8 @@ function asPromptMessages(data: NonNullable<CopilotRequestPayload["variables"]>[
   const fullContext = data?.frontend?.toDeprecate_fullContext;
 
   const systemParts = [
-    "Eres IGNO, un tutor educativo para niños. Responde SIEMPRE en español, con tono claro, cálido y dinámico.",
+    "Eres IGNO, un compañero de aprendizaje con IA. Responde SIEMPRE en español, con tono claro, cálido y dinámico.",
+    "Adapta el tono a la audiencia del contexto: si audience es \"kids\", habla como un amigo divertido para niños con frases cortas y emojis; si es \"adult\", sé un mentor experto, preciso y respetuoso, sin infantilizar y con ejemplos prácticos del mundo real.",
     "Devuelve ÚNICAMENTE JSON válido con esta forma: {\"toolName\":\"presentSimulation\",\"args\":{...},\"text\":\"1 a 3 frases\"}.",
     `Si usas presentSimulation, el campo args.kind debe ser uno de: ${SIMULATION_KINDS.join(", ")}. Usa generic solo si nada más encaja.`,
     "La herramienta visual debe estar directamente relacionada con el tema preguntado y con los gustos/contexto del niño. Evita animaciones genéricas.",
@@ -141,8 +141,7 @@ function fallbackSimulationArgs(data: NonNullable<CopilotRequestPayload["variabl
 }
 
 async function callModel(data: NonNullable<CopilotRequestPayload["variables"]>["data"]) {
-  const geminiKey = process.env.GEMINI_API_KEY ?? process.env.GOOGLE_API_KEY;
-  if (geminiKey) {
+  if (geminiKey()) {
     const promptMessages = asPromptMessages(data);
     const system = promptMessages.find((message) => message.role === "system")?.content ?? "";
     const contents = promptMessages
@@ -152,22 +151,11 @@ async function callModel(data: NonNullable<CopilotRequestPayload["variables"]>["
         parts: [{ text: message.content }],
       }));
 
-    const response = await fetch(`${GEMINI_BASE}/${GEMINI_MODEL}:generateContent?key=${geminiKey}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        systemInstruction: { role: "system", parts: [{ text: system }] },
-        contents: contents.length ? contents : [{ role: "user", parts: [{ text: "Saluda y propone aprender algo divertido." }] }],
-        generationConfig: { responseMimeType: "application/json" },
-      }),
-    });
-
-    if (!response.ok) {
-      const detail = await response.text();
-      throw new Error(`Error de IA ${response.status}: ${detail.slice(0, 180)}`);
-    }
-
-    const gemini = await response.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
+    const gemini = (await geminiGenerate(TEXT_MODELS, {
+      systemInstruction: { role: "system", parts: [{ text: system }] },
+      contents: contents.length ? contents : [{ role: "user", parts: [{ text: "Saluda y propone aprender algo divertido." }] }],
+      generationConfig: { responseMimeType: "application/json" },
+    })) as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
     return { choices: [{ message: { content: gemini.candidates?.[0]?.content?.parts?.map((part) => part.text ?? "").join("") ?? "" } }] };
   }
 

@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { KawaiiBlob } from "@/components/KawaiiBlob";
+import { useEffect, useState } from "react";
+import { Companion, type CompanionState } from "@/components/companion/Companion";
 import { useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/")({ component: Landing });
@@ -129,7 +130,7 @@ function Landing() {
             </h1>
             <p className="text-lg text-muted-foreground max-w-md">{t.sub}</p>
             <div className="flex flex-wrap gap-3">
-              <Link to="/registro" className="rounded-full bg-primary text-primary-foreground px-6 py-3.5 font-bold text-lg shadow-pop hover:translate-y-0.5 hover:shadow-none transition-all">
+              <Link to="/auth" className="rounded-full bg-primary text-primary-foreground px-6 py-3.5 font-bold text-lg shadow-pop hover:translate-y-0.5 hover:shadow-none transition-all">
                 {t.cta1}
               </Link>
               <a href="#por-que" className="rounded-full bg-card border-2 border-border px-6 py-3.5 font-bold text-lg hover:bg-muted transition-colors">
@@ -143,18 +144,7 @@ function Landing() {
               <span>{t.social}</span>
             </div>
           </div>
-          <div className="relative flex justify-center items-center min-h-[360px]">
-            <div className="absolute top-4 left-2 animate-float"><KawaiiBlob shape="pentagon" color="var(--sky)" size={88} mood="happy" /></div>
-            <div className="absolute top-2 right-4 animate-float" style={{ animationDelay: "0.4s" }}><KawaiiBlob shape="circle" color="var(--coral)" size={96} mood="wink" /></div>
-            <div className="absolute bottom-6 left-10 animate-float" style={{ animationDelay: "0.8s" }}><KawaiiBlob shape="triangle" color="var(--mint)" size={84} mood="sleepy" /></div>
-            <div className="absolute bottom-2 right-6 animate-float" style={{ animationDelay: "1.2s" }}><KawaiiBlob shape="square" color="var(--accent)" size={92} mood="smile" /></div>
-            <div className="relative animate-float">
-              <KawaiiBlob shape="blob" color="var(--primary)" size={200} mood="star" />
-              <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-card rounded-full px-4 py-2 shadow-pop border-2 border-border whitespace-nowrap text-sm font-bold">
-                {t.hello}
-              </div>
-            </div>
-          </div>
+          <HeroCompanions hello={t.hello} />
         </div>
       </section>
 
@@ -255,11 +245,11 @@ function Landing() {
       {/* CTA */}
       <section className="px-5 pb-20 pt-20">
         <div className="max-w-5xl mx-auto rounded-[2.5rem] bg-primary p-10 md:p-16 text-center shadow-soft text-primary-foreground relative overflow-hidden">
-          <div className="absolute top-6 left-8 animate-float"><KawaiiBlob shape="circle" color="var(--accent)" size={64} mood="happy" /></div>
-          <div className="absolute bottom-6 right-10 animate-float" style={{ animationDelay: "1s" }}><KawaiiBlob shape="drop" color="var(--coral)" size={64} mood="wink" /></div>
+          <div className="absolute top-4 left-6"><Companion id="chispa" size={80} state="happy" interactive={false} /></div>
+          <div className="absolute bottom-4 right-8"><Companion id="luna" size={80} state="idle" interactive={false} /></div>
           <h2 className="font-display text-4xl md:text-5xl font-bold mb-4">{t.ctaH}</h2>
           <p className="opacity-90 max-w-xl mx-auto mb-8">{t.ctaSub}</p>
-          <Link to="/registro" className="inline-block rounded-full bg-accent text-accent-foreground px-8 py-4 font-bold text-lg shadow-pop hover:translate-y-0.5 hover:shadow-none transition-all">
+          <Link to="/auth" className="inline-block rounded-full bg-accent text-accent-foreground px-8 py-4 font-bold text-lg shadow-pop hover:translate-y-0.5 hover:shadow-none transition-all">
             {t.ctaBtn}
           </Link>
         </div>
@@ -269,5 +259,30 @@ function Landing() {
         © {new Date().getFullYear()} IGNOTO · {t.footer}
       </footer>
     </main>
+  );
+}
+
+const HERO_SEQUENCE: CompanionState[] = ["happy", "speaking", "thinking", "celebrate", "idle", "surprised"];
+
+/** The four companions, each cycling through moods so the hero feels alive. */
+function HeroCompanions({ hello }: { hello: string }) {
+  const [i, setI] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setI((n) => n + 1), 2400);
+    return () => clearInterval(id);
+  }, []);
+  const at = (offset: number) => HERO_SEQUENCE[(i + offset) % HERO_SEQUENCE.length];
+  return (
+    <div className="relative flex justify-center items-center min-h-[380px]">
+      <div className="absolute top-0 left-0"><Companion id="chispa" size={110} state={at(2)} /></div>
+      <div className="absolute top-2 right-0"><Companion id="luna" size={110} state={at(4)} /></div>
+      <div className="absolute bottom-0 left-6"><Companion id="bolt" size={104} state={at(1)} /></div>
+      <div className="relative">
+        <Companion id="igno" size={230} state={at(0)} label="Igno" />
+        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-card rounded-full px-4 py-2 shadow-pop border-2 border-border whitespace-nowrap text-sm font-bold">
+          {hello}
+        </div>
+      </div>
+    </div>
   );
 }

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useRequireLearner } from "@/lib/use-guard";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { parentReport } from "@/lib/ai.functions";
@@ -44,7 +45,7 @@ export const Route = createFileRoute("/padres")({
 });
 
 function Padres() {
-  const profile = useProfile();
+  const profile = useRequireLearner();
   const t = useT(T);
   const ask = useServerFn(parentReport);
   const [report, setReport] = useState<string>("");

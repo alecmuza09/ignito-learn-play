@@ -24,11 +24,24 @@ const TOPICS: Record<Subject, string[]> = {
   logica: ["Acertijos clásicos", "Patrones ocultos", "Sudoku junior", "Pensamiento lateral", "Detective lógico"],
 };
 
+const ADULT_TOPICS: Record<Subject, string[]> = {
+  matematicas: ["Porcentajes en la vida real", "Interés compuesto", "Estadística para decidir mejor", "Probabilidad cotidiana", "Lectura de gráficas"],
+  lectura: ["Lectura crítica", "Escritura persuasiva", "Resumir ideas complejas", "Storytelling profesional", "Ortografía que importa"],
+  ciencias: ["Cómo funciona el cerebro", "Nutrición basada en evidencia", "Cambio climático explicado", "Vacunas y sistema inmune", "Física de lo cotidiano"],
+  historia: ["Revoluciones que cambiaron el mundo", "Historia económica", "México en el siglo XX", "La Guerra Fría", "Historia de la tecnología"],
+  geografia: ["Geopolítica actual", "Recursos y energía", "Migración global", "Ciudades del futuro", "Ecosistemas en riesgo"],
+  arte: ["Cómo mirar una pintura", "Movimientos del arte moderno", "Diseño visual básico", "Fotografía con el celular", "Arte mexicano"],
+  musica: ["Teoría musical esencial", "Historia del rock y el pop", "Cómo escuchar música clásica", "Ritmo y armonía", "Producción musical básica"],
+  ingles: ["Small talk profesional", "Emails en inglés", "Presentaciones efectivas", "Phrasal verbs útiles", "Entrevistas de trabajo"],
+  programacion: ["Qué es un algoritmo", "Automatiza con hojas de cálculo", "Python desde cero", "Cómo funciona internet", "IA generativa en tu trabajo"],
+  logica: ["Pensamiento crítico", "Falacias comunes", "Toma de decisiones", "Resolución de problemas", "Sesgos cognitivos"],
+};
+
 export function buildCurriculum(profile: IgnotoProfile): LessonNode[] {
   const nodes: LessonNode[] = [];
   for (const s of profile.subjects) {
     const meta = SUBJECTS.find((x) => x.id === s.id)!;
-    const topics = TOPICS[s.id];
+    const topics = (profile.kind === "adult" ? ADULT_TOPICS : TOPICS)[s.id];
     topics.forEach((t, i) => {
       nodes.push({
         id: `${s.id}-${i}`,

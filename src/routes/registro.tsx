@@ -1,10 +1,13 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState, type KeyboardEvent } from "react";
-import { AVATARS, LEVELS, SUBJECTS, interestsForAge, saveProfile, type Difficulty, type Subject, type LearningLevel, type IgnotoProfile } from "@/lib/profile";
-import { KawaiiBlob } from "@/components/KawaiiBlob";
+import { AVATARS, LEVELS, SUBJECTS, activateLearner, createLearner, interestsForAge, type CompanionId, type Difficulty, type Subject, type LearningLevel } from "@/lib/profile";
+import { useRequireAuth } from "@/lib/use-guard";
+import { Companion } from "@/components/companion/Companion";
+import { CHARACTER_LIST } from "@/components/companion/characters";
 
 export const Route = createFileRoute("/registro")({
-  head: () => ({ meta: [{ title: "Registro — IGNOTO" }, { name: "description", content: "Crea el perfil de aprendizaje de tu hijo en 5 pasos." }] }),
+  head: () => ({ meta: [{ title: "Nuevo perfil — IGNOTO" }, { name: "description", content: "Crea un perfil de aprendizaje en 5 pasos." }] }),
+  validateSearch: (s: Record<string, unknown>): { tipo?: "child" | "adult" } => (s.tipo === "adult" || s.tipo === "child" ? { tipo: s.tipo } : {}),
   component: Registro,
 });
 
@@ -12,13 +15,18 @@ const DIFF_FACES = ["😟", "😐", "😊", "🔥"] as const;
 
 function Registro() {
   const nav = useNavigate();
+  useRequireAuth();
+  const { tipo } = Route.useSearch();
+  const isAdult = tipo === "adult";
   const [step, setStep] = useState(1);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [data, setData] = useState({
-    role: "nino" as "nino" | "papa" | "tutor",
-    avatar: "🦊",
+    companion: (isAdult ? "bolt" : "igno") as CompanionId,
+    avatar: isAdult ? "🦉" : "🦊",
     childName: "",
-    age: 8,
-    level: "primaria-1-3" as LearningLevel,
+    age: isAdult ? 30 : 8,
+    level: (isAdult ? "adulto" : "primaria-1-3") as LearningLevel,
     language: "es" as "es" | "en" | "bi",
     interests: [] as string[],
     subjects: [] as { id: Subject; difficulty: Difficulty }[],
@@ -64,21 +72,29 @@ function Registro() {
     return true;
   }
 
-  function finish() {
-    const profile: IgnotoProfile = {
-      ownerRole: data.role, avatar: data.avatar, childName: data.childName.trim(), age: data.age,
-      level: data.level, language: data.language, interests: data.interests, subjects: data.subjects,
-      style: data.style, xp: 0, coins: 0, streak: 1, badges: ["primer-paso"], completedLessons: [],
-      createdAt: new Date().toISOString(),
-    };
-    saveProfile(profile);
-    nav({ to: "/dashboard" });
+  async function finish() {
+    setSaving(true);
+    setSaveError(null);
+    try {
+      const row = await createLearner({
+        kind: isAdult ? "adult" : "child", ownerRole: isAdult ? "tutor" : "nino",
+        avatar: data.avatar, childName: data.childName.trim(), age: data.age,
+        level: data.level, language: data.language, interests: data.interests, subjects: data.subjects,
+        style: data.style, companion: data.companion, voiceEnabled: true,
+        xp: 0, coins: 0, streak: 1, badges: ["primer-paso"], completedLessons: [],
+      });
+      await activateLearner(row);
+      nav({ to: "/dashboard" });
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : String(e));
+      setSaving(false);
+    }
   }
 
   return (
     <main className="min-h-screen px-4 py-8 max-w-2xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
-        <KawaiiBlob size={48} shape="blob" color="var(--primary)" mood="happy" />
+        <Companion id={data.companion} size={64} state={saving ? "celebrate" : step === totalSteps ? "happy" : "idle"} />
         <div className="flex-1">
           <div className="text-xs text-muted-foreground font-bold">Paso {step} de {totalSteps}</div>
           <div className="h-2 mt-1 rounded-full bg-muted overflow-hidden">
@@ -90,7 +106,7 @@ function Registro() {
       <div className="rounded-3xl bg-card border border-border p-6 md:p-8 shadow-soft animate-pop-in">
         {step === 1 && (
           <>
-            <h2 className="font-display text-3xl font-bold mb-1">¿Quién se une?</h2>
+            <h2 className="font-display text-3xl font-bold mb-1">{isAdult ? "Nuevo perfil adulto" : "¿Quién se une?"}</h2>
             <p className="text-muted-foreground mb-5">Elige tu avatar y dinos cómo te llamas.</p>
             <div className="grid grid-cols-6 gap-2 mb-6">
               {AVATARS.map((a) => (
@@ -101,12 +117,14 @@ function Registro() {
             <label className="block text-sm font-bold mb-1.5">Nombre</label>
             <input value={data.childName} onChange={(e) => setData({ ...data, childName: e.target.value })}
               placeholder="¿Cómo te llaman?" className="w-full rounded-2xl bg-muted px-4 py-3 outline-none focus:ring-2 ring-primary mb-4" />
-            <label className="block text-sm font-bold mb-2">Soy…</label>
-            <div className="grid grid-cols-3 gap-2">
-              {([{id:"nino",l:"Niño/a",e:"🧒"},{id:"papa",l:"Papá/Mamá",e:"👨‍👩‍👧"},{id:"tutor",l:"Tutor",e:"🧑‍🏫"}] as const).map((r) => (
-                <button key={r.id} onClick={() => setData({ ...data, role: r.id })}
-                  className={`rounded-2xl p-3 border-2 transition-all ${data.role === r.id ? "border-primary bg-primary/10" : "border-border hover:bg-muted"}`}>
-                  <div className="text-2xl">{r.e}</div><div className="text-xs font-bold mt-1">{r.l}</div>
+            <label className="block text-sm font-bold mb-2">Elige a tu compañero</label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {CHARACTER_LIST.map((c) => (
+                <button key={c.id} type="button" onClick={() => setData({ ...data, companion: c.id })}
+                  className={`rounded-2xl p-2 border-2 transition-all ${data.companion === c.id ? "border-primary bg-primary/10" : "border-border hover:bg-muted"}`}>
+                  <div className="flex justify-center"><Companion id={c.id} size={72} state={data.companion === c.id ? "happy" : "idle"} interactive={false} /></div>
+                  <div className="text-sm font-bold">{c.name}</div>
+                  <div className="text-[11px] text-muted-foreground leading-tight">{c.tagline.es}</div>
                 </button>
               ))}
             </div>
@@ -115,16 +133,16 @@ function Registro() {
 
         {step === 2 && (
           <>
-            <h2 className="font-display text-3xl font-bold mb-1">Sobre el alumno</h2>
+            <h2 className="font-display text-3xl font-bold mb-1">{isAdult ? "Sobre ti" : "Sobre el alumno"}</h2>
             <p className="text-muted-foreground mb-5">Cuéntanos un poco más.</p>
             <label className="block text-sm font-bold mb-2">Edad: <span className="text-primary text-lg">{data.age} años</span></label>
-            <input type="range" min={4} max={16} value={data.age} onChange={(e) => setData({ ...data, age: Number(e.target.value) })}
+            <input type="range" min={isAdult ? 16 : 4} max={isAdult ? 90 : 17} value={data.age} onChange={(e) => setData({ ...data, age: Number(e.target.value) })}
               className="w-full accent-primary mb-1" />
-            <div className="flex justify-between text-xs text-muted-foreground mb-5"><span>4</span><span>16</span></div>
+            <div className="flex justify-between text-xs text-muted-foreground mb-5"><span>{isAdult ? 16 : 4}</span><span>{isAdult ? 90 : 17}</span></div>
 
             <label className="block text-sm font-bold mb-2">Nivel escolar</label>
             <div className="grid grid-cols-2 gap-2 mb-5">
-              {LEVELS.map((l) => (
+              {LEVELS.filter((l) => (isAdult ? l.id === "adulto" || l.id === "preparatoria" : l.id !== "adulto")).map((l) => (
                 <button key={l.id} onClick={() => setData({ ...data, level: l.id })}
                   className={`rounded-2xl p-3 text-sm font-bold border-2 transition-all ${data.level === l.id ? "border-primary bg-primary text-primary-foreground" : "border-border hover:bg-muted"}`}>{l.label}</button>
               ))}
@@ -235,15 +253,16 @@ function Registro() {
         )}
       </div>
 
+      {saveError && <p className="mt-4 rounded-xl bg-destructive/10 text-destructive text-sm px-3 py-2">{saveError}</p>}
       <div className="flex gap-3 mt-5">
         {step > 1 && (
           <button onClick={back} className="rounded-full bg-card border-2 border-border px-5 py-3 font-bold hover:bg-muted">← Atrás</button>
         )}
         <button
-          disabled={!canContinue()}
+          disabled={!canContinue() || saving}
           onClick={step === totalSteps ? finish : next}
           className="flex-1 rounded-full bg-primary text-primary-foreground px-5 py-3 font-bold shadow-pop hover:translate-y-0.5 hover:shadow-none transition-all disabled:opacity-40 disabled:cursor-not-allowed">
-          {step === totalSteps ? "¡Crear mi aventura! 🚀" : "Continuar →"}
+          {saving ? "Creando…" : step === totalSteps ? (isAdult ? "Crear perfil →" : "¡Crear mi aventura! 🚀") : "Continuar →"}
         </button>
       </div>
     </main>

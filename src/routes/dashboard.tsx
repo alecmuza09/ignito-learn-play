@@ -1,10 +1,10 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
-import { useProfile } from "@/lib/profile";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useRequireLearner } from "@/lib/use-guard";
+import { Companion } from "@/components/companion/Companion";
 import { dailyMission, weeklyPlan } from "@/lib/curriculum";
 import { LevelBadge } from "@/components/AppHeader";
 import { GenThemeBanner } from "@/components/gen-ui/primitives";
-import { KawaiiBlob, KawaiiBlobCluster } from "@/components/gen-ui/KawaiiBlob";
+import { KawaiiBlob } from "@/components/gen-ui/KawaiiBlob";
 import { useT } from "@/lib/i18n";
 
 const T = {
@@ -44,13 +44,8 @@ export const Route = createFileRoute("/dashboard")({
 });
 
 function Dashboard() {
-  const profile = useProfile();
-  const nav = useNavigate();
+  const profile = useRequireLearner();
   const t = useT(T);
-  useEffect(() => { if (typeof window !== "undefined" && profile === null) {
-    const t = setTimeout(() => { if (!localStorage.getItem("ignoto.profile.v1")) nav({ to: "/registro" }); }, 250);
-    return () => clearTimeout(t);
-  }}, [profile, nav]);
   if (!profile) return <div className="min-h-[60vh] grid place-items-center text-muted-foreground">{t.loading}</div>;
 
   const mission = dailyMission(profile);
@@ -68,11 +63,11 @@ function Dashboard() {
             </h1>
             <p className="mt-3 text-muted-foreground">{t.streakA} <span className="font-bold text-foreground">{profile.streak} {t.streakB(profile.streak)}</span> {t.streakC}</p>
           </div>
-          <div className="hidden sm:block animate-float">
-            <KawaiiBlob size={140} mood="wink" />
+          <div className="hidden sm:block">
+            <Companion id={profile.companion} size={170} state="happy" />
           </div>
         </div>
-        <div className="mt-6 sm:hidden"><KawaiiBlobCluster size={56} /></div>
+        <div className="mt-4 flex justify-center sm:hidden"><Companion id={profile.companion} size={130} state="happy" /></div>
       </section>
 
       <LevelBadge />
