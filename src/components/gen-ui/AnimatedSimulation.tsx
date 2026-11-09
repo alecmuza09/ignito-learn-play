@@ -1,4 +1,6 @@
 import type { SimulationKind } from "@/lib/gen-blocks";
+import { diagramVariantFor, kindFits, matchSimulationKind } from "@/lib/simulation-match";
+import { ContentDiagram, itemsFromSteps } from "./ContentDiagram";
 
 interface AnimatedSimulationProps {
   kind?: SimulationKind;
@@ -10,30 +12,42 @@ interface AnimatedSimulationProps {
 }
 
 export function AnimatedSimulation({ kind = "generic", title, caption, steps, compact = false, hint }: AnimatedSimulationProps) {
-  const safeKind = kind === "generic"
-    ? inferSimulationKind(`${title ?? ""} ${caption ?? ""} ${hint ?? ""} ${(steps ?? []).join(" ")}`)
-    : kind;
+  const text = `${title ?? ""} ${caption ?? ""} ${hint ?? ""} ${(steps ?? []).join(" ")}`;
+  const items = itemsFromSteps(steps ?? []);
+  // A prebuilt scene only when it really depicts this topic; otherwise draw the content itself.
+  if (!kindFits(kind, text)) {
+    if (!items.length) {
+      return (
+        <div className="rounded-3xl bg-card sticker px-5 py-4">
+          {title && <h3 className="font-display text-xl leading-tight">{title}</h3>}
+          {caption && <p className="text-sm text-muted-foreground mt-1 leading-relaxed">{caption}</p>}
+        </div>
+      );
+    }
+    return <ContentDiagram variant={diagramVariantFor(kind)} title={title} caption={caption} items={items} />;
+  }
   return (
-    <div className="rounded-3xl overflow-hidden bg-card border border-border shadow-soft">
+    <div className="rounded-3xl overflow-hidden bg-card sticker">
       {(title || caption) && (
-        <div className="bg-muted/50 px-4 py-3 border-b border-border">
-          {title && <h3 className="font-display text-lg leading-tight">{title}</h3>}
-          {caption && <p className="text-sm text-muted-foreground mt-0.5 leading-relaxed">{caption}</p>}
+        <div className="px-5 py-4 border-b-2 border-ink">
+          {title && <h3 className="font-display text-xl leading-tight">{title}</h3>}
+          {caption && <p className="text-sm text-muted-foreground mt-1 leading-relaxed">{caption}</p>}
         </div>
       )}
       <div className={compact ? "p-3" : "p-4"}>
-        <div className="rounded-2xl overflow-hidden">
-          <SimSvg kind={safeKind} compact={compact} />
+        <div className="rounded-2xl overflow-hidden border-2 border-ink">
+          <SimSvg kind={kind} compact={compact} />
         </div>
-        {!!steps?.length && (
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            {steps.slice(0, 4).map((step, i) => (
-              <div key={`${step}-${i}`} className="rounded-2xl bg-muted px-3 py-2 text-xs font-semibold leading-snug">
-                <span className="inline-grid place-items-center w-5 h-5 rounded-lg bg-primary text-primary-foreground mr-1.5 text-[10px]">{i + 1}</span>
-                {step}
-              </div>
+        {!!items.length && (
+          <ol className="mt-3 grid sm:grid-cols-2 gap-2">
+            {items.slice(0, 4).map((it, i) => (
+              <li key={i} className="rounded-2xl border-2 border-ink bg-background px-3 py-2 text-sm leading-snug">
+                <span className="inline-grid place-items-center w-5 h-5 rounded-md bg-primary text-primary-foreground mr-1.5 text-[11px] font-bold">{i + 1}</span>
+                <span className="font-semibold">{it.label}</span>
+                {it.detail && <span className="text-muted-foreground"> {it.detail}</span>}
+              </li>
             ))}
-          </div>
+          </ol>
         )}
       </div>
     </div>
@@ -76,59 +90,25 @@ function SimSvg({ kind, compact }: { kind: SimulationKind; compact: boolean }) {
   }
 }
 
-const KIND_KEYWORDS: { kind: SimulationKind; words: string[] }[] = [
-  { kind: "photosynthesis", words: ["fotos", "photosynth", "clorof", "chloroph", "hojas", "leaf"] },
-  { kind: "waterCycle",     words: ["ciclo del agua", "water cycle", "evapor", "lluvia", "rain", "precip", "condensa"] },
-  { kind: "weather",        words: ["clima", "tiempo atmosf", "weather", "tormenta", "storm", "nube", "cloud"] },
-  { kind: "seasons",        words: ["estacion", "season", "primavera", "verano", "otoño", "invierno", "tierra inclin"] },
-  { kind: "phaseChange",    words: ["estado", "sólido", "solido", "líquido", "liquido", "gas", "phase", "fusión", "ebullic"] },
-  { kind: "fractionBar",    words: ["fracci", "fraction", "mitad", "tercio", "cuarto", "porcent", "percent"] },
-  { kind: "multiplication", words: ["multiplica", "multiply", "tabla", "times table", "producto", "divisi", "divid"] },
-  { kind: "additionBlocks", words: ["sumar", "suma ", "addition", "restar", "resta ", "subtract", "más ", "menos "] },
-  { kind: "geometry",       words: ["geometr", "triáng", "triangle", "círcul", "circle", "cuadrad", "square", "área", "perímetr", "polígon"] },
-  { kind: "logicPath",      words: ["lógica", "logica", "logic", "ruta", "algoritm", "if then", "secuencia", "código", "programa"] },
-  { kind: "mapRoute",       words: ["mapa", "map ", "geograf", "ubicac", "coordenad", "ruta", "país", "continent"] },
-  { kind: "solarSystem",    words: ["solar", "planeta", "planet", "sol ", "sun ", "luna", "moon", "órbita", "orbit", "espacio", "space", "saturno", "júpiter"] },
-  { kind: "rocket",         words: ["cohete", "rocket", "nave", "spaceship", "lanzamient", "launch", "astronauta"] },
-  { kind: "heart",          words: ["coraz", "heart", "sangre", "blood", "circul", "vena", "vein", "arteri", "pulso", "pulse"] },
-  { kind: "respiration",    words: ["pulm", "lung", "respira", "breath", "oxígeno", "oxygen", "inhal", "exhal"] },
-  { kind: "digestion",      words: ["digest", "estómago", "estomago", "stomach", "intestin", "comida", "alimento"] },
-  { kind: "atom",           words: ["átom", "atom", "molec", "neutron", "electron", "protón", "químic", "chemistry", "elemento quím"] },
-  { kind: "dna",            words: ["adn", "dna", "gen ", "genét", "genetic", "cromos", "chromos", "hereda", "herenc"] },
-  { kind: "ecosystem",      words: ["ecosistem", "ecosystem", "selva", "bosque", "forest", "habitat", "biodivers", "naturale"] },
-  { kind: "foodChain",      words: ["cadena alim", "food chain", "depredador", "predator", "presa", "prey", "carnívor", "herbívor"] },
-  { kind: "lifeCycle",      words: ["ciclo de vida", "life cycle", "metamorf", "mariposa", "butterfly", "rana", "frog", "huevo", "larva"] },
-  { kind: "circuit",        words: ["circuit", "electric", "voltaj", "voltage", "corriente", "current", "bombilla", "bulb", "bater"] },
-  { kind: "magnet",         words: ["imán", "iman", "magnet", "polo norte", "polo sur", "campo magnét"] },
-  { kind: "gravity",        words: ["graved", "gravity", "caída", "newton", "manzana cae", "fuerza"] },
-  { kind: "pendulum",       words: ["péndulo", "pendulo", "pendulum", "oscila", "reloj", "clock", "tiempo medi"] },
-  { kind: "volcano",        words: ["volcán", "volcan", "lava", "magma", "erupci"] },
-  { kind: "alphabet",       words: ["alfabeto", "alphabet", "letras", "abc ", "vocal", "consonante", "sílab"] },
-  { kind: "timeline",       words: ["historia", "history", "línea de tiempo", "timeline", "siglo", "century", "edad media", "antiguo"] },
-  { kind: "musicNotes",     words: ["música", "music", "nota musical", "ritmo", "rhythm", "melod", "instrumento"] },
-  { kind: "wave",           words: ["onda", "wave", "sonido", "sound", "frecuencia", "vibración"] },
-];
-
+/** Prebuilt scene for a text, or "generic" when none clearly fits. */
 export function inferSimulationKind(text: string): SimulationKind {
-  const t = text.toLowerCase();
-  for (const { kind, words } of KIND_KEYWORDS) {
-    if (words.some((w) => t.includes(w))) return kind;
-  }
-  return "generic";
+  return matchSimulationKind(text) ?? "generic";
 }
 
+/** Shown when an image could not be generated: a matching scene, or just the caption. */
 export function AnimatedVisualFallback({ prompt, title, compact = false }: { prompt?: string; title?: string; compact?: boolean }) {
-  const kind = inferSimulationKind(`${title ?? ""} ${prompt ?? ""}`);
-  return <AnimatedSimulation kind={kind} title={title} caption="Visual instantáneo mientras la IA prepara más detalle." compact={compact} hint={prompt} />;
-}
-
-export function QuizMotif({ text, className = "" }: { text: string; className?: string }) {
-  const kind = inferSimulationKind(text);
+  const kind = matchSimulationKind(`${title ?? ""} ${prompt ?? ""}`);
+  if (kind) return <SimSvg kind={kind} compact={compact} />;
   return (
-    <div className={`rounded-2xl overflow-hidden ${className}`}>
-      <SimSvg kind={kind} compact />
+    <div className="grid h-full w-full place-items-center bg-secondary p-6 text-center">
+      <p className="font-display text-lg leading-snug max-w-sm">{title ?? "Imagen no disponible"}</p>
     </div>
   );
+}
+
+/** Kept for existing call sites; quizzes no longer get a decorative scene. */
+export function QuizMotif(_: { text: string; className?: string }) {
+  return null;
 }
 
 /* ============== shared utilities ============== */

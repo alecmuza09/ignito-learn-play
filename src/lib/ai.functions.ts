@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { blockZ, ensureIds, type GenBlock, type MiniQuizBlock, type StyleSpec } from "./gen-blocks";
 import { IMAGE_MODELS, TEXT_MODELS, geminiGenerate } from "./gemini-models";
+import { diagramVariantFor, kindFits } from "./simulation-match";
 
 const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const MODEL = "google/gemini-3-flash-preview";
@@ -14,13 +15,14 @@ const IMAGE_MODEL_FALLBACK = "google/gemini-3-pro-image-preview";
 async function callGemini(
   models: string[],
   contents: unknown,
-  opts: { json?: boolean; image?: boolean; timeoutMs?: number; system?: string } = {},
+  opts: { json?: boolean; image?: boolean; aspectRatio?: string; timeoutMs?: number; system?: string } = {},
 ): Promise<{ text: string; images: string[] }> {
   const body: Record<string, unknown> = { contents };
   if (opts.system) body.systemInstruction = { role: "system", parts: [{ text: opts.system }] };
   const generationConfig: Record<string, unknown> = {};
   if (opts.json) generationConfig.responseMimeType = "application/json";
   if (opts.image) generationConfig.responseModalities = ["IMAGE", "TEXT"];
+  if (opts.image && opts.aspectRatio) generationConfig.imageConfig = { aspectRatio: opts.aspectRatio };
   if (Object.keys(generationConfig).length) body.generationConfig = generationConfig;
 
   const signal = opts.timeoutMs ? AbortSignal.timeout(opts.timeoutMs) : undefined;
@@ -151,7 +153,6 @@ export const generateLesson = createServerFn({ method: "POST" })
     const focus = data.style?.focus ?? "";
     const format = data.style?.format ?? "";
     const mode = data.style?.mode ?? "";
-    const topicText = `${data.subject} ${data.topic ?? ""}`.toLowerCase();
     const targetCount = focus === "5" ? "4-5" : focus === "10" ? "5-7" : focus === "15" ? "7-9" : "8-10";
     const formatHint =
       format === "video"  ? "Lean heavily on hero/image/compare/steps blocks (very visual)."
@@ -188,7 +189,10 @@ GenBlock union (pick the best for each beat — order matters, must start with a
         { "kind": "sort",  "items": [string in CORRECT order], "explanation": string }
         { "kind": "input", "answer": string (short), "hint": string, "explanation": string } }
   { "type": "miniQuiz", "question": string, "options": [string,string,string?,string?], "answerIndex": number, "explanation": string }
-  { "type": "simulation", "kind": "photosynthesis"|"waterCycle"|"fractionBar"|"logicPath"|"solarSystem"|"heart"|"atom"|"ecosystem"|"foodChain"|"circuit"|"magnet"|"gravity"|"dna"|"volcano"|"geometry"|"multiplication"|"alphabet"|"timeline"|"musicNotes"|"lifeCycle"|"weather"|"rocket"|"wave"|"digestion"|"respiration"|"seasons"|"phaseChange"|"pendulum"|"additionBlocks"|"mapRoute"|"generic", "title": string, "caption": string, "steps": [string,string?,string?,string?] }
+  { "type": "diagram", "variant": "timeline"|"cycle"|"flow"|"compare", "title": string, "caption": string,
+      "items": [ { "label": string (max 6 words), "detail": string (max 18 words) } ] (3-6 items, for timeline/cycle/flow),
+      "columns": [ { "title": string, "points": [string] } ] (2-3 columns, only for compare) }
+  { "type": "simulation", "kind": "photosynthesis"|"waterCycle"|"fractionBar"|"solarSystem"|"heart"|"atom"|"circuit"|"magnet"|"gravity"|"dna"|"volcano"|"geometry"|"multiplication"|"weather"|"rocket"|"wave"|"digestion"|"respiration"|"phaseChange"|"pendulum"|"additionBlocks"|"musicNotes", "title": string, "caption": string, "steps": [string,string?,string?,string?] }
 
 MiniQuizBlock = the same as the miniQuiz shape above.
 
@@ -196,12 +200,13 @@ Composition rules:
 - ${formatHint}
 - Density: ${targetCount} body blocks (excluding finalQuiz).
 - Always include at least one of: compare OR steps OR tryIt — to break the monotony.
-- Prefer a "simulation" block for visible processes — pick the MOST SPECIFIC kind that matches the topic (e.g. "heart" for circulation, "solarSystem" for planets, "circuit" for electricity, "dna" for genetics, "volcano", "lifeCycle" for metamorphosis, "multiplication" for tables, "geometry" for shapes, "timeline" for history, "atom" for chemistry, "wave" for sound). Avoid "generic" unless nothing fits — every simulation in the lesson should use a DIFFERENT kind so visuals never repeat.
-- Each "simulation" MUST have a title AND caption that name the EXACT concept being shown (not generic words like "ciencia" or "aprende"). The "steps" array must describe the precise stages of THIS specific process, in order, in the child's language.
-- Across all simulation/tryIt/miniQuiz blocks try to pair each with a distinct visual kind so animations stay varied.
+- Include exactly one "diagram" built from THIS lesson's real content: "timeline" for events in order (use real dates/periods of the topic), "cycle" for processes that repeat, "flow" for cause→effect or steps, "compare" for differences. Every label must be specific to the topic — never generic words like "Inicio", "Era", "Paso 1".
+- Use a "simulation" ONLY when its prebuilt scene literally depicts the concept (e.g. "heart" for how the heart pumps blood, "volcano" for an eruption, "solarSystem" for the planets). If no kind is an exact match, do NOT add a simulation.
+- Accuracy first: every fact, date, number and definition must be correct for the level. Do not invent facts. Analogies with the child's interests must not change the facts.
+- Quizzes: answerIndex must point to the single correct option, distractors must be clearly wrong, and the explanation must justify that answer.
 - Sprinkle exactly one mascotSays somewhere mid-lesson with a warm, in-character message.
-- Every imagePrompt MUST contain BOTH (a) a concrete, specific visual of the lesson concept (the actual subject/topic, not abstract symbols) AND (b) a recognizable element from the child's favorite world (${data.interests.join(", ") || "general kid"}). Example: instead of "a colorful classroom", write "a Spider-Man swinging between planets of the solar system in a cartoon style". NO text inside images.
-- The HERO imagePrompt is the cover of the lesson — it MUST be the most striking blend of the lesson topic AND the child's favorite world, instantly readable as both.
+- Every imagePrompt (English, max 35 words) describes ONE concrete, accurate scene of the lesson concept: the exact object, place or action, what it looks like, viewpoint. No text in images. Do NOT mix in characters from the child's interests (that makes images confusing).
+- The HERO imagePrompt is the lesson cover: the clearest single image of the topic; it may include ONE small element of the child's favorite world (${data.interests.join(", ") || "none"}) as a secondary detail.
 - Use the child's interests as the visual and verbal language.
 - Difficulty ${data.difficulty}/4. Adjust vocabulary and depth.
 - styleSpec: pick ONE consistent visual identity for the whole lesson (palette + illustrationStyle + a 3-5 word vibe). Every imagePrompt should match this identity so the lesson feels like a single illustrated book.
@@ -232,12 +237,15 @@ Return ONLY the JSON.`;
       const r = blockZ.safeParse(x);
       if (r.success) safeBlocks.push(r.data);
     }
+    const checked = sanitizeBlocks(safeBlocks, `${parsed.title ?? ""} ${data.topic ?? ""} ${data.subject}`);
+    safeBlocks.length = 0;
+    safeBlocks.push(...checked);
     const rawFinal = Array.isArray(parsed.finalQuiz) ? (parsed.finalQuiz as unknown[]) : [];
     const finalQuizBlocks: MiniQuizBlock[] = [];
     for (const x of rawFinal) {
       const withType = { ...(x as object), type: "miniQuiz" } as unknown;
       const r = blockZ.safeParse(withType);
-      if (r.success && r.data.type === "miniQuiz") finalQuizBlocks.push(r.data);
+      if (r.success && r.data.type === "miniQuiz" && validQuiz(r.data.options, r.data.answerIndex)) finalQuizBlocks.push(r.data);
     }
     const lesson: LessonShape = {
       title: String(parsed.title ?? "Misión IGNO"),
@@ -247,17 +255,6 @@ Return ONLY the JSON.`;
       blocks: ensureIds(safeBlocks, "b"),
       finalQuiz: ensureIds(finalQuizBlocks, "fq") as MiniQuizBlock[],
     };
-    if (topicText.includes("fotos") && !lesson.blocks.some((b) => b.type === "simulation" && b.kind === "photosynthesis")) {
-      lesson.blocks.splice(Math.min(1, lesson.blocks.length), 0, {
-        id: "",
-        type: "simulation",
-        kind: "photosynthesis",
-        title: lang === "English" ? "Photosynthesis in action" : "Fotosíntesis en acción",
-        caption: lang === "English" ? "Light, water and air become plant food." : "La luz, el agua y el aire se transforman en alimento para la planta.",
-        steps: lang === "English" ? ["Sunlight arrives", "Roots drink water", "Leaves take CO₂", "Glucose and oxygen appear"] : ["Llega luz solar", "Las raíces toman agua", "Las hojas capturan CO₂", "Aparecen glucosa y oxígeno"],
-      });
-      lesson.blocks = ensureIds(lesson.blocks, "b");
-    }
     return { lessonId: data.lessonId, lesson };
   });
 
@@ -300,7 +297,7 @@ Responde como STRICT JSON (sin markdown fences) con esta forma:
     { "type": "tip", "text": string (un mini consejo accionable) }
   ]
 }
-Reglas: 2 a 4 bloques en total. SIEMPRE incluye 1 "text" Y SIEMPRE incluye exactamente 1 "simulation" con el "kind" más específico que aplique al tema (NUNCA uses "generic" si hay otro que encaje). El "title" y "caption" deben ser muy breves (máx 6 palabras cada uno). Si das un ejemplo concreto, usa "example". Devuelve SOLO el JSON.`;
+Reglas: 2 a 4 bloques en total. SIEMPRE incluye 1 "text" con datos correctos. Incluye "simulation" SOLO si ese kind dibuja literalmente el concepto; si no, no la incluyas. El "title" y "caption" deben ser muy breves (máx 6 palabras cada uno). Si das un ejemplo concreto, usa "example". Devuelve SOLO el JSON.`;
     const { text: raw } = await callAI([
       { role: "system", content: sys },
       { role: "user", content: user },
@@ -338,8 +335,45 @@ export const parentReport = createServerFn({ method: "POST" })
     return { report: reply };
   });
 
+/** A quiz is usable only if the answer points at one of its distinct options. */
+function validQuiz(options: string[], answerIndex: number) {
+  const norm = options.map((o) => o.trim().toLowerCase());
+  return Number.isInteger(answerIndex) && answerIndex >= 0 && answerIndex < options.length && new Set(norm).size === norm.length && norm.every(Boolean);
+}
+
+/**
+ * Drops quizzes with a broken answer key and replaces prebuilt scenes that don't
+ * depict the topic with a diagram of the model's own steps (or removes them).
+ */
+function sanitizeBlocks(blocks: GenBlock[], topic: string): GenBlock[] {
+  const out: GenBlock[] = [];
+  for (const b of blocks) {
+    if (b.type === "miniQuiz" && !validQuiz(b.options, b.answerIndex)) continue;
+    if (b.type === "tryIt" && b.payload.kind === "tap" && !validQuiz(b.payload.options, b.payload.answerIndex)) continue;
+    if (b.type === "simulation") {
+      const text = `${topic} ${b.title} ${b.caption ?? ""} ${(b.steps ?? []).join(" ")}`;
+      if (!kindFits(b.kind, text)) {
+        if (b.steps && b.steps.length >= 2) {
+          out.push({ id: b.id, type: "diagram", variant: diagramVariantFor(b.kind), title: b.title, caption: b.caption, items: b.steps.map((label) => ({ label })) });
+        }
+        continue;
+      }
+    }
+    if (b.type === "diagram" && (b.variant === "compare" ? !(b.columns && b.columns.length >= 2) : !(b.items && b.items.length >= 2))) continue;
+    out.push(b);
+  }
+  return out;
+}
+
 const imgInput = z.object({
   prompt: z.string().min(1).max(800),
+  /** What the picture must make obvious (its caption or label). */
+  focus: z.string().max(200).optional(),
+  /** Lesson title, to keep every picture on topic. */
+  topic: z.string().max(200).optional(),
+  ratio: z.enum(["16:9", "4:3", "1:1"]).default("16:9"),
+  hero: z.boolean().optional(),
+  age: z.number().optional(),
   interests: z.array(z.string()).default([]),
   styleSpec: z.object({
     palette: z.string().optional(),
@@ -348,15 +382,36 @@ const imgInput = z.object({
   }).optional(),
 });
 
+/**
+ * Image prompts that stay on the concept: one clear subject, accurate, uncluttered.
+ * The child's interest is only allowed on the cover, and only as a secondary element.
+ */
+function buildImagePrompt(data: z.infer<typeof imgInput>) {
+  const style = data.styleSpec;
+  const audience = data.age && data.age >= 16 ? "adult learners" : `children around ${data.age ?? 9} years old`;
+  const lines = [
+    `Educational illustration for ${audience}.`,
+    `Main subject: ${data.prompt.trim()}`,
+    data.focus ? `The image must make this idea obvious at a glance: "${data.focus}".` : "",
+    data.topic ? `Lesson topic: "${data.topic}". Everything shown must be accurate for this topic.` : "",
+    "Composition: ONE clear main subject, large, centered and fully visible; at most two supporting elements; simple, plain background; no crowds, no busy scenery, no decorative clutter.",
+    "Accuracy: correct shapes, proportions, colors and counts for the real-world subject; do not invent parts.",
+    data.hero && data.interests[0]
+      ? `A small, secondary nod to ${data.interests[0]} is allowed only if it does not distract from the subject.`
+      : "Do not add characters or themes unrelated to the subject.",
+    style
+      ? `Style: ${style.illustrationStyle ?? "clean flat illustration"}, palette ${style.palette ?? "bright, friendly"}.`
+      : "Style: clean flat illustration, soft shading, bright friendly palette, clear outlines.",
+    `Aspect ratio ${data.ratio}.`,
+    "Absolutely no text, letters, numbers, labels, captions, logos or watermarks.",
+  ];
+  return lines.filter(Boolean).join(" ");
+}
+
 export const generateHeroImage = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => imgInput.parse(d))
   .handler(async ({ data }): Promise<{ url: string }> => {
-    const interestsLine = data.interests.length ? ` Subtly weave in elements the child loves: ${data.interests.join(", ")}.` : "";
-    const style = data.styleSpec;
-    const styleLine = style
-      ? ` Visual identity: ${style.illustrationStyle ?? "friendly cartoon"}, palette ${style.palette ?? "bright and cheerful"}, vibe ${style.vibe ?? "playful adventure"}.`
-      : " Bold flat colors, soft shapes, cheerful lighting.";
-    const fullPrompt = `Friendly children's-book illustration. ${data.prompt}${interestsLine}${styleLine} No text, no letters, no logos, wide 16:9 composition.`;
+    const fullPrompt = buildImagePrompt(data);
 
     // Prefer direct Gemini call when the user-provided key is set (no Lovable credits required).
     if (process.env.GEMINI_API_KEY) {
@@ -364,7 +419,7 @@ export const generateHeroImage = createServerFn({ method: "POST" })
         const { images } = await callGemini(
           IMAGE_MODELS,
           [{ role: "user", parts: [{ text: fullPrompt }] }],
-          { image: true, timeoutMs: 25000 },
+          { image: true, aspectRatio: data.ratio, timeoutMs: 40000 },
         );
         if (images[0]) return { url: images[0] };
       } catch (e) {

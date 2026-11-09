@@ -10,7 +10,9 @@ import { useCompanionVoice, useSpeechInput } from "@/lib/voice";
 import { Companion, type CompanionState } from "./companion/Companion";
 import { CHARACTERS } from "./companion/characters";
 import { onCompanionReaction, reactCompanion, type CompanionReaction } from "./companion/bus";
-import { AnimatedSimulation, inferSimulationKind } from "./gen-ui/AnimatedSimulation";
+import { AnimatedSimulation } from "./gen-ui/AnimatedSimulation";
+import { ContentDiagram, type DiagramVariant } from "./gen-ui/ContentDiagram";
+import { LABELLED_KINDS } from "@/lib/simulation-match";
 import { SIMULATION_KINDS, type SimulationKind } from "@/lib/gen-blocks";
 
 export function IgnoOwl({ size = 64 }: { size?: number; animate?: boolean }) {
@@ -39,11 +41,11 @@ const VISUAL_ACTIONS = [
   {
     name: "presentSimulation",
     description:
-      "Muestra una animación SVG educativa relacionada con el tema. Elige el kind MÁS específico posible.",
+      "Animación prehecha. Úsala SOLO si la escena del kind dibuja literalmente el concepto preguntado (heart = cómo bombea el corazón, volcano = una erupción). Si no hay un kind exacto, usa presentDiagram.",
     jsonSchema: JSON.stringify({
       type: "object",
       properties: {
-        kind: { type: "string", enum: SIMULATION_KINDS },
+        kind: { type: "string", enum: SIMULATION_KINDS.filter((k) => !LABELLED_KINDS.has(k)) },
         title: { type: "string" },
         caption: { type: "string" },
         steps: { type: "array", items: { type: "string" }, minItems: 2, maxItems: 4 },
@@ -77,6 +79,32 @@ const VISUAL_ACTIONS = [
         explanation: { type: "string" },
       },
       required: ["question", "answer"],
+    }),
+  },
+  {
+    name: "presentDiagram",
+    description:
+      "Diagrama hecho con el contenido real de la respuesta: timeline (hechos en orden, con fechas o épocas reales), cycle (proceso que se repite), flow (causa y efecto o pasos), compare (diferencias entre 2 o 3 cosas). Cada etiqueta debe ser específica del tema.",
+    jsonSchema: JSON.stringify({
+      type: "object",
+      properties: {
+        variant: { type: "string", enum: ["timeline", "cycle", "flow", "compare"] },
+        title: { type: "string" },
+        caption: { type: "string" },
+        items: {
+          type: "array",
+          items: { type: "object", properties: { label: { type: "string" }, detail: { type: "string" } }, required: ["label"] },
+          minItems: 3,
+          maxItems: 6,
+        },
+        columns: {
+          type: "array",
+          items: { type: "object", properties: { title: { type: "string" }, points: { type: "array", items: { type: "string" } } }, required: ["title", "points"] },
+          minItems: 2,
+          maxItems: 3,
+        },
+      },
+      required: ["variant", "title"],
     }),
   },
   {
@@ -127,13 +155,13 @@ function isSimulationKind(kind: unknown): kind is SimulationKind {
 
 function normalizeResponseMessages(messages: RuntimeMessage[], fallbackText: string): ChatEntry[] {
   const entries = messages.flatMap<ChatEntry>((message) => {
-    if (message.__typename === "ActionExecutionMessageOutput" || message.name) {
+    if ((message.__typename === "ActionExecutionMessageOutput" || message.name) && message.name) {
       return [
         {
           id: makeId("tool"),
           role: "assistant" as const,
           tool: {
-            name: message.name ?? "presentSimulation",
+            name: message.name,
             args: parseToolArgs(message.arguments),
           },
         },
@@ -502,15 +530,44 @@ function ToolRenderer({ tool }: { tool: ToolCall }) {
     );
   }
 
-  const rawKind = args.kind;
-  const title = String(args.title ?? "Animación");
+  if (tool.name === "presentDiagram") {
+    const variant = ["timeline", "cycle", "flow", "compare"].includes(String(args.variant))
+      ? (args.variant as DiagramVariant)
+      : "flow";
+    const items = Array.isArray(args.items)
+      ? args.items.flatMap((it) => {
+          const o = it as { label?: unknown; detail?: unknown };
+          return typeof o?.label === "string" && o.label.trim()
+            ? [{ label: o.label, detail: typeof o.detail === "string" ? o.detail : undefined }]
+            : [];
+        })
+      : [];
+    const columns = Array.isArray(args.columns)
+      ? args.columns.flatMap((c) => {
+          const o = c as { title?: unknown; points?: unknown };
+          return typeof o?.title === "string" && Array.isArray(o.points)
+            ? [{ title: o.title, points: o.points.map(String) }]
+            : [];
+        })
+      : [];
+    if (variant === "compare" ? columns.length < 2 : items.length < 2) return null;
+    return (
+      <ContentDiagram
+        variant={variant}
+        title={String(args.title ?? "")}
+        caption={typeof args.caption === "string" ? args.caption : undefined}
+        items={items}
+        columns={columns}
+      />
+    );
+  }
+
+  // AnimatedSimulation shows the scene only if it fits; otherwise it draws the steps.
+  const title = String(args.title ?? "");
   const caption = typeof args.caption === "string" ? args.caption : undefined;
-  const safeKind = isSimulationKind(rawKind)
-    ? rawKind
-    : inferSimulationKind(`${title} ${caption ?? ""}`);
   return (
     <AnimatedSimulation
-      kind={safeKind}
+      kind={isSimulationKind(args.kind) ? args.kind : "generic"}
       title={title}
       caption={caption}
       steps={Array.isArray(args.steps) ? args.steps.map(String) : undefined}

@@ -5,6 +5,7 @@ import { useGenTheme } from "./primitives";
 import { KawaiiBlob } from "./KawaiiBlob";
 import { AnimatedSimulation, AnimatedVisualFallback, QuizMotif } from "./AnimatedSimulation";
 import { Megaphone } from "lucide-react";
+import { ContentDiagram } from "./ContentDiagram";
 import { stripEmoji } from "@/lib/text";
 
 /** Model output may include emoji; the UI doesn't use them, so strip every text field. */
@@ -68,6 +69,7 @@ function RenderOne({ b, imageUrls, onMiniQuizAnswer, onTryItDone }: {
     case "miniQuiz":   return <MiniQuizBlockView b={b} onAnswer={onMiniQuizAnswer} />;
     case "celebrate":  return <CelebrateBlock b={b} />;
     case "simulation": return <SimulationBlockView b={b} />;
+    case "diagram": return <ContentDiagram variant={b.variant} title={b.title} caption={b.caption} items={b.items ?? []} columns={b.columns} />;
   }
 }
 
@@ -420,13 +422,23 @@ function InputInteraction({ b, payload, onDone }: {
 }
 
 /** Collect all (id, prompt) pairs of blocks that need an AI image. */
-export function collectImageJobs(blocks: GenBlock[]): { key: string; prompt: string }[] {
-  const out: { key: string; prompt: string }[] = [];
+export interface ImageJob {
+  key: string;
+  prompt: string;
+  /** What the picture must make clear (caption, label or title shown next to it). */
+  focus?: string;
+  ratio: "16:9" | "4:3" | "1:1";
+  hero?: boolean;
+}
+
+export function collectImageJobs(blocks: GenBlock[]): ImageJob[] {
+  const out: ImageJob[] = [];
   for (const b of blocks) {
-    if (b.type === "hero" || b.type === "image") out.push({ key: b.id, prompt: b.imagePrompt });
+    if (b.type === "hero") out.push({ key: b.id, prompt: b.imagePrompt, focus: b.title, ratio: "16:9", hero: true });
+    if (b.type === "image") out.push({ key: b.id, prompt: b.imagePrompt, focus: b.caption, ratio: b.ratio ?? "16:9" });
     if (b.type === "compare") {
-      out.push({ key: b.id + ":left",  prompt: b.left.imagePrompt });
-      out.push({ key: b.id + ":right", prompt: b.right.imagePrompt });
+      out.push({ key: b.id + ":left",  prompt: b.left.imagePrompt, focus: b.left.label, ratio: "1:1" });
+      out.push({ key: b.id + ":right", prompt: b.right.imagePrompt, focus: b.right.label, ratio: "1:1" });
     }
   }
   return out;

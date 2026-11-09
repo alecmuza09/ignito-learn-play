@@ -55,9 +55,19 @@ export type SimulationBlock = BlockBase & {
   steps?: string[];
 };
 
+/** Diagram drawn from the model's own labels, so it always matches the explanation. */
+export type DiagramBlock = BlockBase & {
+  type: "diagram";
+  variant: "timeline" | "cycle" | "flow" | "compare";
+  title: string;
+  caption?: string;
+  items?: { label: string; detail?: string }[];
+  columns?: { title: string; points: string[] }[];
+};
+
 export type GenBlock =
   | HeroBlock | TextBlock | ImageBlock | CompareBlock | StepsBlock
-  | CalloutBlock | MascotSays | TryItBlock | MiniQuizBlock | CelebrateBlock | SimulationBlock;
+  | CalloutBlock | MascotSays | TryItBlock | MiniQuizBlock | CelebrateBlock | SimulationBlock | DiagramBlock;
 
 /** Visual style the AI commits to for a whole lesson — used to keep
  *  every generated image in the same look, like the "Wizard Green"
@@ -128,6 +138,12 @@ export const blockZ: z.ZodType<GenBlock> = z.lazy(() => z.discriminatedUnion("ty
       "pendulum","additionBlocks","mapRoute","generic",
     ]),
     title: z.string(), caption: z.string().optional(), steps: z.array(z.string()).min(1).max(6).optional() }),
+  z.object({ id: z.string().optional().default(""), agentInserted: z.boolean().optional(),
+    type: z.literal("diagram"),
+    variant: z.enum(["timeline", "cycle", "flow", "compare"]),
+    title: z.string(), caption: z.string().optional(),
+    items: z.array(z.object({ label: z.string().min(1), detail: z.string().optional() })).max(8).optional(),
+    columns: z.array(z.object({ title: z.string(), points: z.array(z.string()).max(6) })).max(3).optional() }),
 ])) as z.ZodType<GenBlock>;
 
 /** Assign stable ids to a block list (id-less blocks get one). */

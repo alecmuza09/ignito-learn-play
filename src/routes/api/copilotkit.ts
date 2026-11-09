@@ -5,13 +5,6 @@ import { TEXT_MODELS, geminiGenerate, geminiKey } from "@/lib/gemini-models";
 const COPILOTKIT_VERSION = "1.57.1";
 const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const MODEL = "google/gemini-3-flash-preview";
-const SIMULATION_KINDS = [
-  "photosynthesis", "waterCycle", "fractionBar", "logicPath", "solarSystem", "heart", "atom",
-  "ecosystem", "foodChain", "circuit", "magnet", "gravity", "dna", "volcano", "geometry",
-  "multiplication", "alphabet", "timeline", "musicNotes", "lifeCycle", "weather", "rocket",
-  "wave", "digestion", "respiration", "seasons", "phaseChange", "pendulum", "additionBlocks",
-  "mapRoute", "generic",
-];
 
 type CopilotMessageInput = {
   id?: string;
@@ -57,10 +50,12 @@ function asPromptMessages(data: NonNullable<CopilotRequestPayload["variables"]>[
   const systemParts = [
     "Eres IGNO, un compañero de aprendizaje con IA. Responde SIEMPRE en español, con tono claro, cálido y dinámico.",
     "Adapta el tono a la audiencia del contexto: si audience es \"kids\", habla como un amigo divertido para niños con frases cortas (nunca uses emojis); si es \"adult\", sé un mentor experto, preciso y respetuoso, sin infantilizar y con ejemplos prácticos del mundo real.",
-    "Devuelve ÚNICAMENTE JSON válido con esta forma: {\"toolName\":\"presentSimulation\",\"args\":{...},\"text\":\"1 a 3 frases\"}.",
-    `Si usas presentSimulation, el campo args.kind debe ser uno de: ${SIMULATION_KINDS.join(", ")}. Usa generic solo si nada más encaja.`,
-    "La herramienta visual debe estar directamente relacionada con el tema preguntado y con los gustos/contexto del niño. Evita animaciones genéricas.",
-    "Después de la herramienta, el campo text debe complementar la visualización con una idea clave o una pregunta corta.",
+    "Devuelve ÚNICAMENTE JSON válido con esta forma: {\"text\":\"respuesta\",\"toolName\":\"nombre o null\",\"args\":{...}}.",
+    "Primero responde bien la pregunta en text (2 a 5 frases, datos correctos y verificables, sin inventar). Si la pregunta es ambigua, di cómo la interpretas.",
+    "Añade una herramienta visual SOLO si ayuda a entender ESTA pregunta. Si no aporta, usa toolName null.",
+    "Elección de herramienta: presentDiagram para historia, fechas, procesos, pasos o comparaciones (con etiquetas específicas del tema, nunca genéricas como \"Era\" o \"Paso 1\"); presentQuiz o presentTryIt para practicar; presentStorySteps para explicar un proceso paso a paso; presentSimulation SOLO si un kind dibuja literalmente el concepto (no existe un kind para todo: si no hay uno exacto, no lo uses).",
+    "Todo lo que pongas en la herramienta (títulos, etiquetas, pasos, opciones) debe ser coherente con text y factualmente correcto. En quizzes, answerIndex apunta a la única respuesta correcta.",
+    "Los gustos del niño sirven para ejemplos y analogías, pero nunca cambian los hechos ni sustituyen el tema.",
     actions.length
       ? `Herramientas disponibles y sus parámetros JSON: ${actions.map((action) => `${action.name}: ${action.description ?? ""}\n${action.jsonSchema ?? ""}`).join("\n\n")}`
       : "",
@@ -109,37 +104,6 @@ function parseModelJson(content?: string | null) {
   }
 }
 
-function lastUserText(data: NonNullable<CopilotRequestPayload["variables"]>["data"]) {
-  return [...(data?.messages ?? [])].reverse().find((message) => message.textMessage?.role === "user")?.textMessage?.content ?? "";
-}
-
-function inferKind(text: string) {
-  const lower = text.toLowerCase();
-  if (/gravedad|caer|peso|planeta/.test(lower)) return "gravity";
-  if (/planeta|sol|luna|espacio|sistema solar/.test(lower)) return "solarSystem";
-  if (/corazón|sangre|latido/.test(lower)) return "heart";
-  if (/agua|lluvia|nube|evapor/.test(lower)) return "waterCycle";
-  if (/planta|hoja|fotosíntesis|sol/.test(lower)) return "photosynthesis";
-  if (/fracci|mitad|tercio|parte/.test(lower)) return "fractionBar";
-  if (/multiplic|tabla|veces/.test(lower)) return "multiplication";
-  if (/volcán|lava|erup/.test(lower)) return "volcano";
-  if (/electric|circuit|bater/.test(lower)) return "circuit";
-  if (/imán|magnet/.test(lower)) return "magnet";
-  if (/música|nota|sonido/.test(lower)) return "musicNotes";
-  if (/clima|viento|tormenta/.test(lower)) return "weather";
-  return "generic";
-}
-
-function fallbackSimulationArgs(data: NonNullable<CopilotRequestPayload["variables"]>["data"]) {
-  const topic = lastUserText(data) || "lo que estás aprendiendo";
-  return {
-    kind: inferKind(topic),
-    title: topic.length > 48 ? "Idea en movimiento" : topic,
-    caption: "Una animación conectada con tu pregunta para verlo paso a paso.",
-    steps: ["Observa la idea principal", "Mira cómo cambia", "Conecta el dibujo con la explicación"],
-  };
-}
-
 async function callModel(data: NonNullable<CopilotRequestPayload["variables"]>["data"]) {
   if (geminiKey()) {
     const promptMessages = asPromptMessages(data);
@@ -154,7 +118,7 @@ async function callModel(data: NonNullable<CopilotRequestPayload["variables"]>["
     const gemini = (await geminiGenerate(TEXT_MODELS, {
       systemInstruction: { role: "system", parts: [{ text: system }] },
       contents: contents.length ? contents : [{ role: "user", parts: [{ text: "Saluda y propone aprender algo divertido." }] }],
-      generationConfig: { responseMimeType: "application/json" },
+      generationConfig: { responseMimeType: "application/json", temperature: 0.4 },
     })) as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
     return { choices: [{ message: { content: gemini.candidates?.[0]?.content?.parts?.map((part) => part.text ?? "").join("") ?? "" } }] };
   }
@@ -165,7 +129,7 @@ async function callModel(data: NonNullable<CopilotRequestPayload["variables"]>["
   const body = {
     model: MODEL,
     messages: asPromptMessages(data),
-    temperature: 0.8,
+    temperature: 0.4,
     response_format: { type: "json_object" },
   };
 
@@ -205,9 +169,10 @@ async function handleGenerate(payload: CopilotRequestPayload) {
   const assistantId = makeId("assistant");
   const outputMessages: unknown[] = [];
 
-  const toolName = parsed?.toolName ?? "presentSimulation";
-  const toolArgs = parsed?.args ?? fallbackSimulationArgs(data);
-  if (toolName) {
+  const allowed = new Set((data?.frontend?.actions ?? []).map((a) => a.name));
+  const toolName = typeof parsed?.toolName === "string" && allowed.has(parsed.toolName) ? parsed.toolName : null;
+  const toolArgs = parsed?.args;
+  if (toolName && toolArgs && typeof toolArgs === "object") {
     outputMessages.push({
       __typename: "ActionExecutionMessageOutput",
       id: makeId("tool"),
@@ -219,7 +184,7 @@ async function handleGenerate(payload: CopilotRequestPayload) {
     });
   }
 
-  const content = parsed?.text?.trim() || "¡Mira esta idea en movimiento! ¿Qué parte quieres explorar ahora?";
+  const content = parsed?.text?.trim() || (parsed ? "" : message.content?.trim()) || "No pude armar una buena respuesta. ¿Me lo preguntas de otra forma?";
   outputMessages.push({
     __typename: "TextMessageOutput",
     id: assistantId,
