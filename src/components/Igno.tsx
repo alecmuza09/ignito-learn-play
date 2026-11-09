@@ -150,8 +150,8 @@ function normalizeResponseMessages(messages: RuntimeMessage[], fallbackText: str
 }
 
 const STATUS = {
-  es: { idle: "Listo para aprender contigo", listening: "Te escucho…", thinking: "Pensando…", speaking: "Hablando", kidsSub: "Tu compañero con superpoderes", adultSub: "Tu mentor de IA", placeholder: "¿Qué quieres aprender hoy?", send: "Enviar", mic: "Hablar", voiceOn: "Silenciar voz", voiceOff: "Activar voz", close: "Cerrar chat", open: (n: string) => `Hablar con ${n}`, drawing: (n: string) => `${n} está preparando una idea…`, greet: (n: string) => `¡Hola ${n}! ¿Jugamos a aprender algo?`, hello: (n: string, c: string) => `¡Hola ${n}! Soy ${c}. Pregúntame lo que sea — te respondo con animaciones, quizzes y retos ✨`, helloAdult: (n: string, c: string) => `Hola ${n}, soy ${c}. Pregúntame cualquier tema y te lo explico con ejemplos y ejercicios.` },
-  en: { idle: "Ready to learn with you", listening: "Listening…", thinking: "Thinking…", speaking: "Speaking", kidsSub: "Your superpowered buddy", adultSub: "Your AI mentor", placeholder: "What do you want to learn today?", send: "Send", mic: "Talk", voiceOn: "Mute voice", voiceOff: "Turn voice on", close: "Close chat", open: (n: string) => `Talk to ${n}`, drawing: (n: string) => `${n} is preparing an idea…`, greet: (n: string) => `Hi ${n}! Want to learn something fun?`, hello: (n: string, c: string) => `Hi ${n}! I'm ${c}. Ask me anything — I answer with animations, quizzes and challenges ✨`, helloAdult: (n: string, c: string) => `Hi ${n}, I'm ${c}. Ask me about any topic and I'll explain it with examples and exercises.` },
+  es: { idle: "Listo para aprender contigo", listening: "Te escucho…", thinking: "Pensando…", speaking: "Hablando", kidsSub: "Tu compañero de aprendizaje", adultSub: "Tu mentor de IA", placeholder: "¿Qué quieres aprender hoy?", send: "Enviar", mic: "Hablar", voiceOn: "Silenciar voz", voiceOff: "Activar voz", close: "Cerrar chat", open: (n: string) => `Hablar con ${n}`, drawing: (n: string) => `${n} está preparando una idea…`, greet: (n: string) => `Hola, ${n}. ¿Aprendemos algo hoy?`, hello: (n: string, c: string) => `¡Hola ${n}! Soy ${c}. Pregúntame lo que sea — te respondo con animaciones, quizzes y retos.`, helloAdult: (n: string, c: string) => `Hola ${n}, soy ${c}. Pregúntame cualquier tema y te lo explico con ejemplos y ejercicios.` },
+  en: { idle: "Ready to learn with you", listening: "Listening…", thinking: "Thinking…", speaking: "Speaking", kidsSub: "Your learning buddy", adultSub: "Your AI mentor", placeholder: "What do you want to learn today?", send: "Send", mic: "Talk", voiceOn: "Mute voice", voiceOff: "Turn voice on", close: "Close chat", open: (n: string) => `Talk to ${n}`, drawing: (n: string) => `${n} is preparing an idea…`, greet: (n: string) => `Hi ${n}! Want to learn something fun?`, hello: (n: string, c: string) => `Hi ${n}! I'm ${c}. Ask me anything — I answer with animations, quizzes and challenges.`, helloAdult: (n: string, c: string) => `Hi ${n}, I'm ${c}. Ask me about any topic and I'll explain it with examples and exercises.` },
 } as const;
 
 export function IgnoFloating() {
@@ -342,7 +342,7 @@ export function IgnoFloating() {
       {!open && (
         <div className="fixed bottom-4 right-4 z-50 flex items-end gap-2">
           {peek && (
-            <div className="mb-14 max-w-[220px] rounded-2xl rounded-br-sm bg-card border-2 border-primary/30 px-3 py-2 text-sm font-semibold shadow-soft animate-pop-in">
+            <div className="mb-10 max-w-[220px] rounded-2xl rounded-br-sm bg-card border-2 border-primary/30 px-3 py-2 text-sm font-semibold shadow-soft animate-pop-in">
               {peek}
             </div>
           )}
@@ -355,14 +355,14 @@ export function IgnoFloating() {
             className="companion-launcher rounded-full p-1 transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-4 ring-primary/40"
             aria-label={t.open(spec.name)}
           >
-            <Companion id={companionId} size={92} state={state} interactive={false} />
+            <Companion id={companionId} size={68} state={state} interactive={false} />
           </button>
         </div>
       )}
       {open && (
         <div className="fixed bottom-4 right-4 z-50 w-[min(430px,calc(100vw-2rem))] h-[min(680px,calc(100vh-6rem))] bg-card rounded-3xl shadow-soft border-2 border-primary/20 overflow-hidden animate-pop-in flex flex-col">
           <div className="companion-stage relative flex items-center gap-3 px-4 pt-3 pb-2 flex-shrink-0">
-            <Companion id={companionId} size={104} state={state} getLevel={voice.getLevel} label={spec.name} />
+            <Companion id={companionId} size={76} state={state} getLevel={voice.getLevel} label={spec.name} />
             <div className="flex-1 min-w-0">
               <h3 className="font-display text-xl font-bold leading-tight">{spec.name}</h3>
               <p className="text-xs text-muted-foreground">{audience === "adult" ? t.adultSub : t.kidsSub}</p>
@@ -555,7 +555,7 @@ function QuizCard({
               disabled={picked !== null}
               onClick={() => {
                 setPicked(i);
-                reactCompanion(i === answerIndex ? { state: "celebrate", say: "¡Bien hecho! 🎉" } : { state: "sad", say: "¡Casi! Intentemos otra 💪" });
+                reactCompanion(i === answerIndex ? { state: "celebrate", say: "¡Bien hecho!" } : { state: "sad", say: "Casi. Mira la explicación." });
               }}
               className={cls}
             >
@@ -597,7 +597,7 @@ function TryItCard({
         onSubmit={(e) => {
           e.preventDefault();
           setSubmitted(true);
-          reactCompanion(norm(val) === norm(answer) ? { state: "celebrate", say: "¡Correcto! 🎉" } : { state: "surprised", say: "¡Uy! Mira la respuesta 👀" });
+          reactCompanion(norm(val) === norm(answer) ? { state: "celebrate", say: "¡Correcto!" } : { state: "surprised", say: "Casi. Revisa la respuesta." });
         }}
         className="flex gap-1.5"
       >

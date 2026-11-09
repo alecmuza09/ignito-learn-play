@@ -4,14 +4,14 @@ import { useProfile, levelTitle } from "@/lib/profile";
 import { useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/logros")({
-  head: () => ({ meta: [{ title: "Logros — IGNOTO" }] }),
+  head: () => ({ meta: [{ title: "Logros · IGNOTO" }] }),
   component: Logros,
 });
 
 const T = {
   es: {
     loading: "Cargando…",
-    h1: "🏆 Logros",
+    h1: "Logros",
     levelLabel: "Nivel actual:",
     unlocked: "Desbloqueado",
     badges: [
@@ -27,7 +27,7 @@ const T = {
   },
   en: {
     loading: "Loading…",
-    h1: "🏆 Achievements",
+    h1: "Achievements",
     levelLabel: "Current level:",
     unlocked: "Unlocked",
     badges: [
@@ -61,7 +61,7 @@ function Logros() {
           const got = earned.has(b.id);
           return (
             <div key={b.id} className={`rounded-3xl p-4 text-center border-2 transition-all ${got ? "bg-card border-accent shadow-soft" : "bg-muted/50 border-border opacity-60"}`}>
-              <div className={`text-5xl ${got ? "animate-bounce-slow" : "grayscale"}`}>{b.emoji}</div>
+              <div className={`text-5xl ${got ? "" : "grayscale opacity-50"}`}>{b.emoji}</div>
               <div className="font-display font-bold mt-2">{b.name}</div>
               <div className="text-xs text-muted-foreground mt-0.5">{b.desc}</div>
               {got && <div className="mt-2 text-[10px] uppercase font-bold text-mint">{t.unlocked}</div>}

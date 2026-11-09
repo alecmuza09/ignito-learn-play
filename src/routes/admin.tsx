@@ -16,7 +16,7 @@ type RoleRow = Database["public"]["Tables"]["user_roles"]["Row"];
 type ActivityRow = Database["public"]["Tables"]["activity_log"]["Row"];
 
 export const Route = createFileRoute("/admin")({
-  head: () => ({ meta: [{ title: "Administración — IGNOTO" }] }),
+  head: () => ({ meta: [{ title: "Administración · IGNOTO" }] }),
   component: Admin,
 });
 

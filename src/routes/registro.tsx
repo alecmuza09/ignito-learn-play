@@ -6,7 +6,7 @@ import { Companion } from "@/components/companion/Companion";
 import { CHARACTER_LIST } from "@/components/companion/characters";
 
 export const Route = createFileRoute("/registro")({
-  head: () => ({ meta: [{ title: "Nuevo perfil — IGNOTO" }, { name: "description", content: "Crea un perfil de aprendizaje en 5 pasos." }] }),
+  head: () => ({ meta: [{ title: "Nuevo perfil · IGNOTO" }, { name: "description", content: "Crea un perfil de aprendizaje en 5 pasos." }] }),
   validateSearch: (s: Record<string, unknown>): { tipo?: "child" | "adult" } => (s.tipo === "adult" || s.tipo === "child" ? { tipo: s.tipo } : {}),
   component: Registro,
 });

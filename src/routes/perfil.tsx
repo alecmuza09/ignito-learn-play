@@ -9,18 +9,18 @@ import { useT } from "@/lib/i18n";
 const T = {
   es: {
     loading: "Cargando…",
-    h1: "👤 Tu perfil",
+    h1: "Perfil",
     years: "años",
     changeAvatar: "Cambia tu avatar",
     stats: "Estadísticas",
     xp: "XP",
     coins: "Monedas",
     streak: "Racha",
-    passions: "✨ Lo que me apasiona",
+    passions: "Lo que me gusta",
     passionsSub: "Esto guía las historias e imágenes de cada lección.",
     placeholder: "Spiderman, Roblox, dinosaurios…",
     remove: (c: string) => `Quitar ${c}`,
-    subjects: "📚 Materias para seguir aprendiendo",
+    subjects: "Materias",
     subjectsSub: "Activa o ajusta dificultad cuando quieras.",
     difficulty: "Dificultad:",
     reset: "Borrar este perfil",
@@ -31,18 +31,18 @@ const T = {
   },
   en: {
     loading: "Loading…",
-    h1: "👤 Your profile",
+    h1: "Profile",
     years: "years old",
     changeAvatar: "Change your avatar",
     stats: "Stats",
     xp: "XP",
     coins: "Coins",
     streak: "Streak",
-    passions: "✨ What I love",
+    passions: "What I love",
     passionsSub: "This guides the stories and images of each lesson.",
     placeholder: "Spiderman, Roblox, dinosaurs…",
     remove: (c: string) => `Remove ${c}`,
-    subjects: "📚 Subjects to keep learning",
+    subjects: "Subjects",
     subjectsSub: "Toggle or adjust difficulty anytime.",
     difficulty: "Difficulty:",
     reset: "Delete this profile",
@@ -54,7 +54,7 @@ const T = {
 } as const;
 
 export const Route = createFileRoute("/perfil")({
-  head: () => ({ meta: [{ title: "Perfil — IGNOTO" }] }),
+  head: () => ({ meta: [{ title: "Perfil · IGNOTO" }] }),
   component: Perfil,
 });
 

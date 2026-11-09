@@ -11,28 +11,28 @@ import { useT } from "@/lib/i18n";
 const T = {
   es: {
     loading: "Cargando…",
-    h1: "👨‍👩‍👧 Vista para padres",
+    h1: "Reporte de progreso",
     follow: (n: string) => `Sigue el progreso de ${n}.`,
     lessons: "Lecciones",
     xp: "XP total",
     streak: "Racha",
     bySubject: "Progreso por materia",
     difficulty: "dificultad",
-    weekly: "📝 Reporte semanal",
+    weekly: "Resumen semanal con IA",
     generate: "Generar con IA",
     generating: "Generando…",
     placeholder: "IGNO escribirá un resumen personalizado del progreso.",
   },
   en: {
     loading: "Loading…",
-    h1: "👨‍👩‍👧 Parent view",
+    h1: "Progress report",
     follow: (n: string) => `Follow ${n}'s progress.`,
     lessons: "Lessons",
     xp: "Total XP",
     streak: "Streak",
     bySubject: "Progress by subject",
     difficulty: "difficulty",
-    weekly: "📝 Weekly report",
+    weekly: "AI weekly summary",
     generate: "Generate with AI",
     generating: "Generating…",
     placeholder: "IGNO will write a personalized summary of progress.",
@@ -40,7 +40,7 @@ const T = {
 } as const;
 
 export const Route = createFileRoute("/padres")({
-  head: () => ({ meta: [{ title: "Padres y tutores — IGNOTO" }] }),
+  head: () => ({ meta: [{ title: "Reporte de progreso · IGNOTO" }] }),
   component: Padres,
 });
 

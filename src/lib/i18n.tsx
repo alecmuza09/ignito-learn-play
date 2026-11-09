@@ -36,7 +36,7 @@ export function LanguageToggle({ className = "" }: { className?: string }) {
   const { lang, setLang } = useLang();
   return (
     <div
-      className={`inline-flex rounded-full border-2 border-border bg-card p-1 shadow-soft ${className}`}
+      className={`inline-flex rounded-full border border-border bg-card p-0.5 ${className}`}
       role="group"
       aria-label="Language"
     >
@@ -44,8 +44,8 @@ export function LanguageToggle({ className = "" }: { className?: string }) {
         <button
           key={l}
           onClick={() => setLang(l)}
-          className={`px-3 py-1 text-xs font-bold rounded-full transition-colors ${
-            lang === l ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
+          className={`px-2.5 py-1 text-xs font-semibold rounded-full transition-colors ${
+            lang === l ? "bg-secondary text-foreground" : "text-muted-foreground hover:bg-muted"
           }`}
           aria-pressed={lang === l}
         >

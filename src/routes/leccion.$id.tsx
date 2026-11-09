@@ -14,7 +14,7 @@ import type { GenBlock, MiniQuizBlock, TryItBlock, StyleSpec } from "@/lib/gen-b
 import { newId } from "@/lib/gen-blocks";
 
 export const Route = createFileRoute("/leccion/$id")({
-  head: () => ({ meta: [{ title: "Lección — IGNOTO" }] }),
+  head: () => ({ meta: [{ title: "Lección · IGNOTO" }] }),
   component: Lesson,
 });
 
@@ -126,7 +126,7 @@ function Lesson() {
       const newCorrect = correct + 1;
       const newRun = streakRun + 1;
       setCorrect(newCorrect); setStreakRun(newRun);
-      reactCompanion({ state: newRun >= 3 ? "celebrate" : "happy", say: newRun >= 3 ? `¡${newRun} seguidas! 🔥` : undefined, ms: 1600 });
+      reactCompanion({ state: newRun >= 3 ? "celebrate" : "happy", say: newRun >= 3 ? `¡${newRun} seguidas!` : undefined, ms: 1600 });
       emit(newRun >= 3 ? "streak" : "correct", {
         correctSoFar: newCorrect, wrongSoFar: wrong,
         questionIndex: qIdx, questionTotal: finalQuiz.length,
@@ -134,7 +134,7 @@ function Lesson() {
     } else {
       const newWrong = wrong + 1;
       setWrong(newWrong); setStreakRun(0);
-      reactCompanion({ state: "sad", say: "¡Tú puedes! Lee la explicación 💡", ms: 2000 });
+      reactCompanion({ state: "sad", say: "Tú puedes. Lee la explicación.", ms: 2000 });
       emit("wrong", {
         correctSoFar: correct, wrongSoFar: newWrong,
         questionIndex: qIdx, questionTotal: finalQuiz.length,
@@ -148,7 +148,7 @@ function Lesson() {
       const xp = 20 + correct * 4 + (picked === q.answerIndex ? 4 : 0);
       awardXP(xp); markLessonDone(id);
       setStage("done");
-      reactCompanion({ state: "celebrate", say: `¡Lección completa! +${xp} XP 🎉`, ms: 3500 });
+      reactCompanion({ state: "celebrate", say: `Lección completa · +${xp} XP`, ms: 3500 });
       emit("complete", { correctSoFar: correct, wrongSoFar: wrong, questionIndex: qIdx + 1, questionTotal: finalQuiz.length });
     } else { setQIdx((i) => i + 1); setPicked(null); }
   }
@@ -214,7 +214,7 @@ function Lesson() {
 
       {stage === "done" && (
         <div className="text-center py-10 animate-pop-in">
-          <div className="text-7xl animate-bounce-slow">🎉</div>
+          <div className="flex justify-center"><KawaiiBlob size={120} mood="wink" /></div>
           <h2 className="font-display text-3xl font-bold mt-4">{celebration}</h2>
           <p className="mt-2 text-muted-foreground">Acertaste {correct} de {finalQuiz.length}</p>
           <div className="mt-5 inline-flex gap-3">
@@ -239,7 +239,7 @@ function Loader({ text }: { text: string }) {
   return (
     <main className="min-h-[70vh] grid place-items-center text-center px-4 relative overflow-hidden">
       <div>
-        <div className="animate-bounce-slow"><KawaiiBlob size={140} mood="wow" /></div>
+        <div className="flex justify-center"><KawaiiBlob size={120} mood="wow" /></div>
         <p className="mt-5 font-display text-2xl font-bold tracking-tight">{text}</p>
         <p className="text-sm text-muted-foreground mt-1">Mezclando tu mundo de <span className="font-bold text-foreground">{theme.label}</span> con la IA…</p>
       </div>

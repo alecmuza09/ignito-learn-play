@@ -201,7 +201,7 @@ function MascotSaysBlock({ b }: { b: Extract<GenBlock,{type:"mascotSays"}> }) {
   const mood = (b.mood ?? "happy") as "happy"|"wink"|"wow"|"calm";
   return (
     <div className="flex items-end gap-3">
-      <div className="animate-float shrink-0"><KawaiiBlob size={64} mood={mood} /></div>
+      <div className="shrink-0"><KawaiiBlob size={56} mood={mood} /></div>
       <div className={`relative ${t.bg} ${t.text} rounded-2xl rounded-bl-sm px-4 py-3 font-semibold shadow-pop`}>
         {b.text}
       </div>

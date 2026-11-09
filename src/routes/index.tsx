@@ -1,288 +1,534 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { Companion, type CompanionState } from "@/components/companion/Companion";
+import type { ReactNode } from "react";
+import { ArrowRight, Check, Gauge, MessageCircle, Sparkles, Trophy } from "lucide-react";
+import { Companion } from "@/components/companion/Companion";
+import { CHARACTER_LIST } from "@/components/companion/characters";
 import { useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/")({ component: Landing });
 
 const T = {
   es: {
-    badge: "⚡ Aprendizaje a la medida",
-    h1a: "Cada niño aprende",
-    h1b: "distinto",
-    h1c: ". Por fin una app que lo entiende.",
-    sub: "IGNOTO genera cada lección desde cero usando lo que tu hijo sabe, cómo aprende y lo que le apasiona. Si le gustan los dinosaurios, las fracciones se explican con dinosaurios. Si va más rápido, la dificultad sube. Si se atasca, IGNO lo acompaña con otra explicación.",
-    cta1: "Empezar la aventura →",
-    cta2: "¿Por qué importa?",
-    social: "+1,000 niños ya están aprendiendo así",
-    hello: "¡Hola! Soy IGNO",
-    problemTag: "El problema",
-    problemH: "El colegio enseña a 30 niños igual. Pero ningún niño aprende igual.",
-    problemSub: "Mismas explicaciones, mismos ejemplos, mismo ritmo. Al que va rápido le aburre. Al que va lento le abruma. Y a casi nadie le hablan en su propio lenguaje.",
-    problems: [
-      { i: "😴", t: "Se desconectan", d: "Cuando el contenido no conecta con lo que les importa, el cerebro lo descarta." },
-      { i: "📉", t: "Pierden confianza", d: "Quedarse atrás en grupo enseña más sobre comparación que sobre el tema." },
-      { i: "🔁", t: "Olvidan rápido", d: "Memorizar sin contexto = información que se evapora en una semana." },
+    eyebrow: "Tutor con IA para toda la familia",
+    h1a: "Aprende a tu manera,",
+    h1b: "al ritmo de cada quien.",
+    sub: "IGNOTO crea cada lección en el momento a partir de lo que te gusta y de tu nivel. Para niños desde 4 años y para adultos que quieren seguir aprendiendo.",
+    cta: "Crear cuenta",
+    ctaAlt: "Cómo funciona",
+    facts: [
+      "Lecciones nuevas en segundos",
+      "Niños y adultos en una cuenta",
+      "Progreso visible para la familia",
     ],
-    solTag: "La solución",
-    solH: "Una clase distinta para cada niño, cada día.",
-    solSub: "IGNOTO no es un curso pregrabado. Es un tutor con IA que arma la lección en el momento, usando el contexto único de tu hijo.",
+    hello: "Hola, soy Igno",
+    whyTag: "Por qué",
+    whyH: "Nadie aprende igual. Las clases casi siempre sí.",
+    whySub:
+      "Mismo ejemplo, mismo ritmo y mismo tono para todos. Así es fácil perder el interés, quedarse atrás o aburrirse.",
+    why: [
+      {
+        t: "Se pierde el interés",
+        d: "Si el ejemplo no tiene nada que ver contigo, la idea no se queda.",
+      },
+      {
+        t: "Se pierde la confianza",
+        d: "Ir más lento que el grupo enseña comparación, no el tema.",
+      },
+      {
+        t: "Se olvida rápido",
+        d: "Memorizar sin contexto dura una semana. Entender dura mucho más.",
+      },
+    ],
+    featTag: "Qué hace IGNOTO",
+    featH: "Un tutor que se adapta a ti, no al revés.",
     features: [
-      { c: "primary", i: "🎯", t: "Aprende con lo que ama", d: "¿Le gustan los planetas, K-pop o el fútbol? Ese mundo se vuelve el escenario donde se enseñan matemáticas, lectura o ciencias. La motivación deja de ser un problema." },
-      { c: "coral", i: "📊", t: "Se ajusta a su nivel real", d: "Cada respuesta ajusta la siguiente lección. Si dominó algo, sube. Si dudó, IGNO repite con otra analogía. Sin grupos rígidos ni etiquetas." },
-      { c: "accent", i: "🦉", t: "Un tutor que escucha", d: "IGNO responde dudas en lenguaje de niño, con ejemplos visuales y animaciones generadas. Pueden preguntar lo que quieran, sin pena." },
-      { c: "mint", i: "🎮", t: "Aprender no se siente como tarea", d: "XP, racha, mapa épico, recompensas. La estructura de un videojuego sostiene la atención donde un PDF la pierde." },
+      {
+        t: "Parte de lo que te gusta",
+        d: "Dinosaurios, fútbol o finanzas personales: tu interés se vuelve el ejemplo con el que se explica cada tema.",
+      },
+      {
+        t: "Ajusta la dificultad sola",
+        d: "Cada respuesta afina la siguiente lección. Si algo cuesta, cambia la explicación; si es fácil, sube el reto.",
+      },
+      {
+        t: "Responde con voz",
+        d: "Pregunta escribiendo o hablando. Tu compañero contesta en voz alta, con animaciones, quizzes y retos.",
+      },
+      {
+        t: "Motiva sin presionar",
+        d: "Puntos, rachas y un mapa de avance personal. Sin rankings públicos ni comparaciones.",
+      },
     ],
-    persoH: "El mismo tema, contado para cada niño",
-    persoSub1: "Así se ve enseñar ",
-    persoSub2: " en IGNOTO según los intereses del niño:",
-    persoTopic: "fracciones",
-    cards: [
-      { e: "🦖", n: "Para Mateo, 7", g: "Ama dinosaurios", q: "Si un T-Rex se come ¾ de un brontosaurio, ¿cuánto queda para mañana?" },
-      { e: "⚽", n: "Para Sofía, 8", g: "Vive el fútbol", q: "El equipo metió 2 goles de los 5 tiros. ¿Qué fracción acertaron?" },
-      { e: "🎨", n: "Para Lía, 6", g: "Pinta todo el día", q: "Si tu paleta tiene 8 colores y usas 3, ¿qué fracción te falta probar?" },
+    demoTag: "Personalización",
+    demoH: "El mismo tema, explicado para cada persona.",
+    demoSub: "Así cambia una explicación de fracciones según quién aprende:",
+    demo: [
+      {
+        who: "Mateo, 7 años",
+        like: "Le encantan los dinosaurios",
+        q: "Un T-Rex se comió ¾ de su comida. ¿Qué parte le queda para mañana?",
+      },
+      {
+        who: "Sofía, 10 años",
+        like: "Juega fútbol",
+        q: "Tu equipo anotó 2 de 5 tiros a gol. ¿Qué fracción de los tiros fue gol?",
+      },
+      {
+        who: "Ana, 34 años",
+        like: "Quiere ordenar sus finanzas",
+        q: "Destinas ⅓ de tu ingreso a la renta y ¼ al ahorro. ¿Qué fracción te queda para lo demás?",
+      },
     ],
-    howH: "Cómo funciona",
+    modesTag: "Dos experiencias",
+    modesH: "Pensado para niños. Útil para adultos.",
+    kidsT: "Para niños",
+    kidsD:
+      "Colores, compañeros con personalidad, retos cortos y explicaciones con su mundo favorito.",
+    kids: [
+      "Desde preescolar hasta preparatoria",
+      "Lecciones de 5 a 30 minutos",
+      "Compañero que reacciona a sus respuestas",
+    ],
+    adultsT: "Para adultos",
+    adultsD: "Interfaz sobria, ejemplos de la vida real y un tono de mentor, no de caricatura.",
+    adults: [
+      "Finanzas, idiomas, IA, historia y más",
+      "Explicaciones precisas y prácticas",
+      "Ideal para aprender junto a tus hijos",
+    ],
+    howTag: "Cómo funciona",
+    howH: "Empieza en menos de dos minutos.",
     steps: [
-      { n: 1, t: "Cuéntanos quién es", d: "Edad, nivel, idioma, intereses y materias favoritas. Esa información es la base de todo." },
-      { n: 2, t: "IGNOTO arma su mundo", d: "Genera un plan único, un mapa de lecciones y un tutor IGNO con la voz adecuada para su edad." },
-      { n: 3, t: "Aprende y se ajusta solo", d: "Cada respuesta enseña a IGNOTO cómo piensa tu hijo. La siguiente lección llega más afinada." },
+      { t: "Crea tu cuenta familiar", d: "Una sola cuenta para todos los que aprenden en casa." },
+      {
+        t: "Agrega perfiles",
+        d: "Edad, intereses y materias de cada niño o adulto. Cada quien elige su compañero.",
+      },
+      {
+        t: "Aprende y avanza",
+        d: "Cada lección se crea en el momento y la siguiente llega mejor ajustada.",
+      },
     ],
-    princH: "En lo que creemos",
-    principles: [
-      { i: "🌱", t: "El contexto enseña, no el contenido", d: "Un dato suelto se olvida. Un dato dentro de algo que le importa al niño se queda." },
-      { i: "🧭", t: "Cada niño marca su ritmo", d: "Avanzar más rápido o más lento no es bueno ni malo. Es información para enseñar mejor." },
-      { i: "🛡️", t: "Sin presión social", d: "Aquí no hay rankings públicos ni comparaciones. Solo el progreso de tu hijo, con su mascota." },
-      { i: "👪", t: "Padres como aliados", d: "Verás qué aprendió, qué le costó y qué le encantó. Para acompañar sin invadir." },
+    familyTag: "Para familias",
+    familyH: "Acompaña sin estar encima.",
+    family: [
+      {
+        t: "Reporte de progreso",
+        d: "Qué aprendió cada quien, qué le costó y qué sigue, en lenguaje claro.",
+      },
+      {
+        t: "Sin comparaciones",
+        d: "Cada perfil ve solo su propio avance. No hay tablas públicas.",
+      },
+      {
+        t: "Un lugar para todos",
+        d: "Cambia de perfil en un toque: cada uno conserva su progreso y su estilo.",
+      },
+      {
+        t: "Habla o escribe",
+        d: "Los más pequeños pueden preguntar con la voz, sin necesidad de escribir.",
+      },
     ],
-    ctaH: "Una lección hecha para tu hijo, esperándolo",
-    ctaSub: "Cuéntanos quién es y deja que IGNOTO haga el resto. Sin contraseñas complicadas, sin fricciones — solo aprendizaje real, en su propio idioma.",
-    ctaBtn: "Crear mi perfil →",
-    footer: "Hecho con 💜 para niños curiosos",
+    finalH: "Tu primera lección está a dos minutos.",
+    finalSub: "Crea la cuenta, agrega un perfil y deja que IGNOTO prepare algo hecho a la medida.",
+    footer: "Aprendizaje con IA para niños y adultos.",
+    signIn: "Entrar",
   },
   en: {
-    badge: "⚡ Learning that fits",
-    h1a: "Every child learns",
-    h1b: "differently",
-    h1c: ". Finally, an app that gets it.",
-    sub: "IGNOTO builds every lesson from scratch using what your child knows, how they learn, and what they love. If they love dinosaurs, fractions are taught with dinosaurs. If they go faster, difficulty rises. If they get stuck, IGNO walks them through another way.",
-    cta1: "Start the adventure →",
-    cta2: "Why it matters",
-    social: "+1,000 kids already learning this way",
-    hello: "Hi! I'm IGNO",
-    problemTag: "The problem",
-    problemH: "School teaches 30 kids the same. But no two kids learn the same.",
-    problemSub: "Same explanations, same examples, same pace. The fast ones get bored. The slower ones get overwhelmed. And almost no one is spoken to in their own language.",
-    problems: [
-      { i: "😴", t: "They tune out", d: "When content doesn't connect with what matters to them, the brain discards it." },
-      { i: "📉", t: "They lose confidence", d: "Falling behind in a group teaches more about comparison than about the topic." },
-      { i: "🔁", t: "They forget fast", d: "Memorizing without context = information that evaporates in a week." },
+    eyebrow: "AI tutor for the whole family",
+    h1a: "Learn your way,",
+    h1b: "at everyone's own pace.",
+    sub: "IGNOTO builds each lesson on the spot from what you love and your level. For kids from age 4 and for adults who want to keep learning.",
+    cta: "Create account",
+    ctaAlt: "How it works",
+    facts: [
+      "New lessons in seconds",
+      "Kids and adults in one account",
+      "Progress the family can see",
     ],
-    solTag: "The solution",
-    solH: "A different class for each child, every day.",
-    solSub: "IGNOTO is not a pre-recorded course. It's an AI tutor that builds the lesson on the spot, using your child's unique context.",
+    hello: "Hi, I'm Igno",
+    whyTag: "Why",
+    whyH: "Nobody learns the same way. Classes almost always teach that way.",
+    whySub:
+      "Same example, same pace and same tone for everyone. That makes it easy to lose interest, fall behind or get bored.",
+    why: [
+      {
+        t: "Interest fades",
+        d: "If the example has nothing to do with you, the idea doesn't stick.",
+      },
+      {
+        t: "Confidence drops",
+        d: "Going slower than the group teaches comparison, not the topic.",
+      },
+      {
+        t: "It's forgotten fast",
+        d: "Memorizing without context lasts a week. Understanding lasts much longer.",
+      },
+    ],
+    featTag: "What IGNOTO does",
+    featH: "A tutor that adapts to you, not the other way around.",
     features: [
-      { c: "primary", i: "🎯", t: "Learns with what they love", d: "Planets, K-pop, soccer? That world becomes the stage where math, reading or science is taught. Motivation stops being a problem." },
-      { c: "coral", i: "📊", t: "Adjusts to their real level", d: "Every answer tunes the next lesson. Mastered it? Goes up. Hesitated? IGNO retries with another analogy. No rigid groups or labels." },
-      { c: "accent", i: "🦉", t: "A tutor who listens", d: "IGNO answers questions in kid-language, with visual examples and generated animations. They can ask anything, no shame." },
-      { c: "mint", i: "🎮", t: "Learning doesn't feel like homework", d: "XP, streaks, an epic map, rewards. A videogame structure keeps attention where a PDF loses it." },
+      {
+        t: "Starts from what you love",
+        d: "Dinosaurs, soccer or personal finance: your interest becomes the example used to explain every topic.",
+      },
+      {
+        t: "Adjusts difficulty on its own",
+        d: "Each answer tunes the next lesson. If something is hard, the explanation changes; if it's easy, the challenge grows.",
+      },
+      {
+        t: "Answers out loud",
+        d: "Ask by typing or speaking. Your companion replies by voice, with animations, quizzes and challenges.",
+      },
+      {
+        t: "Motivates without pressure",
+        d: "Points, streaks and a personal progress map. No public rankings or comparisons.",
+      },
     ],
-    persoH: "Same topic, told for each kid",
-    persoSub1: "Here's what teaching ",
-    persoSub2: " looks like in IGNOTO depending on the child's interests:",
-    persoTopic: "fractions",
-    cards: [
-      { e: "🦖", n: "For Mateo, 7", g: "Loves dinosaurs", q: "If a T-Rex eats ¾ of a brontosaurus, how much is left for tomorrow?" },
-      { e: "⚽", n: "For Sofía, 8", g: "Lives soccer", q: "The team scored 2 goals out of 5 shots. What fraction did they make?" },
-      { e: "🎨", n: "For Lía, 6", g: "Paints all day", q: "If your palette has 8 colors and you've used 3, what fraction is left to try?" },
+    demoTag: "Personalization",
+    demoH: "The same topic, explained for each person.",
+    demoSub: "Here's how an explanation of fractions changes depending on who's learning:",
+    demo: [
+      {
+        who: "Mateo, 7",
+        like: "Loves dinosaurs",
+        q: "A T-Rex ate ¾ of its food. What part is left for tomorrow?",
+      },
+      {
+        who: "Sofía, 10",
+        like: "Plays soccer",
+        q: "Your team scored on 2 of 5 shots. What fraction of the shots were goals?",
+      },
+      {
+        who: "Ana, 34",
+        like: "Wants to sort out her finances",
+        q: "You spend ⅓ of your income on rent and save ¼. What fraction is left for everything else?",
+      },
     ],
-    howH: "How it works",
+    modesTag: "Two experiences",
+    modesH: "Designed for kids. Useful for adults.",
+    kidsT: "For kids",
+    kidsD:
+      "Color, companions with personality, short challenges and explanations set in their favorite world.",
+    kids: [
+      "Preschool through high school",
+      "Lessons from 5 to 30 minutes",
+      "A companion that reacts to their answers",
+    ],
+    adultsT: "For adults",
+    adultsD: "A calm interface, real-life examples and a mentor's tone, not a cartoon's.",
+    adults: [
+      "Finance, languages, AI, history and more",
+      "Precise, practical explanations",
+      "Great for learning alongside your kids",
+    ],
+    howTag: "How it works",
+    howH: "Get started in under two minutes.",
     steps: [
-      { n: 1, t: "Tell us who they are", d: "Age, level, language, interests and favorite subjects. That info is the base of everything." },
-      { n: 2, t: "IGNOTO builds their world", d: "Generates a unique plan, a lesson map and an IGNO tutor with the right voice for their age." },
-      { n: 3, t: "Learns and adjusts itself", d: "Every answer teaches IGNOTO how your child thinks. The next lesson lands sharper." },
+      { t: "Create your family account", d: "One account for everyone learning at home." },
+      {
+        t: "Add profiles",
+        d: "Age, interests and subjects for each child or adult. Everyone picks a companion.",
+      },
+      {
+        t: "Learn and progress",
+        d: "Each lesson is built on the spot, and the next one arrives better tuned.",
+      },
     ],
-    princH: "What we believe",
-    principles: [
-      { i: "🌱", t: "Context teaches, not content", d: "A loose fact is forgotten. A fact inside something the child cares about stays." },
-      { i: "🧭", t: "Each kid sets their pace", d: "Going faster or slower isn't good or bad. It's information to teach better." },
-      { i: "🛡️", t: "No social pressure", d: "No public rankings, no comparisons. Just your child's progress, with their mascot." },
-      { i: "👪", t: "Parents as allies", d: "You'll see what they learned, what was hard and what they loved. To support without invading." },
+    familyTag: "For families",
+    familyH: "Stay involved without hovering.",
+    family: [
+      {
+        t: "Progress reports",
+        d: "What each person learned, what was hard and what's next, in plain language.",
+      },
+      {
+        t: "No comparisons",
+        d: "Each profile only sees its own progress. No public leaderboards.",
+      },
+      {
+        t: "One place for everyone",
+        d: "Switch profiles in a tap: each keeps its own progress and style.",
+      },
+      { t: "Speak or type", d: "Little ones can ask out loud, no typing needed." },
     ],
-    ctaH: "A lesson made for your child, waiting",
-    ctaSub: "Tell us who they are and let IGNOTO do the rest. No complicated passwords, no friction — just real learning, in their own language.",
-    ctaBtn: "Create my profile →",
-    footer: "Made with 💜 for curious kids",
+    finalH: "Your first lesson is two minutes away.",
+    finalSub: "Create the account, add a profile and let IGNOTO prepare something made to measure.",
+    footer: "AI learning for kids and adults.",
+    signIn: "Sign in",
   },
 } as const;
+
+const FEATURE_ICONS = [Sparkles, Gauge, MessageCircle, Trophy];
+const FEATURE_TONES = [
+  "bg-primary/12 text-primary",
+  "bg-accent/30 text-accent-foreground",
+  "bg-mint/40 text-mint-foreground",
+  "bg-sky/40 text-sky-foreground",
+];
+
+function Section({
+  id,
+  tag,
+  title,
+  sub,
+  children,
+  muted,
+}: {
+  id?: string;
+  tag: string;
+  title: string;
+  sub?: string;
+  children: ReactNode;
+  muted?: boolean;
+}) {
+  return (
+    <section id={id} className={muted ? "bg-secondary/60 border-y border-border" : ""}>
+      <div className="max-w-6xl mx-auto px-5 py-20 md:py-28">
+        <div className="max-w-2xl mb-12">
+          <p className="text-sm font-semibold text-primary">{tag}</p>
+          <h2 className="font-display text-3xl md:text-[2.75rem] mt-2">{title}</h2>
+          {sub && <p className="text-muted-foreground text-lg mt-4">{sub}</p>}
+        </div>
+        {children}
+      </div>
+    </section>
+  );
+}
 
 function Landing() {
   const t = useT(T);
   return (
-    <main className="min-h-screen">
+    <main>
       {/* HERO */}
-      <section className="relative overflow-hidden">
-        <div className="max-w-6xl mx-auto px-5 pt-6 pb-16 md:pt-12 md:pb-28 grid md:grid-cols-2 gap-10 items-center">
-          <div className="space-y-6 animate-pop-in">
-            <span className="inline-block rounded-full bg-accent text-accent-foreground px-3 py-1 text-xs font-bold uppercase tracking-wider">{t.badge}</span>
-            <h1 className="font-display text-5xl md:text-7xl font-bold leading-[0.95] text-balance">
-              {t.h1a} <span className="text-primary">{t.h1b}</span>{t.h1c}
-            </h1>
-            <p className="text-lg text-muted-foreground max-w-md">{t.sub}</p>
-            <div className="flex flex-wrap gap-3">
-              <Link to="/auth" className="rounded-full bg-primary text-primary-foreground px-6 py-3.5 font-bold text-lg shadow-pop hover:translate-y-0.5 hover:shadow-none transition-all">
-                {t.cta1}
-              </Link>
-              <a href="#por-que" className="rounded-full bg-card border-2 border-border px-6 py-3.5 font-bold text-lg hover:bg-muted transition-colors">
-                {t.cta2}
-              </a>
-            </div>
-            <div className="flex items-center gap-4 pt-4 text-xs text-muted-foreground">
-              <div className="flex -space-x-2">
-                {["🦊","🦄","🦖","🐼"].map((e) => <div key={e} className="w-9 h-9 rounded-full bg-card border-2 border-background flex items-center justify-center text-lg shadow-soft">{e}</div>)}
-              </div>
-              <span>{t.social}</span>
-            </div>
+      <section className="max-w-6xl mx-auto px-5 pt-14 pb-20 md:pt-24 md:pb-28 grid md:grid-cols-[1.15fr_1fr] gap-14 items-center">
+        <div>
+          <p className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-sm font-medium text-muted-foreground">
+            <span className="h-2 w-2 rounded-full bg-mint" aria-hidden />
+            {t.eyebrow}
+          </p>
+          <h1 className="font-display text-[2.75rem] leading-[1.02] md:text-7xl mt-6">
+            {t.h1a} <span className="text-primary">{t.h1b}</span>
+          </h1>
+          <p className="text-lg md:text-xl text-muted-foreground mt-6 max-w-xl">{t.sub}</p>
+          <div className="flex flex-wrap gap-3 mt-8">
+            <Link
+              to="/auth"
+              className="inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-6 py-3.5 font-semibold shadow-pop hover:brightness-110 transition"
+            >
+              {t.cta} <ArrowRight className="h-4 w-4" />
+            </Link>
+            <a
+              href="#como"
+              className="rounded-full border border-border bg-card px-6 py-3.5 font-semibold hover:bg-muted transition-colors"
+            >
+              {t.ctaAlt}
+            </a>
           </div>
-          <HeroCompanions hello={t.hello} />
-        </div>
-      </section>
-
-      {/* PROBLEMA */}
-      <section id="por-que" className="bg-muted/40 border-y border-border">
-        <div className="max-w-6xl mx-auto px-5 py-16 md:py-20">
-          <div className="text-center max-w-2xl mx-auto mb-10">
-            <span className="inline-block rounded-full bg-coral/20 text-coral-foreground px-3 py-1 text-xs font-bold uppercase tracking-wider mb-3">{t.problemTag}</span>
-            <h2 className="font-display text-3xl md:text-4xl font-bold leading-tight">{t.problemH}</h2>
-            <p className="text-muted-foreground mt-3">{t.problemSub}</p>
-          </div>
-          <div className="grid md:grid-cols-3 gap-4">
-            {t.problems.map((x) => (
-              <div key={x.t} className="rounded-2xl bg-card border border-border p-5">
-                <div className="text-3xl mb-2">{x.i}</div>
-                <h3 className="font-display font-bold text-lg mb-1">{x.t}</h3>
-                <p className="text-sm text-muted-foreground">{x.d}</p>
-              </div>
+          <ul className="mt-10 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
+            {t.facts.map((f) => (
+              <li key={f} className="flex items-center gap-1.5">
+                <Check className="h-4 w-4 text-primary" /> {f}
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
+        <HeroCompanions hello={t.hello} />
       </section>
 
-      {/* SOLUCIÓN */}
-      <section className="max-w-6xl mx-auto px-5 py-20">
-        <div className="text-center max-w-2xl mx-auto mb-12">
-          <span className="inline-block rounded-full bg-mint/30 text-mint-foreground px-3 py-1 text-xs font-bold uppercase tracking-wider mb-3">{t.solTag}</span>
-          <h2 className="font-display text-3xl md:text-5xl font-bold leading-tight">{t.solH}</h2>
-          <p className="text-muted-foreground mt-3">{t.solSub}</p>
-        </div>
-        <div className="grid md:grid-cols-2 gap-6">
-          {t.features.map((f) => (
-            <div key={f.t} className="rounded-3xl p-6 bg-card border border-border hover:shadow-soft transition-shadow">
-              <div className={`w-14 h-14 rounded-2xl bg-${f.c} text-${f.c}-foreground flex items-center justify-center text-3xl mb-4 shadow-pop`}>{f.i}</div>
-              <h3 className="font-display text-2xl font-bold mb-2">{f.t}</h3>
-              <p className="text-muted-foreground">{f.d}</p>
-            </div>
+      {/* POR QUÉ */}
+      <Section tag={t.whyTag} title={t.whyH} sub={t.whySub} muted>
+        <ol className="grid md:grid-cols-3 gap-px rounded-3xl overflow-hidden border border-border bg-border">
+          {t.why.map((x, i) => (
+            <li key={x.t} className="bg-card p-7">
+              <span className="font-display text-sm text-muted-foreground tabular-nums">
+                0{i + 1}
+              </span>
+              <h3 className="font-display text-xl mt-3">{x.t}</h3>
+              <p className="text-muted-foreground mt-2">{x.d}</p>
+            </li>
           ))}
+        </ol>
+      </Section>
+
+      {/* QUÉ HACE */}
+      <Section tag={t.featTag} title={t.featH}>
+        <div className="grid sm:grid-cols-2 gap-5">
+          {t.features.map((f, i) => {
+            const Icon = FEATURE_ICONS[i];
+            return (
+              <div key={f.t} className="rounded-3xl border border-border bg-card p-7">
+                <div className={`grid h-11 w-11 place-items-center rounded-xl ${FEATURE_TONES[i]}`}>
+                  <Icon className="h-5 w-5" />
+                </div>
+                <h3 className="font-display text-xl mt-5">{f.t}</h3>
+                <p className="text-muted-foreground mt-2">{f.d}</p>
+              </div>
+            );
+          })}
         </div>
-      </section>
+      </Section>
 
       {/* PERSONALIZACIÓN */}
-      <section className="bg-card border-y border-border">
-        <div className="max-w-6xl mx-auto px-5 py-16 md:py-20">
-          <h2 className="font-display text-3xl md:text-4xl font-bold text-center mb-3">{t.persoH}</h2>
-          <p className="text-center text-muted-foreground max-w-xl mx-auto mb-10">{t.persoSub1}<strong>{t.persoTopic}</strong>{t.persoSub2}</p>
-          <div className="grid md:grid-cols-3 gap-5">
-            {t.cards.map((c) => (
-              <div key={c.n} className="rounded-3xl bg-background border-2 border-border p-5 shadow-soft">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-xl">{c.e}</div>
-                  <div>
-                    <div className="font-bold text-sm">{c.n}</div>
-                    <div className="text-xs text-muted-foreground">{c.g}</div>
-                  </div>
+      <Section tag={t.demoTag} title={t.demoH} sub={t.demoSub} muted>
+        <div className="grid md:grid-cols-3 gap-5">
+          {t.demo.map((c, i) => (
+            <figure
+              key={c.who}
+              className="rounded-3xl bg-card border border-border p-6 flex flex-col"
+            >
+              <figcaption className="flex items-center gap-3">
+                <Companion id={CHARACTER_LIST[i].id} size={44} interactive={false} />
+                <div>
+                  <div className="font-semibold">{c.who}</div>
+                  <div className="text-sm text-muted-foreground">{c.like}</div>
                 </div>
-                <div className="rounded-2xl bg-primary/10 border border-primary/20 p-3 text-sm">{c.q}</div>
-              </div>
-            ))}
-          </div>
+              </figcaption>
+              <blockquote className="mt-5 text-lg leading-snug">“{c.q}”</blockquote>
+            </figure>
+          ))}
         </div>
-      </section>
+      </Section>
+
+      {/* NIÑOS / ADULTOS */}
+      <Section tag={t.modesTag} title={t.modesH}>
+        <div className="grid md:grid-cols-2 gap-5">
+          <ModeCard
+            companion="chispa"
+            title={t.kidsT}
+            desc={t.kidsD}
+            items={t.kids}
+            tone="bg-accent/25"
+          />
+          <ModeCard
+            companion="bolt"
+            title={t.adultsT}
+            desc={t.adultsD}
+            items={t.adults}
+            tone="bg-secondary"
+          />
+        </div>
+      </Section>
 
       {/* CÓMO FUNCIONA */}
-      <section id="como" className="max-w-6xl mx-auto px-5 py-20">
-        <h2 className="font-display text-4xl md:text-5xl font-bold text-center mb-12">{t.howH}</h2>
-        <div className="grid md:grid-cols-3 gap-6">
-          {t.steps.map((s) => (
-            <div key={s.n} className="rounded-3xl bg-card border-2 border-border p-6 shadow-soft hover:-translate-y-1 transition-transform">
-              <div className="h-full">
-                <div className="w-12 h-12 rounded-full bg-accent text-accent-foreground font-display font-bold text-xl flex items-center justify-center shadow-pop mb-4">{s.n}</div>
-                <h3 className="font-display text-2xl font-bold mb-2">{s.t}</h3>
-                <p className="text-muted-foreground">{s.d}</p>
+      <Section id="como" tag={t.howTag} title={t.howH} muted>
+        <ol className="grid md:grid-cols-3 gap-5">
+          {t.steps.map((s, i) => (
+            <li key={s.t} className="rounded-3xl bg-card border border-border p-7">
+              <span className="grid h-9 w-9 place-items-center rounded-full bg-primary text-primary-foreground font-display font-semibold">
+                {i + 1}
+              </span>
+              <h3 className="font-display text-xl mt-5">{s.t}</h3>
+              <p className="text-muted-foreground mt-2">{s.d}</p>
+            </li>
+          ))}
+        </ol>
+      </Section>
+
+      {/* FAMILIAS */}
+      <Section tag={t.familyTag} title={t.familyH}>
+        <div className="grid sm:grid-cols-2 gap-x-10 gap-y-8 max-w-4xl">
+          {t.family.map((p) => (
+            <div key={p.t} className="flex gap-4">
+              <Check className="h-5 w-5 mt-1 flex-shrink-0 text-primary" />
+              <div>
+                <h3 className="font-display text-lg">{p.t}</h3>
+                <p className="text-muted-foreground mt-1">{p.d}</p>
               </div>
             </div>
           ))}
         </div>
-      </section>
+      </Section>
 
-      {/* PRINCIPIOS */}
-      <section className="bg-muted/40 border-y border-border">
-        <div className="max-w-6xl mx-auto px-5 py-16 md:py-20">
-          <h2 className="font-display text-3xl md:text-4xl font-bold text-center mb-10">{t.princH}</h2>
-          <div className="grid md:grid-cols-2 gap-4 max-w-4xl mx-auto">
-            {t.principles.map((p) => (
-              <div key={p.t} className="flex gap-4 rounded-2xl bg-card border border-border p-5">
-                <div className="text-3xl flex-shrink-0">{p.i}</div>
-                <div>
-                  <h3 className="font-display font-bold text-lg mb-1">{p.t}</h3>
-                  <p className="text-sm text-muted-foreground">{p.d}</p>
-                </div>
-              </div>
+      {/* CTA */}
+      <section className="px-5 pb-24">
+        <div className="max-w-6xl mx-auto rounded-[2rem] bg-foreground text-background px-8 py-14 md:px-16 md:py-20 grid md:grid-cols-[1fr_auto] gap-10 items-center">
+          <div>
+            <h2 className="font-display text-3xl md:text-5xl">{t.finalH}</h2>
+            <p className="mt-4 text-lg opacity-75 max-w-xl">{t.finalSub}</p>
+            <Link
+              to="/auth"
+              className="mt-8 inline-flex items-center gap-2 rounded-full bg-background text-foreground px-6 py-3.5 font-semibold hover:opacity-90 transition"
+            >
+              {t.cta} <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+          <div className="hidden md:flex gap-3">
+            {CHARACTER_LIST.map((c) => (
+              <Companion key={c.id} id={c.id} size={76} interactive={false} />
             ))}
           </div>
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="px-5 pb-20 pt-20">
-        <div className="max-w-5xl mx-auto rounded-[2.5rem] bg-primary p-10 md:p-16 text-center shadow-soft text-primary-foreground relative overflow-hidden">
-          <div className="absolute top-4 left-6"><Companion id="chispa" size={80} state="happy" interactive={false} /></div>
-          <div className="absolute bottom-4 right-8"><Companion id="luna" size={80} state="idle" interactive={false} /></div>
-          <h2 className="font-display text-4xl md:text-5xl font-bold mb-4">{t.ctaH}</h2>
-          <p className="opacity-90 max-w-xl mx-auto mb-8">{t.ctaSub}</p>
-          <Link to="/auth" className="inline-block rounded-full bg-accent text-accent-foreground px-8 py-4 font-bold text-lg shadow-pop hover:translate-y-0.5 hover:shadow-none transition-all">
-            {t.ctaBtn}
-          </Link>
+      <footer className="border-t border-border">
+        <div className="max-w-6xl mx-auto px-5 py-8 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+          <span className="font-display text-base font-semibold text-foreground">IGNOTO</span>
+          <span>{t.footer}</span>
+          <span className="ml-auto flex gap-5">
+            <Link to="/auth" className="hover:text-foreground">
+              {t.signIn}
+            </Link>
+            <span>© {new Date().getFullYear()}</span>
+          </span>
         </div>
-      </section>
-
-      <footer className="text-center text-xs text-muted-foreground pb-8">
-        © {new Date().getFullYear()} IGNOTO · {t.footer}
       </footer>
     </main>
   );
 }
 
-const HERO_SEQUENCE: CompanionState[] = ["happy", "speaking", "thinking", "celebrate", "idle", "surprised"];
-
-/** The four companions, each cycling through moods so the hero feels alive. */
-function HeroCompanions({ hello }: { hello: string }) {
-  const [i, setI] = useState(0);
-  useEffect(() => {
-    const id = setInterval(() => setI((n) => n + 1), 2400);
-    return () => clearInterval(id);
-  }, []);
-  const at = (offset: number) => HERO_SEQUENCE[(i + offset) % HERO_SEQUENCE.length];
+function ModeCard({
+  companion,
+  title,
+  desc,
+  items,
+  tone,
+}: {
+  companion: "chispa" | "bolt";
+  title: string;
+  desc: string;
+  items: readonly string[];
+  tone: string;
+}) {
   return (
-    <div className="relative flex justify-center items-center min-h-[380px]">
-      <div className="absolute top-0 left-0"><Companion id="chispa" size={110} state={at(2)} /></div>
-      <div className="absolute top-2 right-0"><Companion id="luna" size={110} state={at(4)} /></div>
-      <div className="absolute bottom-0 left-6"><Companion id="bolt" size={104} state={at(1)} /></div>
-      <div className="relative">
-        <Companion id="igno" size={230} state={at(0)} label="Igno" />
-        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-card rounded-full px-4 py-2 shadow-pop border-2 border-border whitespace-nowrap text-sm font-bold">
+    <div className={`rounded-3xl p-8 ${tone}`}>
+      <Companion id={companion} size={72} />
+      <h3 className="font-display text-2xl mt-5">{title}</h3>
+      <p className="text-muted-foreground mt-2">{desc}</p>
+      <ul className="mt-6 space-y-2.5">
+        {items.map((it) => (
+          <li key={it} className="flex items-start gap-2">
+            <Check className="h-4 w-4 mt-1 text-primary flex-shrink-0" /> {it}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/** The four companions; their eyes follow the visitor's pointer. */
+function HeroCompanions({ hello }: { hello: string }) {
+  const [igno, chispa, bolt, luna] = CHARACTER_LIST;
+  return (
+    <div className="relative mx-auto grid w-full max-w-[420px] grid-cols-3 gap-4" aria-hidden>
+      <div className="col-span-3 flex flex-col items-center rounded-[2rem] bg-primary/8 border border-border pt-8 pb-6">
+        <Companion id={igno.id} size={170} />
+        <span className="mt-3 rounded-full bg-card border border-border px-4 py-1.5 text-sm font-semibold">
           {hello}
-        </div>
+        </span>
       </div>
+      {[
+        { c: chispa, bg: "bg-accent/20" },
+        { c: bolt, bg: "bg-mint/30" },
+        { c: luna, bg: "bg-sky/30" },
+      ].map(({ c, bg }) => (
+        <div
+          key={c.id}
+          className={`flex aspect-square items-center justify-center rounded-[1.5rem] border border-border ${bg}`}
+        >
+          <Companion id={c.id} size={72} />
+        </div>
+      ))}
     </div>
   );
 }

@@ -18,8 +18,8 @@ const NAV = {
   en: { inicio: "Home", mapa: "Map", logros: "Achievements", padres: "Report", perfil: "Profile", start: "Start", login: "Sign in", switch: "Switch profile", family: "My family", admin: "Admin", logout: "Sign out" },
 } as const;
 
-const LINK = "px-3 py-2 rounded-full hover:bg-muted transition-colors";
-const ACTIVE = { className: "px-3 py-2 rounded-full bg-primary text-primary-foreground" };
+const LINK = "px-3 py-2 rounded-full text-muted-foreground hover:text-foreground transition-colors";
+const ACTIVE = { className: "px-3 py-2 rounded-full bg-secondary text-foreground" };
 const MLINK = "px-3 py-1.5 rounded-full bg-muted";
 const MACTIVE = { className: "px-3 py-1.5 rounded-full bg-primary text-primary-foreground" };
 
@@ -43,13 +43,13 @@ export function AppHeader() {
   );
 
   return (
-    <header className="sticky top-0 z-40 bg-background/85 backdrop-blur-md border-b border-border">
-      <div className="max-w-6xl mx-auto px-4 py-2.5 flex items-center gap-3">
-        <Link to={auth.session ? "/familia" : "/"} className="flex items-center gap-1.5 font-display text-2xl font-bold tracking-tight">
-          <Companion id={profile?.companion ?? "igno"} size={40} interactive={false} />
+    <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border">
+      <div className="max-w-6xl mx-auto px-4 h-16 flex items-center gap-3">
+        <Link to={auth.session ? "/familia" : "/"} className="flex items-center gap-2 font-display text-xl font-semibold">
+          <Companion id={profile?.companion ?? "igno"} size={30} interactive={false} />
           <span className="text-foreground">IGNOTO</span>
         </Link>
-        <nav className="ml-auto hidden md:flex items-center gap-1 text-sm font-semibold">
+        <nav className="ml-auto hidden md:flex items-center gap-1 text-sm font-medium">
           {showNav && links(LINK, ACTIVE)}
           {!auth.session && auth.ready && !onAuthFlow && (
             <Link to="/auth" className="px-4 py-2 rounded-full bg-primary text-primary-foreground">{t.login}</Link>
@@ -58,9 +58,8 @@ export function AppHeader() {
         </nav>
         {showNav && (
           <div className="ml-auto md:ml-0 hidden sm:flex items-center gap-2 text-xs">
-            <span className="rounded-full bg-accent text-accent-foreground px-2.5 py-1 font-bold">⭐ {profile.xp}</span>
-            <span className="rounded-full bg-coral text-coral-foreground px-2.5 py-1 font-bold">🪙 {profile.coins}</span>
-            <span className="rounded-full bg-mint text-mint-foreground px-2.5 py-1 font-bold">🔥 {profile.streak}</span>
+            <span className="rounded-full bg-secondary px-2.5 py-1 font-semibold tabular-nums" title="XP">⭐ {profile.xp}</span>
+            <span className="rounded-full bg-secondary px-2.5 py-1 font-semibold tabular-nums" title="Racha">🔥 {profile.streak}</span>
           </div>
         )}
         {auth.session && (
@@ -112,12 +111,12 @@ export function LevelBadge() {
   const lvl = levelTitle(profile.xp);
   const pct = Math.min(100, Math.round((profile.xp / lvl.next) * 100));
   return (
-    <div className="rounded-3xl bg-card border border-border p-4 shadow-soft">
-      <div className="flex items-center justify-between mb-2">
-        <span className="font-display text-lg font-bold">{lvl.name}</span>
-        <span className="text-xs text-muted-foreground">{profile.xp}/{lvl.next} XP</span>
+    <div>
+      <div className="flex items-baseline justify-between mb-2">
+        <span className="font-display text-base">{lvl.name}</span>
+        <span className="text-xs text-muted-foreground tabular-nums">{profile.xp} / {lvl.next} XP</span>
       </div>
-      <div className="h-3 rounded-full bg-muted overflow-hidden">
+      <div className="h-2 rounded-full bg-muted overflow-hidden">
         <div className="h-full bg-primary transition-all duration-700 ease-out" style={{ width: `${pct}%` }} />
       </div>
     </div>

@@ -52,7 +52,7 @@ const T = {
 } as const;
 
 export const Route = createFileRoute("/auth")({
-  head: () => ({ meta: [{ title: "Entrar — IGNOTO" }] }),
+  head: () => ({ meta: [{ title: "Entrar · IGNOTO" }] }),
   validateSearch: (s: Record<string, unknown>): { suspendida?: number } =>
     s.suspendida ? { suspendida: 1 } : {},
   component: AuthPage,

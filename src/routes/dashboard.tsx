@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useRequireLearner } from "@/lib/use-guard";
 import { Companion } from "@/components/companion/Companion";
+import { ArrowRight } from "lucide-react";
 import { dailyMission, weeklyPlan } from "@/lib/curriculum";
 import { LevelBadge } from "@/components/AppHeader";
 import { GenThemeBanner } from "@/components/gen-ui/primitives";
@@ -9,9 +10,9 @@ import { useT } from "@/lib/i18n";
 
 const T = {
   es: {
-    title: "Inicio — IGNOTO",
+    title: "Inicio · IGNOTO",
     loading: "Cargando…",
-    hello: "¡Hola de nuevo,",
+    hello: "Hola de nuevo,",
     streakA: "Llevas",
     streakB: (n: number) => `día${n !== 1 ? "s" : ""}`,
     streakC: "de racha. No la pierdas hoy.",
@@ -19,11 +20,11 @@ const T = {
     min: "min",
     weekly: "Plan semanal",
     map: "Mapa de aprendizaje",
-    adventure: "Tu aventura",
-    unlock: "Desbloquea lecciones en el mapa",
+    adventure: "Tu recorrido",
+    unlock: "Todas tus materias y lecciones en un solo lugar",
   },
   en: {
-    title: "Home — IGNOTO",
+    title: "Home · IGNOTO",
     loading: "Loading…",
     hello: "Welcome back,",
     streakA: "You're on a",
@@ -33,13 +34,13 @@ const T = {
     min: "min",
     weekly: "Weekly plan",
     map: "Learning map",
-    adventure: "Your adventure",
-    unlock: "Unlock lessons on the map",
+    adventure: "Your path",
+    unlock: "All your subjects and lessons in one place",
   },
 } as const;
 
 export const Route = createFileRoute("/dashboard")({
-  head: () => ({ meta: [{ title: "Inicio — IGNOTO" }] }),
+  head: () => ({ meta: [{ title: "Inicio · IGNOTO" }] }),
   component: Dashboard,
 });
 
@@ -52,71 +53,62 @@ function Dashboard() {
   const plan = weeklyPlan(profile);
 
   return (
-    <main className="max-w-6xl mx-auto px-4 py-6 pb-24 space-y-6">
+    <main className="max-w-6xl mx-auto px-4 py-8 pb-28 space-y-8">
       <GenThemeBanner />
-      <section className="rounded-3xl bg-card border border-border p-6 md:p-8 shadow-soft relative overflow-hidden">
-        <div className="flex items-center gap-6">
-          <div className="flex-1 min-w-0">
-            <p className="text-sm text-muted-foreground font-semibold">{t.hello}</p>
-            <h1 className="font-display text-4xl md:text-5xl font-bold tracking-tight leading-[1.05]">
-              {profile.childName}!
-            </h1>
-            <p className="mt-3 text-muted-foreground">{t.streakA} <span className="font-bold text-foreground">{profile.streak} {t.streakB(profile.streak)}</span> {t.streakC}</p>
-          </div>
-          <div className="hidden sm:block">
-            <Companion id={profile.companion} size={170} state="happy" />
-          </div>
+      <section className="rounded-3xl bg-card border border-border p-6 md:p-8 flex items-center gap-6">
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-muted-foreground">{t.hello}</p>
+          <h1 className="font-display text-4xl md:text-5xl mt-1 truncate">{profile.childName}</h1>
+          <p className="mt-3 text-muted-foreground">
+            {t.streakA} <span className="font-semibold text-foreground">{profile.streak} {t.streakB(profile.streak)}</span> {t.streakC}
+          </p>
+          <div className="mt-5 max-w-md"><LevelBadge /></div>
         </div>
-        <div className="mt-4 flex justify-center sm:hidden"><Companion id={profile.companion} size={130} state="happy" /></div>
+        <Companion id={profile.companion} size={120} state="happy" className="hidden sm:inline-block flex-shrink-0" />
       </section>
 
-      <LevelBadge />
-
-      {mission && (
-        <section>
-          <h2 className="font-display text-2xl font-bold mb-3 tracking-tight">{t.mission}</h2>
-          <Link to="/leccion/$id" params={{ id: mission.id }} className="block rounded-3xl bg-card border border-border p-5 shadow-soft hover:-translate-y-0.5 transition-transform animate-pop-in">
-            <div className="flex items-center gap-4">
-              <KawaiiBlob size={72} tone="coral" mood="happy" />
-              <div className="flex-1">
-                <div className="text-xs font-bold text-muted-foreground uppercase tracking-[0.15em]">{mission.subjectLabel}</div>
-                <div className="font-display text-xl font-bold leading-tight">{mission.title}</div>
+      <div className="grid md:grid-cols-2 gap-5">
+        {mission && (
+          <Link to="/leccion/$id" params={{ id: mission.id }} className="group rounded-3xl bg-card border border-border p-6 hover:border-primary/40 transition-colors">
+            <p className="text-sm font-semibold text-primary">{t.mission}</p>
+            <div className="mt-4 flex items-center gap-4">
+              <KawaiiBlob size={56} tone="coral" mood="happy" />
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{mission.subjectLabel}</div>
+                <div className="font-display text-xl mt-0.5">{mission.title}</div>
                 <div className="text-sm text-muted-foreground mt-1">{mission.estMin} {t.min} · +30 XP</div>
               </div>
-              <div className="self-center text-2xl text-primary">→</div>
+              <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition" />
             </div>
           </Link>
-        </section>
-      )}
+        )}
+        <Link to="/mapa" className="group rounded-3xl bg-card border border-border p-6 hover:border-primary/40 transition-colors">
+          <p className="text-sm font-semibold text-primary">{t.map}</p>
+          <div className="mt-4 flex items-center gap-4">
+            <KawaiiBlob size={56} tone="mint" mood="calm" />
+            <div className="flex-1 min-w-0">
+              <div className="font-display text-xl">{t.adventure}</div>
+              <div className="text-sm text-muted-foreground mt-1">{t.unlock}</div>
+            </div>
+            <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition" />
+          </div>
+        </Link>
+      </div>
 
       <section>
-        <h2 className="font-display text-2xl font-bold mb-3 tracking-tight">{t.weekly}</h2>
-        <div className="grid grid-cols-7 gap-1.5">
+        <h2 className="font-display text-2xl mb-4">{t.weekly}</h2>
+        <div className="grid grid-cols-7 gap-2">
           {plan.map((d, i) => (
-            <div key={i} className="rounded-2xl bg-card border border-border p-2 text-center min-h-[110px] flex flex-col">
-              <div className="text-[10px] font-bold text-muted-foreground">{d.day}</div>
-              <div className="flex flex-col gap-1 mt-1.5 flex-1">
+            <div key={i} className="rounded-2xl bg-card border border-border p-2 text-center min-h-[112px] flex flex-col">
+              <div className="text-[11px] font-semibold text-muted-foreground">{d.day}</div>
+              <div className="flex flex-col gap-1 mt-2 flex-1">
                 {d.lessons.map((l) => (
-                  <Link key={l.id} to="/leccion/$id" params={{ id: l.id }} className="text-2xl rounded-lg bg-muted hover:bg-accent transition-colors py-1" title={l.title}>{l.emoji}</Link>
+                  <Link key={l.id} to="/leccion/$id" params={{ id: l.id }} className="text-xl rounded-lg bg-muted hover:bg-secondary transition-colors py-1.5" title={l.title}>{l.emoji}</Link>
                 ))}
               </div>
             </div>
           ))}
         </div>
-      </section>
-
-      <section>
-        <h2 className="font-display text-2xl font-bold mb-3 tracking-tight">{t.map}</h2>
-        <Link to="/mapa" className="block rounded-3xl bg-card border border-border p-5 shadow-soft hover:-translate-y-0.5 transition-transform">
-          <div className="flex items-center gap-4">
-            <KawaiiBlob size={72} tone="mint" mood="calm" />
-            <div className="flex-1">
-              <div className="font-display text-xl font-bold">{t.adventure}</div>
-              <div className="text-sm text-muted-foreground">{t.unlock}</div>
-            </div>
-            <div className="text-2xl text-primary">→</div>
-          </div>
-        </Link>
       </section>
     </main>
   );

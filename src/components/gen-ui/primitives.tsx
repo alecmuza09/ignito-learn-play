@@ -112,7 +112,7 @@ export function GenThemeBanner({ subtitle, compact = false }: { subtitle?: strin
         ))}
       </div>
       <div className="relative flex items-center gap-3">
-        <div className={`shrink-0 grid place-items-center rounded-2xl ${t.bgSoft} ${compact ? "w-10 h-10 text-xl" : "w-14 h-14 text-2xl"} animate-float`}>
+        <div className={`shrink-0 grid place-items-center rounded-2xl ${t.bgSoft} ${compact ? "w-10 h-10 text-xl" : "w-14 h-14 text-2xl"}`}>
           {theme.motifs[0]}
         </div>
         <div className="flex-1 min-w-0">

@@ -60,7 +60,7 @@ const T = {
 } as const;
 
 export const Route = createFileRoute("/familia")({
-  head: () => ({ meta: [{ title: "Familia — IGNOTO" }] }),
+  head: () => ({ meta: [{ title: "Familia · IGNOTO" }] }),
   component: Familia,
 });
 

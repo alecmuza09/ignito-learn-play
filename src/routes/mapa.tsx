@@ -8,22 +8,22 @@ import { useT } from "@/lib/i18n";
 const T = {
   es: {
     loading: "Cargando…",
-    h1: "🗺 Mapa de aprendizaje",
+    h1: "Mapa de aprendizaje",
     sub: "Cada materia tiene su propio camino. Elige por dónde aventurarte.",
-    all: "🌈 Todas",
+    all: "Todas",
     completed: "completadas",
   },
   en: {
     loading: "Loading…",
-    h1: "🗺 Learning map",
+    h1: "Learning map",
     sub: "Each subject has its own path. Pick where to adventure.",
-    all: "🌈 All",
+    all: "All",
     completed: "completed",
   },
 } as const;
 
 export const Route = createFileRoute("/mapa")({
-  head: () => ({ meta: [{ title: "Mapa — IGNOTO" }] }),
+  head: () => ({ meta: [{ title: "Mapa · IGNOTO" }] }),
   component: Mapa,
 });
 
