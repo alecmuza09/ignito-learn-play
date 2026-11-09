@@ -1,37 +1,44 @@
 import type { CompanionId } from "@/lib/profile";
 
-export type GeoShape = "circle" | "triangle" | "square" | "pentagon";
+export type GeoShape = "circle" | "triangle" | "square" | "cloud";
 
-/** Flat geometric bodies on a 200×200 canvas, with where the eyes sit on each. */
-export const SHAPES: Record<GeoShape, { path: string; eyes: [number, number]; eyeGap: number }> = {
+/**
+ * Soft, flat bodies on a 200×200 canvas (bottom edge near y=174), with where the
+ * eyes sit on each. Slightly irregular on purpose so they read as characters.
+ */
+export const SHAPES: Record<GeoShape, { path: string; eyes: [number, number] }> = {
+  // Gumdrop: round top, settled bottom.
   circle: {
-    path: "M100 28a72 72 0 1 1 0 144a72 72 0 1 1 0-144Z",
-    eyes: [100, 98],
-    eyeGap: 26,
+    path: "M100 30C146 30 178 68 178 116C178 156 150 174 100 174C50 174 22 156 22 116C22 68 54 30 100 30Z",
+    eyes: [100, 102],
   },
+  // Soft triangle leaning right.
   triangle: {
-    path: "M88 36Q100 16 112 36L174 146Q184 166 162 166H38Q16 166 26 146Z",
-    eyes: [100, 122],
-    eyeGap: 22,
+    path: "M114 26C126 22 136 30 142 42L182 138C190 160 178 176 152 176H50C24 176 12 158 24 136L94 36C99 30 106 27 114 26Z",
+    eyes: [112, 120],
   },
+  // Squircle.
   square: {
-    path: "M60 34H140Q166 34 166 60V140Q166 166 140 166H60Q34 166 34 140V60Q34 34 60 34Z",
-    eyes: [100, 96],
-    eyeGap: 28,
+    path: "M64 34H136C160 34 172 46 172 70V138C172 162 160 174 136 174H64C40 174 28 162 28 138V70C28 46 40 34 64 34Z",
+    eyes: [100, 100],
   },
-  pentagon: {
-    path: "M88 30Q100 21 112 30L163 67Q175 76 170 90L151 150Q146 164 131 164H69Q54 164 49 150L30 90Q25 76 37 67Z",
-    eyes: [100, 104],
-    eyeGap: 25,
+  // Cloud.
+  cloud: {
+    path: "M58 174C30 174 16 154 22 132C27 114 40 104 54 104C52 76 72 56 98 56C118 56 134 68 140 86C164 84 182 104 182 130C182 156 162 174 136 174Z",
+    eyes: [106, 126],
   },
 };
 
-/** How the eyes are drawn; each one gives the character a different temperament. */
-export type EyeStyle = "googly" | "spark" | "dot" | "dreamy";
-/** School item the character wears. */
-export type Accessory = "cap" | "spark" | "glasses" | "beret";
+/** Pill eyes: size, spacing and a tilt (both eyes lean the same way) set the temperament. */
+export interface EyeSpec {
+  w: number;
+  h: number;
+  gap: number;
+  tilt: number;
+}
+
 /** Small idle habit, played every now and then. */
-export type Quirk = "tilt" | "hop" | "brow" | "slowblink";
+export type Quirk = "tilt" | "hop" | "squash" | "sway";
 
 export interface CharacterSpec {
   id: CompanionId;
@@ -41,9 +48,7 @@ export interface CharacterSpec {
   line: { es: string; en: string };
   shape: GeoShape;
   color: string;
-  cheek: string;
-  eyes: EyeStyle;
-  accessory: Accessory;
+  eyes: EyeSpec;
   quirk: Quirk;
   /** Gemini TTS prebuilt voice. */
   voice: string;
@@ -56,10 +61,8 @@ export const CHARACTERS: Record<CompanionId, CharacterSpec> = {
     tagline: { es: "El curioso de la clase", en: "The curious one" },
     line: { es: "¿Y eso por qué pasa? ¡Averigüémoslo!", en: "Why does that happen? Let's find out!" },
     shape: "circle",
-    color: "var(--pink)",
-    cheek: "#e8457f",
-    eyes: "googly",
-    accessory: "cap",
+    color: "#ff4fa0",
+    eyes: { w: 15, h: 30, gap: 21, tilt: 0 },
     quirk: "tilt",
     voice: "Puck",
   },
@@ -69,10 +72,8 @@ export const CHARACTERS: Record<CompanionId, CharacterSpec> = {
     tagline: { es: "La que siempre levanta la mano", en: "Always raising her hand" },
     line: { es: "¡Ya sé, ya sé! ¿Otra más?", en: "I know, I know! Another one?" },
     shape: "triangle",
-    color: "var(--lime)",
-    cheek: "#ff8fb1",
-    eyes: "spark",
-    accessory: "spark",
+    color: "#ff9a1f",
+    eyes: { w: 12, h: 25, gap: 16, tilt: 6 },
     quirk: "hop",
     voice: "Fenrir",
   },
@@ -82,11 +83,9 @@ export const CHARACTERS: Record<CompanionId, CharacterSpec> = {
     tagline: { es: "El de los apuntes ordenados", en: "The one with tidy notes" },
     line: { es: "Vamos paso a paso. Primero lo primero.", en: "Step by step. First things first." },
     shape: "square",
-    color: "var(--mint)",
-    cheek: "#ff8fb1",
-    eyes: "dot",
-    accessory: "glasses",
-    quirk: "brow",
+    color: "#12b39a",
+    eyes: { w: 13, h: 27, gap: 19, tilt: -22 },
+    quirk: "squash",
     voice: "Charon",
   },
   luna: {
@@ -94,12 +93,10 @@ export const CHARACTERS: Record<CompanionId, CharacterSpec> = {
     name: "Luna",
     tagline: { es: "La que dibuja en los márgenes", en: "Doodles in the margins" },
     line: { es: "Imaginemos que es un cuento…", en: "Let's imagine it's a story…" },
-    shape: "pentagon",
-    color: "var(--sky)",
-    cheek: "#ff8fb1",
-    eyes: "dreamy",
-    accessory: "beret",
-    quirk: "slowblink",
+    shape: "cloud",
+    color: "#2f83ff",
+    eyes: { w: 14, h: 20, gap: 20, tilt: 10 },
+    quirk: "sway",
     voice: "Aoede",
   },
 };

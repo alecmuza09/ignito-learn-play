@@ -368,32 +368,45 @@
   filter: drop-shadow(3px 3px 0 var(--ink));
 }
 
-/* One small hop when a mascot celebrates. */
-.mascot-hop {
-  animation: mascot-hop 520ms cubic-bezier(0.3, 0, 0.2, 1) both;
+/* Mascot habits: a hop, a head tilt, a squash and a slow sway. */
+.mascot-hop,
+.mascot-tilt,
+.mascot-squash,
+.mascot-sway {
   transform-box: view-box;
-  transform-origin: 100px 166px;
+  transform-origin: 100px 174px;
 }
+.mascot-hop { animation: mascot-hop 560ms cubic-bezier(0.3, 0, 0.2, 1) both; }
+.mascot-tilt { animation: mascot-tilt 1100ms cubic-bezier(0.3, 0, 0.2, 1) both; }
+.mascot-squash { animation: mascot-squash 700ms cubic-bezier(0.3, 0, 0.2, 1) both; }
+.mascot-sway { animation: mascot-sway 1200ms ease-in-out both; }
 @keyframes mascot-hop {
   0% { transform: translateY(0) scale(1, 1); }
-  30% { transform: translateY(-14px) scale(0.97, 1.03); }
-  60% { transform: translateY(0) scale(1.03, 0.97); }
+  20% { transform: translateY(0) scale(1.06, 0.92); }
+  45% { transform: translateY(-18px) scale(0.95, 1.06); }
+  75% { transform: translateY(0) scale(1.05, 0.95); }
   100% { transform: translateY(0) scale(1, 1); }
-}
-
-.mascot-tilt {
-  animation: mascot-tilt 1000ms cubic-bezier(0.3, 0, 0.2, 1) both;
-  transform-box: view-box;
-  transform-origin: 100px 166px;
 }
 @keyframes mascot-tilt {
   0%, 100% { transform: rotate(0); }
-  30%, 70% { transform: rotate(-8deg); }
+  30%, 70% { transform: rotate(-9deg); }
+}
+@keyframes mascot-squash {
+  0%, 100% { transform: scale(1, 1); }
+  35% { transform: scale(1.1, 0.88); }
+  65% { transform: scale(0.97, 1.04); }
+}
+@keyframes mascot-sway {
+  0%, 100% { transform: translateX(0) rotate(0); }
+  30% { transform: translateX(-5px) rotate(-4deg); }
+  70% { transform: translateX(5px) rotate(4deg); }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .mascot-hop,
   .mascot-tilt,
+  .mascot-squash,
+  .mascot-sway,
   .animate-float,
   .animate-bounce-slow,
   .animate-wiggle {

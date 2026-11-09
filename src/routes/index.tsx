@@ -446,20 +446,20 @@ function Landing() {
 
       {/* CTA */}
       <section className="px-5 pb-24">
-        <div className="max-w-6xl mx-auto rounded-[2rem] bg-ink text-white border-[2.5px] border-ink shadow-[6px_6px_0_var(--primary)] px-8 py-14 md:px-16 md:py-20 grid md:grid-cols-[1fr_auto] gap-10 items-center">
-          <div>
+        <div className="relative overflow-hidden max-w-6xl mx-auto rounded-[2rem] bg-ink text-white border-[2.5px] border-ink shadow-[6px_6px_0_var(--primary)] px-8 pt-14 pb-40 md:px-16 md:pt-20 md:pb-20 md:min-h-[420px]">
+          <div className="relative z-10 md:max-w-[52%]">
             <h2 className="font-display text-4xl md:text-6xl">{t.finalH}</h2>
             <p className="mt-4 text-lg text-white/75 max-w-xl">{t.finalSub}</p>
             <Link to="/auth" className="btn-sticker mt-8 bg-lime text-ink px-6 py-3.5 text-lg !border-white !shadow-[3px_3px_0_#fff]">
               {t.cta} <ArrowRight className="h-5 w-5" />
             </Link>
           </div>
-          <div className="hidden md:grid grid-cols-2 gap-2">
-            {CHARACTER_LIST.map((c) => (
-              <span key={c.id} className="grid place-items-center rounded-2xl bg-white/95 p-1">
-                <Companion id={c.id} size={84} interactive={false} />
-              </span>
-            ))}
+          {/* The crew peeking up from the bottom edge. */}
+          <div className="pointer-events-none absolute bottom-0 right-0 flex items-end gap-1 md:gap-3 translate-y-[18%] md:right-8" aria-hidden>
+            <Companion id="chispa" size={130} className="rotate-[-8deg]" />
+            <Companion id="igno" size={190} />
+            <Companion id="bolt" size={120} className="rotate-[10deg]" />
+            <Companion id="luna" size={160} className="hidden sm:inline-block" />
           </div>
         </div>
       </section>
@@ -530,12 +530,12 @@ function HeroBoard({ hello, note }: { hello: string; note: string }) {
       </div>
       <div className="mt-5 grid grid-cols-3 gap-3">
         {[
-          { c: chispa, bg: "bg-pink", r: "rotate-2" },
-          { c: bolt, bg: "bg-sky", r: "-rotate-2" },
-          { c: luna, bg: "bg-lime", r: "rotate-1" },
+          { c: chispa, bg: "bg-sky", r: "rotate-2" },
+          { c: bolt, bg: "bg-lime", r: "-rotate-2" },
+          { c: luna, bg: "bg-pink", r: "rotate-1" },
         ].map(({ c, bg, r }) => (
-          <div key={c.id} className={`grid aspect-square place-items-center rounded-2xl sticker ${bg} ${r}`}>
-            <Companion id={c.id} size={84} />
+          <div key={c.id} className={`relative aspect-square overflow-hidden rounded-2xl sticker ${bg} ${r}`}>
+            <Companion id={c.id} size={128} className="absolute left-1/2 bottom-0 -translate-x-1/2 translate-y-[16%]" />
           </div>
         ))}
       </div>

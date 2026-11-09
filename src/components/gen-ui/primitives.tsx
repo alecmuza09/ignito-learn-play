@@ -59,7 +59,7 @@ export function GenBackdrop() {
   return null;
 }
 
-const SHAPE_FOR_THEME: Record<string, GeoShape> = { spider: "square", auto: "square", dino: "triangle", game: "pentagon", robot: "pentagon" };
+const SHAPE_FOR_THEME: Record<string, GeoShape> = { spider: "square", auto: "square", dino: "triangle", game: "cloud", robot: "cloud" };
 
 /** Loud, persistent banner: "Modo X activado, personalizado para Niño".
  *  Goal: the kid SEES that the platform is shaped to them. */

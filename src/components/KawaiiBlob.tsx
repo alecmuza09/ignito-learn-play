@@ -8,7 +8,7 @@ const GEO: Record<Shape, GeoShape> = {
   blob: "circle",
   circle: "circle",
   drop: "circle",
-  pentagon: "pentagon",
+  pentagon: "cloud",
   square: "square",
   triangle: "triangle",
 };
@@ -37,7 +37,6 @@ export function KawaiiBlob({
   return (
     <GeoMascot
       shape={GEO[shape]}
-      color={color}
       size={size}
       look={LOOK[mood]}
       className={className}

@@ -16,8 +16,8 @@ const SHAPE_BY_THEME: Record<string, GeoShape> = {
   spider: "square",
   auto: "square",
   dino: "triangle",
-  game: "pentagon",
-  robot: "pentagon",
+  game: "cloud",
+  robot: "cloud",
 };
 
 const LOOK: Record<"happy" | "wow" | "calm" | "wink", EyeLook> = {
@@ -43,7 +43,6 @@ export function KawaiiBlob({
   return (
     <GeoMascot
       shape={SHAPE_BY_THEME[theme.id] ?? "circle"}
-      color={TONE_VAR[tone ?? theme.tone]}
       size={size}
       look={LOOK[mood]}
       className={className}
@@ -57,13 +56,13 @@ export function KawaiiBlobCluster({ size = 80 }: { size?: number }) {
     { tone: "primary", shape: "circle" },
     { tone: "accent", shape: "triangle" },
     { tone: "mint", shape: "square" },
-    { tone: "sky", shape: "pentagon" },
+    { tone: "sky", shape: "cloud" },
     { tone: "coral", shape: "circle" },
   ];
   return (
     <div className="flex items-end gap-2 justify-center flex-wrap">
       {items.map((it) => (
-        <GeoMascot key={it.tone} shape={it.shape} color={TONE_VAR[it.tone]} size={size} />
+        <GeoMascot key={it.tone} shape={it.shape} size={size} />
       ))}
     </div>
   );
