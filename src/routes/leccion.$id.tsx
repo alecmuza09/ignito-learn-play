@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { generateLesson, generateHeroImage } from "@/lib/ai.functions";
 import { awardXP, markLessonDone, uiModeFor, useProfile } from "@/lib/profile";
 import { reactCompanion } from "@/components/companion/bus";
+import { stripEmoji } from "@/lib/text";
 import { buildCurriculum } from "@/lib/curriculum";
 import { GenButton, GenProgress, GenReaction, GenThemeBanner, useGenTheme } from "@/components/gen-ui/primitives";
 import { GenRenderer, collectImageJobs } from "@/components/gen-ui/GenRenderer";
@@ -91,9 +92,9 @@ function Lesson() {
   if (!profile) return <Loader text="Cargando perfil…" />;
   if (error) return (
     <main className="max-w-2xl mx-auto px-4 py-10 text-center">
-      <div className="text-6xl">😕</div>
+      <div className="flex justify-center"><KawaiiBlob size={96} mood="calm" /></div>
       <p className="mt-3 font-bold">{error}</p>
-      <Link to="/dashboard" className="inline-block mt-5 rounded-full bg-primary text-primary-foreground px-5 py-2.5 font-bold">Volver</Link>
+      <Link to="/dashboard" className="btn-sticker mt-5 bg-primary text-primary-foreground px-5 py-2.5">Volver</Link>
     </main>
   );
   if (!blocks) return <Loader text={`Personalizando para ${profile.childName}…`} />;
@@ -154,7 +155,7 @@ function Lesson() {
   }
 
   return (
-    <main className="max-w-2xl mx-auto px-4 py-6 pb-24">
+    <main className="max-w-2xl mx-auto px-4 py-8 pb-28">
       <GenReaction reaction={reaction} onDone={clear} />
       <div className="mb-5">
         <GenThemeBanner subtitle={
@@ -168,7 +169,7 @@ function Lesson() {
         <>
           <GenRenderer blocks={blocks} imageUrls={imageUrls} onTryItDone={onTryIt} />
           <GenButton onClick={() => { setStage("quiz"); emit("start"); }} className="mt-6 w-full py-4 text-lg">
-            ¡Al quiz final! →
+            Ir al quiz final
           </GenButton>
         </>
       )}
@@ -177,20 +178,20 @@ function Lesson() {
         <div className="animate-pop-in">
           <div className="text-xs text-muted-foreground font-bold mb-2">Pregunta {qIdx + 1} de {finalQuiz.length}</div>
           <div className="mb-6"><GenProgress value={qIdx + 1} max={finalQuiz.length} /></div>
-          <h2 className="font-display text-2xl font-bold mb-5">{finalQuiz[qIdx].question}</h2>
+          <h2 className="font-display text-3xl mb-5">{finalQuiz[qIdx].question}</h2>
           <div className="space-y-2.5">
             {finalQuiz[qIdx].options.map((o, i) => {
               const isAnswer = i === finalQuiz[qIdx].answerIndex;
               const isPick = picked === i;
               const cls =
-                picked === null ? "border-border hover:border-primary hover:bg-primary/5"
-                : isAnswer ? "border-mint bg-mint/25"
+                picked === null ? "border-ink bg-card hover:bg-white hover:-translate-y-0.5"
+                : isAnswer ? "border-ink bg-mint shadow-[3px_3px_0_var(--ink)]"
                 : isPick ? "border-destructive bg-destructive/15"
-                : "border-border opacity-50";
+                : "border-ink/30 bg-card opacity-50";
               return (
                 <button key={i} disabled={picked !== null} onClick={() => pickAnswer(i)}
                   className={`w-full text-left rounded-2xl border-2 p-4 font-semibold transition ${cls}`}>
-                  <span className="inline-block w-7 h-7 rounded-lg bg-muted text-foreground text-xs grid place-items-center mr-2 align-middle">
+                  <span className="inline-grid w-8 h-8 rounded-lg border-2 border-ink bg-lime font-display text-base place-items-center mr-3 align-middle">
                     {String.fromCharCode(65+i)}
                   </span>
                   {o}
@@ -200,12 +201,12 @@ function Lesson() {
           </div>
           {picked !== null && (
             <>
-              <div className={`mt-4 rounded-2xl p-4 text-sm ${picked === finalQuiz[qIdx].answerIndex ? "bg-mint/20" : "bg-accent/15"}`}>
-                <div className="font-bold mb-1">{picked === finalQuiz[qIdx].answerIndex ? "¡Correcto! 🎉" : "Casi… 💭"}</div>
+              <div className={`mt-4 rounded-2xl p-4 text-sm border-2 border-ink ${picked === finalQuiz[qIdx].answerIndex ? "bg-mint" : "bg-lime/60"}`}>
+                <div className="font-bold mb-1">{picked === finalQuiz[qIdx].answerIndex ? "¡Correcto!" : "Casi. Así se resuelve:"}</div>
                 <p className="opacity-80">{finalQuiz[qIdx].explanation}</p>
               </div>
               <GenButton onClick={nextQ} className="mt-4 w-full py-3.5">
-                {qIdx + 1 >= finalQuiz.length ? "Terminar" : "Siguiente →"}
+                {qIdx + 1 >= finalQuiz.length ? "Terminar" : "Siguiente"}
               </GenButton>
             </>
           )}
@@ -215,15 +216,15 @@ function Lesson() {
       {stage === "done" && (
         <div className="text-center py-10 animate-pop-in">
           <div className="flex justify-center"><KawaiiBlob size={120} mood="wink" /></div>
-          <h2 className="font-display text-3xl font-bold mt-4">{celebration}</h2>
+          <h2 className="font-display text-4xl mt-4">{stripEmoji(celebration) || "¡Lección completa!"}</h2>
           <p className="mt-2 text-muted-foreground">Acertaste {correct} de {finalQuiz.length}</p>
           <div className="mt-5 inline-flex gap-3">
-            <span className="rounded-full bg-accent text-accent-foreground px-4 py-2 font-bold">+{20 + correct * 4} XP</span>
-            <span className="rounded-full bg-coral text-coral-foreground px-4 py-2 font-bold">+{Math.floor((20 + correct * 4) / 5)} 🪙</span>
+            <span className="rounded-full border-2 border-ink bg-lime px-4 py-2 font-bold">+{20 + correct * 4} XP</span>
+            <span className="rounded-full border-2 border-ink bg-pink px-4 py-2 font-bold">+{Math.floor((20 + correct * 4) / 5)} monedas</span>
           </div>
           <div className="mt-8 flex gap-3 justify-center">
-            <Link to="/mapa" className="rounded-full bg-card border-2 border-border px-5 py-3 font-bold">Ver mapa</Link>
-            <Link to="/dashboard" className="rounded-full bg-primary text-primary-foreground px-5 py-3 font-bold shadow-pop">Inicio</Link>
+            <Link to="/mapa" className="btn-sticker bg-card px-5 py-3">Ver mapa</Link>
+            <Link to="/dashboard" className="btn-sticker bg-primary text-primary-foreground px-5 py-3">Inicio</Link>
           </div>
         </div>
       )}
@@ -240,7 +241,7 @@ function Loader({ text }: { text: string }) {
     <main className="min-h-[70vh] grid place-items-center text-center px-4 relative overflow-hidden">
       <div>
         <div className="flex justify-center"><KawaiiBlob size={120} mood="wow" /></div>
-        <p className="mt-5 font-display text-2xl font-bold tracking-tight">{text}</p>
+        <p className="mt-5 font-display text-2xl tracking-tight">{text}</p>
         <p className="text-sm text-muted-foreground mt-1">Mezclando tu mundo de <span className="font-bold text-foreground">{theme.label}</span> con la IA…</p>
       </div>
     </main>

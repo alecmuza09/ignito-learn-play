@@ -17,7 +17,7 @@ export function AnimatedSimulation({ kind = "generic", title, caption, steps, co
     <div className="rounded-3xl overflow-hidden bg-card border border-border shadow-soft">
       {(title || caption) && (
         <div className="bg-muted/50 px-4 py-3 border-b border-border">
-          {title && <h3 className="font-display text-lg font-bold leading-tight">{title}</h3>}
+          {title && <h3 className="font-display text-lg leading-tight">{title}</h3>}
           {caption && <p className="text-sm text-muted-foreground mt-0.5 leading-relaxed">{caption}</p>}
         </div>
       )}
@@ -475,18 +475,18 @@ function EcosystemSvg({ compact: _c }: { compact: boolean }) {
       ))}
       {/* fox running */}
       <g>
-        <text x="280" y="310" fontSize="36">🦊</text>
+        <path d="M280 312 L298 280 L316 312 Z" fill="var(--coral)" stroke="var(--ink)" strokeWidth="2.5" strokeLinejoin="round" />
         <animateTransform attributeName="transform" type="translate" values="0 0;240 0;0 0" dur="9s" repeatCount="indefinite" />
       </g>
       {/* birds */}
       <g>
-        <text x="120" y="120" fontSize="20">🐦</text>
-        <text x="160" y="100" fontSize="18">🐦</text>
+        <circle cx="128" cy="112" r="8" fill="var(--sky)" stroke="var(--ink)" strokeWidth="2.5" />
+        <circle cx="166" cy="94" r="7" fill="var(--sky)" stroke="var(--ink)" strokeWidth="2.5" />
         <animateTransform attributeName="transform" type="translate" values="0 0;320 30;0 0" dur="7s" repeatCount="indefinite" />
       </g>
       {/* butterfly */}
       <g>
-        <text x="380" y="200" fontSize="22">🦋</text>
+        <path d="M380 192 l10 -10 l10 10 l-10 10 Z" fill="var(--pink)" stroke="var(--ink)" strokeWidth="2.5" />
         <animateMotion dur="6s" repeatCount="indefinite" path="M0 0 q40 -30 80 0 q40 30 80 0 q-40 -30 -80 0 q-40 30 -80 0 z" />
       </g>
     </svg>
@@ -511,7 +511,7 @@ function FoodChainSvg({ compact: _c }: { compact: boolean }) {
           <circle cx={it.x + 22} cy="180" r="46" fill="var(--card)" stroke="var(--border)" strokeWidth="4">
             <animate attributeName="r" values="44;50;44" dur="1.8s" begin={`${i * 0.4}s`} repeatCount="indefinite" />
           </circle>
-          <text x={it.x + 22} y="198" textAnchor="middle" fontSize="44">{it.e}</text>
+          <circle cx={it.x + 22} cy={184} r="22" fill="var(--lime)" stroke="var(--ink)" strokeWidth="2.5" /><text x={it.x + 22} y="192" textAnchor="middle" fontSize="22" fontWeight="700" fill="var(--ink)">{it.l.charAt(0)}</text>
           <text x={it.x + 22} y="260" textAnchor="middle" fontSize="11" fontWeight="700" fill="var(--foreground)">{it.l}</text>
         </g>
       ))}
@@ -585,7 +585,7 @@ function MagnetSvg({ compact: _c }: { compact: boolean }) {
       ))}
       {/* attracted clip */}
       <g>
-        <text x="500" y="200" fontSize="24">📎</text>
+        <rect x="500" y="182" width="10" height="22" rx="5" fill="none" stroke="var(--ink)" strokeWidth="2.5" />
         <animateTransform attributeName="transform" type="translate" values="0 0;-160 0;-160 0;0 0" dur="3s" repeatCount="indefinite" />
       </g>
       <Label x={320} y={310} text="Campo magnético" delay={0.3} size={12} />
@@ -781,7 +781,7 @@ function TimelineSvg({ compact: _c }: { compact: boolean }) {
           <circle cx={ev.x} cy="200" r="22" fill={i % 2 ? "var(--accent)" : "var(--mint-foreground)"} stroke="var(--card)" strokeWidth="4">
             <animate attributeName="r" values="18;26;18" dur="2.2s" begin={`${i * 0.4}s`} repeatCount="indefinite" />
           </circle>
-          <text x={ev.x} y="208" textAnchor="middle" fontSize="20">{ev.e}</text>
+          <circle cx={ev.x} cy={201} r="11" fill="var(--pink)" stroke="var(--ink)" strokeWidth="2.5" />
           <text x={ev.x} y={i % 2 ? 270 : 145} textAnchor="middle" fontSize="12" fontWeight="700" fill="var(--foreground)">{ev.l}</text>
         </g>
       ))}
@@ -833,7 +833,7 @@ function LifeCycleSvg({ compact: _c }: { compact: boolean }) {
             <circle cx={x} cy={y} r="34" fill="var(--card)" stroke="var(--accent)" strokeWidth="4">
               <animate attributeName="r" values="30;38;30" dur="2s" begin={`${i * 0.4}s`} repeatCount="indefinite" />
             </circle>
-            <text x={x} y={y + 12} textAnchor="middle" fontSize="32">{s.e}</text>
+            <circle cx={x} cy={y} r="18" fill="var(--mint)" stroke="var(--ink)" strokeWidth="2.5" /><text x={x} y={y + 7} textAnchor="middle" fontSize="18" fontWeight="700" fill="var(--ink)">{s.l.charAt(0)}</text>
             <text x={x} y={y + (s.a === 0 ? -50 : s.a === 180 ? 60 : 12) + (s.a === 90 || s.a === 270 ? (s.a === 90 ? 0 : 0) : 0)} textAnchor="middle" fontSize="11" fontWeight="800" fill="var(--foreground)" />
           </g>
         );
@@ -1009,7 +1009,7 @@ function SeasonsSvg({ compact: _c }: { compact: boolean }) {
       {positions.map((p, i) => (
         <g key={i}>
           <circle cx={p.x} cy={p.y} r="28" fill="var(--card)" stroke="var(--foreground)" strokeWidth="3" />
-          <text x={p.x} y={p.y + 9} textAnchor="middle" fontSize="22">{p.e}</text>
+          <circle cx={p.x} cy={p.y} r="14" fill="var(--lime)" stroke="var(--ink)" strokeWidth="2.5" />
           <text x={p.x} y={p.y + (p.y > 180 ? 56 : -38)} textAnchor="middle" fontSize="12" fontWeight="700" fill="var(--foreground)">{p.l}</text>
         </g>
       ))}
@@ -1140,11 +1140,11 @@ function MapRouteSvg({ compact: _c }: { compact: boolean }) {
       {/* pins */}
       <g>
         <circle cx="100" cy="150" r="14" fill="var(--coral)" stroke="var(--card)" strokeWidth="4" />
-        <text x="100" y="155" textAnchor="middle" fontSize="14">📍</text>
+        <circle cx="100" cy="150" r="6" fill="var(--pink)" stroke="var(--ink)" strokeWidth="2.5" />
       </g>
       <g>
         <circle cx="580" cy="240" r="14" fill="var(--primary)" stroke="var(--card)" strokeWidth="4" />
-        <text x="580" y="245" textAnchor="middle" fontSize="14">🏁</text>
+        <rect x="574" y="234" width="12" height="12" fill="var(--lime)" stroke="var(--ink)" strokeWidth="2.5" />
       </g>
       {/* moving marker */}
       <circle r="10" fill="var(--accent)" stroke="var(--card)" strokeWidth="3">

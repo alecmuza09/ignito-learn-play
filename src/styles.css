@@ -5,8 +5,9 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-display: "Outfit", "Plus Jakarta Sans", system-ui, sans-serif;
-  --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+  --font-display: "Lilita One", "DM Sans", system-ui, sans-serif;
+  --font-sans: "DM Sans", system-ui, -apple-system, sans-serif;
+  --font-hand: "Caveat", "Comic Sans MS", cursive;
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -36,14 +37,18 @@
   --color-mint-foreground: var(--mint-foreground);
   --color-sky: var(--sky);
   --color-sky-foreground: var(--sky-foreground);
+  --color-pink: var(--pink);
+  --color-lime: var(--lime);
+  --color-paper: var(--paper);
+  --color-ink: var(--ink);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
 
-  --shadow-pop: 0 1px 2px var(--shadow-color), 0 6px 16px -8px var(--shadow-color);
-  --shadow-soft: 0 1px 2px var(--shadow-color), 0 12px 32px -16px var(--shadow-color);
+  --shadow-pop: 3px 3px 0 var(--ink);
+  --shadow-soft: 4px 4px 0 var(--ink);
   --shadow-glow: 0 0 40px color-mix(in oklab, var(--accent) 50%, transparent);
 
   /* Gradients removed by design — keep var names as solid colors for legacy refs. */
@@ -82,49 +87,50 @@
 
 :root {
   --radius: 1rem;
-  --background: oklch(0.995 0.003 295);
-  --foreground: oklch(0.18 0.02 280);
+  /* Útiles escolares: papel crema, tinta, rosa chicle y marcatextos verde limón. */
+  --ink: #17141c;
+  --paper: #f6ecdf;
+  --pink: #ff8fb1;
+  --lime: #e4f924;
 
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.22 0.05 280);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.22 0.05 280);
+  --background: var(--paper);
+  --foreground: var(--ink);
 
-  /* Violeta lavanda kawaii */
-  --primary: oklch(0.62 0.18 295);
-  --primary-foreground: oklch(0.99 0 0);
-  --primary-glow: oklch(0.85 0.10 305);
+  --card: #fffbf4;
+  --card-foreground: var(--ink);
+  --popover: #fffbf4;
+  --popover-foreground: var(--ink);
 
-  --secondary: oklch(0.96 0.02 295);
-  --secondary-foreground: oklch(0.25 0.06 280);
+  --primary: #e8457f;
+  --primary-foreground: #ffffff;
+  --primary-glow: var(--pink);
 
-  --muted: oklch(0.97 0.005 295);
-  --muted-foreground: oklch(0.50 0.03 280);
+  --secondary: #efe1cf;
+  --secondary-foreground: var(--ink);
 
-  /* Naranja durazno kawaii */
-  --accent: oklch(0.83 0.13 50);
-  --accent-foreground: oklch(0.25 0.08 35);
+  --muted: #f0e5d6;
+  --muted-foreground: #5f5664;
 
-  /* Rosa pastel kawaii */
-  --coral: oklch(0.82 0.10 0);
-  --coral-foreground: oklch(0.30 0.10 0);
+  --accent: var(--lime);
+  --accent-foreground: var(--ink);
 
-  /* Menta pastel kawaii */
-  --mint: oklch(0.84 0.09 175);
-  --mint-foreground: oklch(0.25 0.07 175);
+  --coral: #ffa36c;
+  --coral-foreground: var(--ink);
 
-  /* Azul pastel kawaii */
-  --sky: oklch(0.82 0.08 240);
-  --sky-foreground: oklch(0.25 0.08 250);
+  --mint: #7fe0c3;
+  --mint-foreground: var(--ink);
 
-  --destructive: oklch(0.62 0.24 25);
-  --destructive-foreground: oklch(0.99 0 0);
+  --sky: #9ccbff;
+  --sky-foreground: var(--ink);
 
-  --border: oklch(0.92 0.01 280);
-  --input: oklch(0.94 0.01 280);
-  --ring: oklch(0.62 0.18 295);
+  --destructive: #d92d20;
+  --destructive-foreground: #ffffff;
 
-  --shadow-color: oklch(0.30 0.04 280 / 0.14);
+  --border: var(--ink);
+  --input: var(--ink);
+  --ring: var(--ink);
+
+  --shadow-color: var(--ink);
 }
 
 .dark {
@@ -174,19 +180,25 @@
   html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility; }
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display);
-    font-weight: 600;
-    letter-spacing: -0.025em;
-    line-height: 1.1;
+    font-weight: 400;
+    font-synthesis: none;
+    letter-spacing: 0.005em;
+    line-height: 1.05;
     text-wrap: balance;
   }
   p { text-wrap: pretty; }
   body {
     background-color: var(--color-background);
+    background-image:
+      linear-gradient(color-mix(in oklab, var(--ink) 6%, transparent) 1px, transparent 1px),
+      linear-gradient(90deg, color-mix(in oklab, var(--ink) 6%, transparent) 1px, transparent 1px);
+    background-size: 28px 28px;
     color: var(--color-foreground);
     font-size: 1rem;
     line-height: 1.6;
   }
-  .font-display { letter-spacing: -0.025em; }
+  .font-display { font-weight: 400 !important; font-synthesis: none; letter-spacing: 0.005em; }
+  input, textarea, select { font-size: 1rem; }
 }
 
 @layer utilities {
@@ -198,44 +210,139 @@
   .shadow-soft { box-shadow: var(--shadow-soft); }
   .shadow-glow { box-shadow: var(--shadow-glow); }
   .text-balance { text-wrap: balance; }
+  .font-hand { font-family: var(--font-hand); }
+
+  /* Sticker: tinta gruesa y sombra dura desplazada. */
+  .sticker {
+    border: 2.5px solid var(--ink);
+    box-shadow: 4px 4px 0 var(--ink);
+  }
+  .sticker-sm {
+    border: 2px solid var(--ink);
+    box-shadow: 2px 2px 0 var(--ink);
+  }
+  /* Botón que se "hunde" al presionarlo. */
+  .btn-sticker {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border: 2.5px solid var(--ink);
+    border-radius: 0.9rem;
+    box-shadow: 3px 3px 0 var(--ink);
+    font-weight: 700;
+    transition: transform 120ms ease, box-shadow 120ms ease, background-color 150ms;
+  }
+  .btn-sticker:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--ink); }
+  .btn-sticker:active { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--ink); }
+  .btn-sticker:disabled { opacity: 0.55; pointer-events: none; }
+  .btn-sticker:focus-visible { outline: 3px solid var(--lime); outline-offset: 2px; }
+
+  /* Texto tipo calcomanía: relleno blanco, contorno y sombra de tinta. */
+  .text-sticker {
+    color: #fff;
+    -webkit-text-stroke: 0.09em var(--ink);
+    paint-order: stroke fill;
+    text-shadow: 0.06em 0.07em 0 var(--ink);
+  }
+  /* Marcatextos detrás de una frase. */
+  .highlight {
+    background: linear-gradient(transparent 12%, var(--lime) 12%, var(--lime) 88%, transparent 88%);
+    padding: 0 0.15em;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+  }
+  /* Hoja de cuaderno: cuadrícula o renglones con margen rojo. */
+  .paper-grid {
+    background-color: var(--paper);
+    background-image:
+      linear-gradient(color-mix(in oklab, var(--ink) 7%, transparent) 1px, transparent 1px),
+      linear-gradient(90deg, color-mix(in oklab, var(--ink) 7%, transparent) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+  .paper-lines {
+    background-color: #fffbf4;
+    background-image:
+      linear-gradient(90deg, transparent 2.6rem, #ff8fb1 2.6rem, #ff8fb1 calc(2.6rem + 2px), transparent calc(2.6rem + 2px)),
+      repeating-linear-gradient(transparent 0 1.85rem, #b9d4f2 1.85rem calc(1.85rem + 1px));
+  }
+  .checker {
+    background-image:
+      linear-gradient(45deg, color-mix(in oklab, #fff 18%, transparent) 25%, transparent 25%, transparent 75%, color-mix(in oklab, #fff 18%, transparent) 75%),
+      linear-gradient(45deg, color-mix(in oklab, #fff 18%, transparent) 25%, transparent 25%, transparent 75%, color-mix(in oklab, #fff 18%, transparent) 75%);
+    background-size: 22px 22px;
+    background-position: 0 0, 11px 11px;
+  }
+  /* Formularios: un solo estilo para campos, chips y opciones. */
+  .field {
+    width: 100%;
+    min-height: 3rem;
+    border: 2px solid var(--ink);
+    border-radius: 0.85rem;
+    background: var(--card);
+    padding: 0.65rem 1rem;
+    font-size: 1rem;
+    color: var(--ink);
+    transition: box-shadow 120ms, background-color 120ms;
+  }
+  .field::placeholder { color: color-mix(in oklab, var(--ink) 40%, transparent); }
+  .field:focus { outline: none; box-shadow: 3px 3px 0 var(--ink); background: #fff; }
+  .field[aria-invalid="true"] { border-color: var(--destructive); }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    min-height: 2.75rem;
+    padding: 0.5rem 0.95rem;
+    border: 2px solid var(--ink);
+    border-radius: 999px;
+    background: var(--card);
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: transform 100ms, box-shadow 120ms, background-color 120ms;
+  }
+  .chip:hover { background: #fff; }
+  .chip[aria-pressed="true"], .chip[aria-checked="true"] {
+    background: var(--lime);
+    box-shadow: 2px 2px 0 var(--ink);
+  }
+  .chip:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+  .chip:disabled { opacity: 0.4; pointer-events: none; }
+  .label { display: block; font-weight: 700; font-size: 0.95rem; margin-bottom: 0.5rem; }
+  .hint { font-size: 0.85rem; color: var(--muted-foreground); }
+
+  /* Cinta adhesiva para pegar notas. */
+  .tape { position: relative; }
+  .tape::before {
+    content: "";
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    width: 84px;
+    height: 24px;
+    transform: translateX(-50%) rotate(-3deg);
+    background: color-mix(in oklab, #fff 55%, transparent);
+    border: 1px solid color-mix(in oklab, var(--ink) 15%, transparent);
+  }
 }
 
 /* ============ Modo adulto ============
    Same components, calmer surface: neutral palette, tighter radii, editorial type,
    and motion reduced to short fades instead of bounces. */
 [data-mode="adult"] {
-  --radius: 0.7rem;
-  --background: oklch(0.985 0.003 260);
-  --foreground: oklch(0.21 0.02 260);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.21 0.02 260);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.21 0.02 260);
-  --primary: oklch(0.48 0.16 268);
-  --primary-foreground: oklch(0.99 0 0);
-  --primary-glow: oklch(0.80 0.08 268);
-  --secondary: oklch(0.95 0.01 260);
-  --secondary-foreground: oklch(0.25 0.03 260);
-  --muted: oklch(0.96 0.005 260);
-  --muted-foreground: oklch(0.50 0.02 260);
-  --accent: oklch(0.86 0.09 75);
-  --accent-foreground: oklch(0.30 0.06 60);
-  --coral: oklch(0.88 0.06 20);
-  --coral-foreground: oklch(0.38 0.10 20);
-  --mint: oklch(0.90 0.06 165);
-  --mint-foreground: oklch(0.32 0.07 165);
-  --sky: oklch(0.88 0.05 240);
-  --sky-foreground: oklch(0.32 0.08 250);
-  --border: oklch(0.91 0.008 260);
-  --input: oklch(0.93 0.008 260);
-  --ring: oklch(0.48 0.16 268);
-  --shadow-color: oklch(0.25 0.03 260 / 0.08);
+  --radius: 0.75rem;
+  --primary: #2f3bd6;
+  --primary-foreground: #ffffff;
+  --background: #f4efe6;
 }
-[data-mode="adult"] .shadow-pop {
-  box-shadow: 0 1px 2px var(--shadow-color), 0 4px 14px -6px var(--shadow-color);
-}
-[data-mode="adult"] .shadow-soft {
-  box-shadow: 0 1px 2px var(--shadow-color), 0 8px 24px -12px var(--shadow-color);
+[data-mode="adult"] h1,
+[data-mode="adult"] h2,
+[data-mode="adult"] h3,
+[data-mode="adult"] .font-display {
+  font-family: var(--font-sans);
+  font-weight: 700 !important;
+  letter-spacing: -0.02em;
 }
 [data-mode="adult"] .animate-pop-in {
   animation: fade-up 0.28s cubic-bezier(0.2, 0, 0, 1) both;
@@ -252,13 +359,13 @@
 
 /* ============ Modo niños: escenario del compañero ============ */
 .companion-stage {
-  background: color-mix(in oklab, var(--primary) 8%, var(--card));
+  background: color-mix(in oklab, var(--pink) 22%, var(--card));
 }
 [data-mode="adult"] .companion-stage {
   background: var(--secondary);
 }
 .companion-launcher {
-  filter: drop-shadow(0 8px 14px color-mix(in oklab, var(--foreground) 14%, transparent));
+  filter: drop-shadow(3px 3px 0 var(--ink));
 }
 
 /* One small hop when a mascot celebrates. */
@@ -274,8 +381,19 @@
   100% { transform: translateY(0) scale(1, 1); }
 }
 
+.mascot-tilt {
+  animation: mascot-tilt 1000ms cubic-bezier(0.3, 0, 0.2, 1) both;
+  transform-box: view-box;
+  transform-origin: 100px 166px;
+}
+@keyframes mascot-tilt {
+  0%, 100% { transform: rotate(0); }
+  30%, 70% { transform: rotate(-8deg); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .mascot-hop,
+  .mascot-tilt,
   .animate-float,
   .animate-bounce-slow,
   .animate-wiggle {

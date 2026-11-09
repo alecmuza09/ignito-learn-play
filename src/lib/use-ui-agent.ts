@@ -17,11 +17,11 @@ function localReaction(event: Event, theme: GenTheme): AgentReaction {
   const pickO = theme.oops[Math.floor(Math.random() * theme.oops.length)];
   switch (event) {
     case "correct":  return { kind: "celebrate", tone: theme.tone, headline: pickC, message: "+XP", particles: theme.particles, intensity: "normal", ttlMs: 1800 };
-    case "wrong":    return { kind: "encourage", tone: "accent",   headline: pickO, message: "Otra vez con calma 💛", particles: ["💭"], intensity: "calm", ttlMs: 1800 };
-    case "streak":   return { kind: "level-up",  tone: theme.accentTone, headline: "¡COMBO!", message: "Cadena de aciertos 🔥", particles: theme.particles, intensity: "epic", ttlMs: 2400 };
+    case "wrong":    return { kind: "encourage", tone: "accent",   headline: pickO, message: "Otra vez, con calma.", particles: [], intensity: "calm", ttlMs: 1800 };
+    case "streak":   return { kind: "level-up",  tone: theme.accentTone, headline: "¡COMBO!", message: "Cadena de aciertos", particles: theme.particles, intensity: "epic", ttlMs: 2400 };
     case "complete": return { kind: "level-up",  tone: theme.tone, headline: "¡Misión completa!", message: "Tu mundo crece contigo", particles: theme.particles, intensity: "epic", ttlMs: 2800 };
-    case "stuck":    return { kind: "hint",      tone: "sky",      headline: "Pista", message: "Piensa en tu héroe favorito 💡", particles: ["💡"], intensity: "calm", ttlMs: 2400 };
-    case "start":    return { kind: "ambient",   tone: theme.tone, headline: "¡A jugar!", message: "Estoy contigo 🦉", particles: [], intensity: "calm", ttlMs: 1500 };
+    case "stuck":    return { kind: "hint",      tone: "sky",      headline: "Pista", message: "Piensa en tu tema favorito.", particles: [], intensity: "calm", ttlMs: 2400 };
+    case "start":    return { kind: "ambient",   tone: theme.tone, headline: "¡A jugar!", message: "Estoy contigo.", particles: [], intensity: "calm", ttlMs: 1500 };
   }
 }
 

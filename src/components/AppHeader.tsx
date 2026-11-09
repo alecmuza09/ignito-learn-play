@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { LogOut, ShieldCheck, Users } from "lucide-react";
+import { Flame, LogOut, ShieldCheck, Star, Users } from "lucide-react";
 import { clearActiveLearner, useProfile, levelTitle } from "@/lib/profile";
 import { useAuth } from "@/lib/auth";
 import { Companion } from "./companion/Companion";
@@ -18,10 +18,10 @@ const NAV = {
   en: { inicio: "Home", mapa: "Map", logros: "Achievements", padres: "Report", perfil: "Profile", start: "Start", login: "Sign in", switch: "Switch profile", family: "My family", admin: "Admin", logout: "Sign out" },
 } as const;
 
-const LINK = "px-3 py-2 rounded-full text-muted-foreground hover:text-foreground transition-colors";
-const ACTIVE = { className: "px-3 py-2 rounded-full bg-secondary text-foreground" };
-const MLINK = "px-3 py-1.5 rounded-full bg-muted";
-const MACTIVE = { className: "px-3 py-1.5 rounded-full bg-primary text-primary-foreground" };
+const LINK = "px-3 py-1.5 rounded-full border-2 border-transparent text-muted-foreground hover:text-foreground transition-colors";
+const ACTIVE = { className: "px-3 py-1.5 rounded-full border-2 border-ink bg-lime text-foreground" };
+const MLINK = "px-3 py-1.5 rounded-full border-2 border-ink bg-card";
+const MACTIVE = { className: "px-3 py-1.5 rounded-full border-2 border-ink bg-lime" };
 
 export function AppHeader() {
   const profile = useProfile();
@@ -43,32 +43,32 @@ export function AppHeader() {
   );
 
   return (
-    <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border">
+    <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b-2 border-ink">
       <div className="max-w-6xl mx-auto px-4 h-16 flex items-center gap-3">
-        <Link to={auth.session ? "/familia" : "/"} className="flex items-center gap-2 font-display text-xl font-semibold">
-          <Companion id={profile?.companion ?? "igno"} size={30} interactive={false} />
-          <span className="text-foreground">IGNOTO</span>
+        <Link to={auth.session ? "/familia" : "/"} className="flex items-center gap-1.5" aria-label="IGNOTO">
+          <Companion id={profile?.companion ?? "igno"} size={38} interactive={false} />
+          <span className="font-display text-2xl text-sticker tracking-wide -rotate-2">IGNOTO</span>
         </Link>
-        <nav className="ml-auto hidden md:flex items-center gap-1 text-sm font-medium">
+        <nav className="ml-auto hidden md:flex items-center gap-1 text-sm font-semibold">
           {showNav && links(LINK, ACTIVE)}
           {!auth.session && auth.ready && !onAuthFlow && (
-            <Link to="/auth" className="px-4 py-2 rounded-full bg-primary text-primary-foreground">{t.login}</Link>
+            <Link to="/auth" className="btn-sticker bg-lime px-4 py-1.5">{t.login}</Link>
           )}
           <LanguageToggle className="ml-2" />
         </nav>
         {showNav && (
           <div className="ml-auto md:ml-0 hidden sm:flex items-center gap-2 text-xs">
-            <span className="rounded-full bg-secondary px-2.5 py-1 font-semibold tabular-nums" title="XP">⭐ {profile.xp}</span>
-            <span className="rounded-full bg-secondary px-2.5 py-1 font-semibold tabular-nums" title="Racha">🔥 {profile.streak}</span>
+            <span className="inline-flex items-center gap-1 rounded-full border-2 border-ink bg-card px-2.5 py-1 font-bold tabular-nums" title="XP"><Star className="h-3.5 w-3.5" /> {profile.xp}</span>
+            <span className="inline-flex items-center gap-1 rounded-full border-2 border-ink bg-card px-2.5 py-1 font-bold tabular-nums" title="Racha"><Flame className="h-3.5 w-3.5" /> {profile.streak}</span>
           </div>
         )}
         {auth.session && (
           <DropdownMenu>
             <DropdownMenuTrigger
-              className="ml-auto sm:ml-0 grid h-10 w-10 place-items-center rounded-full bg-muted text-xl hover:ring-2 ring-primary transition"
+              className="ml-auto sm:ml-0 grid h-10 w-10 place-items-center rounded-full border-2 border-ink bg-card font-bold hover:bg-lime transition"
               aria-label={auth.account?.display_name ?? "Cuenta"}
             >
-              {profile?.avatar ?? "👤"}
+              {(profile?.childName ?? auth.account?.display_name ?? auth.user?.email ?? "?").charAt(0).toUpperCase()}
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel className="font-normal">
@@ -94,7 +94,7 @@ export function AppHeader() {
         {!auth.session && <LanguageToggle className="ml-auto md:hidden" />}
       </div>
       {showNav && (
-        <div className="md:hidden border-t border-border bg-card/60 overflow-x-auto">
+        <div className="md:hidden border-t-2 border-ink bg-background overflow-x-auto">
           <div className="flex gap-1 px-3 py-2 text-xs font-semibold whitespace-nowrap">
             {links(MLINK, MACTIVE)}
             <LanguageToggle className="ml-auto" />
@@ -116,7 +116,7 @@ export function LevelBadge() {
         <span className="font-display text-base">{lvl.name}</span>
         <span className="text-xs text-muted-foreground tabular-nums">{profile.xp} / {lvl.next} XP</span>
       </div>
-      <div className="h-2 rounded-full bg-muted overflow-hidden">
+      <div className="h-3 rounded-full border-2 border-ink bg-card overflow-hidden">
         <div className="h-full bg-primary transition-all duration-700 ease-out" style={{ width: `${pct}%` }} />
       </div>
     </div>

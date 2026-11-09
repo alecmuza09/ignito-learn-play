@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { useRequireLearner } from "@/lib/use-guard";
 import { buildCurriculum } from "@/lib/curriculum";
 import { SUBJECTS } from "@/lib/profile";
+import { Check, Lock } from "lucide-react";
+import { SubjectIcon } from "@/components/SubjectIcon";
 import { useT } from "@/lib/i18n";
 
 const T = {
@@ -46,32 +48,32 @@ function Mapa() {
 
   return (
     <main className="max-w-3xl mx-auto px-4 py-6 pb-24">
-      <h1 className="font-display text-3xl font-bold mb-2">{t.h1}</h1>
+      <h1 className="font-display text-3xl mb-2">{t.h1}</h1>
       <p className="text-muted-foreground mb-5">{t.sub}</p>
 
       <div className="flex gap-2 overflow-x-auto pb-2 mb-6 -mx-4 px-4">
         <button onClick={() => setActive("todas")}
-          className={`shrink-0 rounded-full px-4 py-2 text-sm font-bold border-2 transition-all ${active === "todas" ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border hover:bg-muted"}`}>
+          aria-pressed={active === "todas"} className="chip shrink-0">
           {t.all}
         </button>
         {groups.map((g) => (
           <button key={g.meta.id} onClick={() => setActive(g.meta.id)}
-            className={`shrink-0 rounded-full px-4 py-2 text-sm font-bold border-2 transition-all ${active === g.meta.id ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border hover:bg-muted"}`}>
-            {g.meta.emoji} {g.meta.label}
+            aria-pressed={active === g.meta.id} className="chip shrink-0">
+            {g.meta.label}
           </button>
         ))}
       </div>
 
       <div className="space-y-8">
         {visible.map((g) => (
-          <section key={g.meta.id} className="rounded-3xl bg-card border border-border p-5 shadow-soft">
+          <section key={g.meta.id} className="rounded-3xl bg-card sticker p-5">
             <header className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-hero text-primary-foreground flex items-center justify-center text-2xl shadow-pop">{g.meta.emoji}</div>
+              <SubjectIcon id={g.meta.id} size={48} />
               <div className="flex-1">
-                <h2 className="font-display text-xl font-bold">{g.meta.label}</h2>
+                <h2 className="font-display text-2xl">{g.meta.label}</h2>
                 <div className="text-xs text-muted-foreground font-bold">{g.completed}/{g.list.length} {t.completed}</div>
-                <div className="h-1.5 mt-1 rounded-full bg-muted overflow-hidden">
-                  <div className="h-full bg-gradient-hero" style={{ width: `${g.list.length ? (g.completed / g.list.length) * 100 : 0}%` }} />
+                <div className="h-2.5 mt-1.5 rounded-full border-2 border-ink bg-background overflow-hidden">
+                  <div className="h-full bg-primary" style={{ width: `${g.list.length ? (g.completed / g.list.length) * 100 : 0}%` }} />
                 </div>
               </div>
             </header>
@@ -87,15 +89,15 @@ function Mapa() {
                       to="/leccion/$id" params={{ id: l.id }}
                       onClick={(e) => { if (isLocked) e.preventDefault(); }}
                       className={`max-w-[85%] rounded-2xl p-3 flex items-center gap-3 transition-all ${
-                        isDone ? "bg-mint text-mint-foreground shadow-soft" :
-                        isLocked ? "bg-muted text-muted-foreground opacity-60 cursor-not-allowed" :
-                        "bg-background border-2 border-primary hover:scale-[1.02] shadow-pop"
+                        isDone ? "bg-mint border-2 border-ink" :
+                        isLocked ? "border-2 border-dashed border-ink/40 text-muted-foreground cursor-not-allowed" :
+                        "bg-lime border-2 border-ink shadow-[3px_3px_0_var(--ink)] hover:-translate-y-0.5"
                       }`}
                     >
-                      <div className="w-10 h-10 rounded-xl bg-card/70 flex items-center justify-center text-xl shrink-0">
-                        {isLocked ? "🔒" : isDone ? "✓" : i + 1}
+                      <div className="w-10 h-10 rounded-xl border-2 border-ink bg-card flex items-center justify-center font-display text-lg shrink-0">
+                        {isLocked ? <Lock className="h-4 w-4" /> : isDone ? <Check className="h-5 w-5" strokeWidth={3} /> : i + 1}
                       </div>
-                      <div className="font-display font-bold text-sm">{l.title}</div>
+                      <div className="font-semibold text-sm">{l.title}</div>
                     </Link>
                   </div>
                 );

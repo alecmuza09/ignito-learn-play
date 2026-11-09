@@ -1,4 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Companion } from "@/components/companion/Companion";
+import type { CompanionId } from "@/lib/profile";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -125,7 +127,7 @@ function Admin() {
       <div className="min-h-[60vh] grid place-items-center text-center px-4">
         <div>
           <ShieldCheck className="mx-auto h-10 w-10 text-muted-foreground" />
-          <h1 className="font-display text-2xl font-bold mt-3">Acceso restringido</h1>
+          <h1 className="font-display text-2xl mt-3">Acceso restringido</h1>
           <p className="text-muted-foreground mt-1">Esta sección es solo para administradores.</p>
         </div>
       </div>
@@ -186,7 +188,7 @@ function Admin() {
           <p className="text-xs font-bold uppercase tracking-[0.15em] text-muted-foreground">
             Panel de administración
           </p>
-          <h1 className="font-display text-3xl font-bold tracking-tight">IGNOTO</h1>
+          <h1 className="font-display text-3xl tracking-tight">IGNOTO</h1>
         </div>
         <label className="relative w-full sm:w-72">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -234,7 +236,7 @@ function Admin() {
         </TabsList>
 
         <TabsContent value="resumen">
-          <div className="rounded-2xl bg-card border border-border p-4">
+          <div className="rounded-2xl bg-card border-2 border-ink p-4">
             <h2 className="font-bold mb-1">Actividad de los últimos 14 días</h2>
             <p className="text-xs text-muted-foreground mb-4">
               Sesiones iniciadas, lecciones completadas y conversaciones con los compañeros.
@@ -279,7 +281,7 @@ function Admin() {
               </ResponsiveContainer>
             </div>
           </div>
-          <div className="mt-4 rounded-2xl bg-card border border-border p-4">
+          <div className="mt-4 rounded-2xl bg-card border-2 border-ink p-4">
             <h2 className="font-bold mb-3">Aprendices más activos</h2>
             <ol className="space-y-2">
               {[...learners]
@@ -288,7 +290,7 @@ function Admin() {
                 .map((l, i) => (
                   <li key={l.id} className="flex items-center gap-3 text-sm">
                     <span className="w-5 text-muted-foreground font-bold">{i + 1}</span>
-                    <span className="text-xl">{l.avatar}</span>
+                    <Companion id={l.companion as CompanionId} size={32} interactive={false} />
                     <span className="font-semibold flex-1 truncate">{l.name}</span>
                     <span className="text-muted-foreground">{levelTitle(l.xp).name}</span>
                     <span className="font-bold tabular-nums">{l.xp} XP</span>
@@ -400,7 +402,7 @@ function Admin() {
               {filteredLearners.map((l) => (
                 <tr key={l.id} className="border-t border-border">
                   <Td>
-                    <span className="mr-1.5">{l.avatar}</span>
+                    
                     <span className="font-semibold">{l.name}</span>
                   </Td>
                   <Td>{l.kind === "adult" ? "Adulto" : `Niño · ${l.age}`}</Td>
@@ -412,7 +414,7 @@ function Admin() {
                     <span className="text-muted-foreground tabular-nums">({l.xp} XP)</span>
                   </Td>
                   <Td className="tabular-nums">{l.completed_lessons.length}</Td>
-                  <Td className="tabular-nums">{l.streak} 🔥</Td>
+                  <Td className="tabular-nums">{l.streak}</Td>
                   <Td>{fmtDate(l.last_active_at)}</Td>
                   <Td className="text-right">
                     <ActionBtn
@@ -436,12 +438,12 @@ function Admin() {
         </TabsContent>
 
         <TabsContent value="actividad">
-          <div className="rounded-2xl bg-card border border-border divide-y divide-border">
+          <div className="rounded-2xl bg-card border-2 border-ink divide-y divide-border">
             {activity.slice(0, 100).map((a) => {
               const l = a.learner_id ? learnerById.get(a.learner_id) : undefined;
               return (
                 <div key={a.id} className="flex items-center gap-3 px-4 py-2.5 text-sm">
-                  <span className="text-lg w-6 text-center">{l?.avatar ?? "👤"}</span>
+                  <Companion id={(l?.companion ?? "igno") as CompanionId} size={24} interactive={false} />
                   <span className="font-semibold">
                     {l?.name ?? emailById.get(a.owner_id) ?? "—"}
                   </span>
@@ -468,12 +470,12 @@ function Admin() {
 
 function Kpi({ icon, label, value }: { icon: React.ReactNode; label: string; value: number }) {
   return (
-    <div className="rounded-2xl bg-card border border-border p-4">
+    <div className="rounded-2xl bg-card border-2 border-ink p-4">
       <div className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground">
         {icon}
         {label}
       </div>
-      <div className="font-display text-3xl font-bold tabular-nums mt-1">{value}</div>
+      <div className="font-display text-3xl tabular-nums mt-1">{value}</div>
     </div>
   );
 }
@@ -488,7 +490,7 @@ function TableShell({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl bg-card border border-border overflow-x-auto">
+    <div className="rounded-2xl bg-card border-2 border-ink overflow-x-auto">
       <table className="w-full text-sm">{children}</table>
       {loading ? (
         <p className="p-4 text-sm text-muted-foreground">Cargando…</p>

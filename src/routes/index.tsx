@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { ArrowRight, Check, Gauge, MessageCircle, Sparkles, Trophy } from "lucide-react";
 import { Companion } from "@/components/companion/Companion";
 import { CHARACTER_LIST } from "@/components/companion/characters";
+import { useLang } from "@/lib/i18n";
 import { useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/")({ component: Landing });
@@ -10,8 +11,12 @@ export const Route = createFileRoute("/")({ component: Landing });
 const T = {
   es: {
     eyebrow: "Tutor con IA para toda la familia",
-    h1a: "Aprende a tu manera,",
+    h1a: "Aprende",
+    h1hl: "a tu manera,",
     h1b: "al ritmo de cada quien.",
+    meet: "Conoce a la pandilla",
+    meetSub: "Cuatro compañeros, cuatro maneras de estudiar. Cada quien elige el suyo.",
+    note: "¡Nada de clases aburridas!",
     sub: "IGNOTO crea cada lección en el momento a partir de lo que te gusta y de tu nivel. Para niños desde 4 años y para adultos que quieren seguir aprendiendo.",
     cta: "Crear cuenta",
     ctaAlt: "Cómo funciona",
@@ -136,8 +141,12 @@ const T = {
   },
   en: {
     eyebrow: "AI tutor for the whole family",
-    h1a: "Learn your way,",
+    h1a: "Learn",
+    h1hl: "your way,",
     h1b: "at everyone's own pace.",
+    meet: "Meet the crew",
+    meetSub: "Four companions, four ways to study. Everyone picks their own.",
+    note: "No more boring classes!",
     sub: "IGNOTO builds each lesson on the spot from what you love and your level. For kids from age 4 and for adults who want to keep learning.",
     cta: "Create account",
     ctaAlt: "How it works",
@@ -260,12 +269,9 @@ const T = {
 } as const;
 
 const FEATURE_ICONS = [Sparkles, Gauge, MessageCircle, Trophy];
-const FEATURE_TONES = [
-  "bg-primary/12 text-primary",
-  "bg-accent/30 text-accent-foreground",
-  "bg-mint/40 text-mint-foreground",
-  "bg-sky/40 text-sky-foreground",
-];
+const FEATURE_TONES = ["bg-pink", "bg-lime", "bg-mint", "bg-sky"];
+const NOTE_TONES = ["bg-[#fff27a]", "bg-pink", "bg-mint"];
+const TILTS = ["-rotate-2", "rotate-1", "-rotate-1", "rotate-2"];
 
 function Section({
   id,
@@ -273,22 +279,23 @@ function Section({
   title,
   sub,
   children,
-  muted,
+  tone,
 }: {
   id?: string;
   tag: string;
   title: string;
   sub?: string;
   children: ReactNode;
-  muted?: boolean;
+  tone?: "pink" | "lime";
 }) {
+  const bg = tone === "pink" ? "bg-pink checker border-y-[2.5px] border-ink" : tone === "lime" ? "bg-lime border-y-[2.5px] border-ink" : "";
   return (
-    <section id={id} className={muted ? "bg-secondary/60 border-y border-border" : ""}>
+    <section id={id} className={bg}>
       <div className="max-w-6xl mx-auto px-5 py-20 md:py-28">
         <div className="max-w-2xl mb-12">
-          <p className="text-sm font-semibold text-primary">{tag}</p>
-          <h2 className="font-display text-3xl md:text-[2.75rem] mt-2">{title}</h2>
-          {sub && <p className="text-muted-foreground text-lg mt-4">{sub}</p>}
+          <p className="font-hand text-2xl -rotate-2 inline-block">{tag}</p>
+          <h2 className="font-display text-4xl md:text-6xl mt-1">{title}</h2>
+          {sub && <p className="text-lg mt-4 text-foreground/75">{sub}</p>}
         </div>
         {children}
       </div>
@@ -298,54 +305,66 @@ function Section({
 
 function Landing() {
   const t = useT(T);
+  const { lang } = useLang();
   return (
-    <main>
+    <main className="overflow-x-clip">
       {/* HERO */}
-      <section className="max-w-6xl mx-auto px-5 pt-14 pb-20 md:pt-24 md:pb-28 grid md:grid-cols-[1.15fr_1fr] gap-14 items-center">
-        <div>
-          <p className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-sm font-medium text-muted-foreground">
-            <span className="h-2 w-2 rounded-full bg-mint" aria-hidden />
+      <section className="relative max-w-6xl mx-auto px-5 pt-12 pb-20 md:pt-20 md:pb-28 grid md:grid-cols-[1.1fr_1fr] gap-14 items-center">
+        <div className="relative">
+          <p className="inline-flex items-center gap-2 rounded-full border-2 border-ink bg-card px-3 py-1 text-sm font-semibold">
+            <span className="h-2.5 w-2.5 rounded-full bg-primary border border-ink" aria-hidden />
             {t.eyebrow}
           </p>
-          <h1 className="font-display text-[2.75rem] leading-[1.02] md:text-7xl mt-6">
-            {t.h1a} <span className="text-primary">{t.h1b}</span>
+          <h1 className="font-display text-[3.2rem] leading-[0.98] md:text-[5.4rem] mt-6">
+            {t.h1a} <span className="highlight whitespace-nowrap">{t.h1hl}</span> {t.h1b}
           </h1>
-          <p className="text-lg md:text-xl text-muted-foreground mt-6 max-w-xl">{t.sub}</p>
-          <div className="flex flex-wrap gap-3 mt-8">
-            <Link
-              to="/auth"
-              className="inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-6 py-3.5 font-semibold shadow-pop hover:brightness-110 transition"
-            >
-              {t.cta} <ArrowRight className="h-4 w-4" />
+          <p className="text-lg md:text-xl text-foreground/75 mt-6 max-w-xl">{t.sub}</p>
+          <div className="flex flex-wrap gap-4 mt-8">
+            <Link to="/auth" className="btn-sticker bg-primary text-primary-foreground px-6 py-3.5 text-lg">
+              {t.cta} <ArrowRight className="h-5 w-5" />
             </Link>
-            <a
-              href="#como"
-              className="rounded-full border border-border bg-card px-6 py-3.5 font-semibold hover:bg-muted transition-colors"
-            >
+            <a href="#como" className="btn-sticker bg-card px-6 py-3.5 text-lg">
               {t.ctaAlt}
             </a>
           </div>
-          <ul className="mt-10 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
+          <ul className="mt-10 flex flex-wrap gap-x-6 gap-y-2 text-sm font-semibold">
             {t.facts.map((f) => (
               <li key={f} className="flex items-center gap-1.5">
-                <Check className="h-4 w-4 text-primary" /> {f}
+                <span className="grid h-5 w-5 place-items-center rounded-full border-2 border-ink bg-mint">
+                  <Check className="h-3 w-3" strokeWidth={3} />
+                </span>
+                {f}
               </li>
             ))}
           </ul>
         </div>
-        <HeroCompanions hello={t.hello} />
+        <HeroBoard hello={t.hello} note={t.note} />
       </section>
 
+      {/* LA PANDILLA */}
+      <Section tag={t.meet} title={t.meetSub} tone="pink">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
+          {CHARACTER_LIST.map((c, i) => (
+            <div key={c.id} className={`rounded-3xl bg-card sticker p-5 text-center ${TILTS[i]} hover:rotate-0 transition-transform`}>
+              <div className="flex justify-center">
+                <Companion id={c.id} size={128} />
+              </div>
+              <h3 className="font-display text-3xl mt-2">{c.name}</h3>
+              <p className="text-sm font-semibold text-foreground/70">{c.tagline[lang]}</p>
+              <p className="font-hand text-xl mt-3 leading-tight">“{c.line[lang]}”</p>
+            </div>
+          ))}
+        </div>
+      </Section>
+
       {/* POR QUÉ */}
-      <Section tag={t.whyTag} title={t.whyH} sub={t.whySub} muted>
-        <ol className="grid md:grid-cols-3 gap-px rounded-3xl overflow-hidden border border-border bg-border">
+      <Section tag={t.whyTag} title={t.whyH} sub={t.whySub}>
+        <ol className="grid md:grid-cols-3 gap-6">
           {t.why.map((x, i) => (
-            <li key={x.t} className="bg-card p-7">
-              <span className="font-display text-sm text-muted-foreground tabular-nums">
-                0{i + 1}
-              </span>
-              <h3 className="font-display text-xl mt-3">{x.t}</h3>
-              <p className="text-muted-foreground mt-2">{x.d}</p>
+            <li key={x.t} className={`tape relative rounded-md ${NOTE_TONES[i]} border-2 border-ink p-7 shadow-[4px_5px_0_var(--ink)] ${TILTS[i]}`}>
+              <span className="font-hand text-3xl">0{i + 1}.</span>
+              <h3 className="font-display text-2xl mt-2">{x.t}</h3>
+              <p className="mt-2 text-foreground/80">{x.d}</p>
             </li>
           ))}
         </ol>
@@ -353,16 +372,16 @@ function Landing() {
 
       {/* QUÉ HACE */}
       <Section tag={t.featTag} title={t.featH}>
-        <div className="grid sm:grid-cols-2 gap-5">
+        <div className="grid sm:grid-cols-2 gap-6">
           {t.features.map((f, i) => {
             const Icon = FEATURE_ICONS[i];
             return (
-              <div key={f.t} className="rounded-3xl border border-border bg-card p-7">
-                <div className={`grid h-11 w-11 place-items-center rounded-xl ${FEATURE_TONES[i]}`}>
-                  <Icon className="h-5 w-5" />
+              <div key={f.t} className="rounded-3xl bg-card sticker p-7">
+                <div className={`grid h-12 w-12 place-items-center rounded-xl border-2 border-ink ${FEATURE_TONES[i]}`}>
+                  <Icon className="h-6 w-6" strokeWidth={2.25} />
                 </div>
-                <h3 className="font-display text-xl mt-5">{f.t}</h3>
-                <p className="text-muted-foreground mt-2">{f.d}</p>
+                <h3 className="font-display text-2xl mt-5">{f.t}</h3>
+                <p className="text-foreground/75 mt-2">{f.d}</p>
               </div>
             );
           })}
@@ -370,21 +389,18 @@ function Landing() {
       </Section>
 
       {/* PERSONALIZACIÓN */}
-      <Section tag={t.demoTag} title={t.demoH} sub={t.demoSub} muted>
-        <div className="grid md:grid-cols-3 gap-5">
+      <Section tag={t.demoTag} title={t.demoH} sub={t.demoSub} tone="lime">
+        <div className="grid md:grid-cols-3 gap-6">
           {t.demo.map((c, i) => (
-            <figure
-              key={c.who}
-              className="rounded-3xl bg-card border border-border p-6 flex flex-col"
-            >
+            <figure key={c.who} className="paper-lines rounded-2xl border-[2.5px] border-ink shadow-[4px_4px_0_var(--ink)] p-6 pl-14 flex flex-col">
               <figcaption className="flex items-center gap-3">
-                <Companion id={CHARACTER_LIST[i].id} size={44} interactive={false} />
+                <Companion id={CHARACTER_LIST[i].id} size={48} interactive={false} />
                 <div>
-                  <div className="font-semibold">{c.who}</div>
-                  <div className="text-sm text-muted-foreground">{c.like}</div>
+                  <div className="font-bold">{c.who}</div>
+                  <div className="text-sm text-foreground/65">{c.like}</div>
                 </div>
               </figcaption>
-              <blockquote className="mt-5 text-lg leading-snug">“{c.q}”</blockquote>
+              <blockquote className="mt-4 font-hand text-2xl leading-[1.85rem]">{c.q}</blockquote>
             </figure>
           ))}
         </div>
@@ -392,34 +408,20 @@ function Landing() {
 
       {/* NIÑOS / ADULTOS */}
       <Section tag={t.modesTag} title={t.modesH}>
-        <div className="grid md:grid-cols-2 gap-5">
-          <ModeCard
-            companion="chispa"
-            title={t.kidsT}
-            desc={t.kidsD}
-            items={t.kids}
-            tone="bg-accent/25"
-          />
-          <ModeCard
-            companion="bolt"
-            title={t.adultsT}
-            desc={t.adultsD}
-            items={t.adults}
-            tone="bg-secondary"
-          />
+        <div className="grid md:grid-cols-2 gap-6">
+          <ModeCard companion="chispa" title={t.kidsT} desc={t.kidsD} items={t.kids} tone="bg-pink" />
+          <ModeCard companion="bolt" title={t.adultsT} desc={t.adultsD} items={t.adults} tone="bg-sky" />
         </div>
       </Section>
 
       {/* CÓMO FUNCIONA */}
-      <Section id="como" tag={t.howTag} title={t.howH} muted>
-        <ol className="grid md:grid-cols-3 gap-5">
+      <Section id="como" tag={t.howTag} title={t.howH} tone="pink">
+        <ol className="grid md:grid-cols-3 gap-6">
           {t.steps.map((s, i) => (
-            <li key={s.t} className="rounded-3xl bg-card border border-border p-7">
-              <span className="grid h-9 w-9 place-items-center rounded-full bg-primary text-primary-foreground font-display font-semibold">
-                {i + 1}
-              </span>
-              <h3 className="font-display text-xl mt-5">{s.t}</h3>
-              <p className="text-muted-foreground mt-2">{s.d}</p>
+            <li key={s.t} className="rounded-3xl bg-card sticker p-7">
+              <span className="font-display text-6xl text-sticker">{i + 1}</span>
+              <h3 className="font-display text-2xl mt-3">{s.t}</h3>
+              <p className="text-foreground/75 mt-2">{s.d}</p>
             </li>
           ))}
         </ol>
@@ -430,10 +432,12 @@ function Landing() {
         <div className="grid sm:grid-cols-2 gap-x-10 gap-y-8 max-w-4xl">
           {t.family.map((p) => (
             <div key={p.t} className="flex gap-4">
-              <Check className="h-5 w-5 mt-1 flex-shrink-0 text-primary" />
+              <span className="mt-1 grid h-7 w-7 flex-shrink-0 place-items-center rounded-lg border-2 border-ink bg-lime">
+                <Check className="h-4 w-4" strokeWidth={3} />
+              </span>
               <div>
-                <h3 className="font-display text-lg">{p.t}</h3>
-                <p className="text-muted-foreground mt-1">{p.d}</p>
+                <h3 className="font-display text-xl">{p.t}</h3>
+                <p className="text-foreground/75 mt-1">{p.d}</p>
               </div>
             </div>
           ))}
@@ -442,31 +446,30 @@ function Landing() {
 
       {/* CTA */}
       <section className="px-5 pb-24">
-        <div className="max-w-6xl mx-auto rounded-[2rem] bg-foreground text-background px-8 py-14 md:px-16 md:py-20 grid md:grid-cols-[1fr_auto] gap-10 items-center">
+        <div className="max-w-6xl mx-auto rounded-[2rem] bg-ink text-white border-[2.5px] border-ink shadow-[6px_6px_0_var(--primary)] px-8 py-14 md:px-16 md:py-20 grid md:grid-cols-[1fr_auto] gap-10 items-center">
           <div>
-            <h2 className="font-display text-3xl md:text-5xl">{t.finalH}</h2>
-            <p className="mt-4 text-lg opacity-75 max-w-xl">{t.finalSub}</p>
-            <Link
-              to="/auth"
-              className="mt-8 inline-flex items-center gap-2 rounded-full bg-background text-foreground px-6 py-3.5 font-semibold hover:opacity-90 transition"
-            >
-              {t.cta} <ArrowRight className="h-4 w-4" />
+            <h2 className="font-display text-4xl md:text-6xl">{t.finalH}</h2>
+            <p className="mt-4 text-lg text-white/75 max-w-xl">{t.finalSub}</p>
+            <Link to="/auth" className="btn-sticker mt-8 bg-lime text-ink px-6 py-3.5 text-lg !border-white !shadow-[3px_3px_0_#fff]">
+              {t.cta} <ArrowRight className="h-5 w-5" />
             </Link>
           </div>
-          <div className="hidden md:flex gap-3">
+          <div className="hidden md:grid grid-cols-2 gap-2">
             {CHARACTER_LIST.map((c) => (
-              <Companion key={c.id} id={c.id} size={76} interactive={false} />
+              <span key={c.id} className="grid place-items-center rounded-2xl bg-white/95 p-1">
+                <Companion id={c.id} size={84} interactive={false} />
+              </span>
             ))}
           </div>
         </div>
       </section>
 
-      <footer className="border-t border-border">
-        <div className="max-w-6xl mx-auto px-5 py-8 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-          <span className="font-display text-base font-semibold text-foreground">IGNOTO</span>
-          <span>{t.footer}</span>
-          <span className="ml-auto flex gap-5">
-            <Link to="/auth" className="hover:text-foreground">
+      <footer className="border-t-[2.5px] border-ink bg-background">
+        <div className="max-w-6xl mx-auto px-5 py-8 flex flex-wrap items-center gap-4 text-sm">
+          <span className="font-display text-2xl text-sticker -rotate-2">IGNOTO</span>
+          <span className="text-foreground/70">{t.footer}</span>
+          <span className="ml-auto flex gap-5 text-foreground/70">
+            <Link to="/auth" className="font-semibold hover:text-foreground">
               {t.signIn}
             </Link>
             <span>© {new Date().getFullYear()}</span>
@@ -491,14 +494,17 @@ function ModeCard({
   tone: string;
 }) {
   return (
-    <div className={`rounded-3xl p-8 ${tone}`}>
-      <Companion id={companion} size={72} />
-      <h3 className="font-display text-2xl mt-5">{title}</h3>
-      <p className="text-muted-foreground mt-2">{desc}</p>
-      <ul className="mt-6 space-y-2.5">
+    <div className={`rounded-3xl p-8 sticker ${tone}`}>
+      <Companion id={companion} size={96} />
+      <h3 className="font-display text-3xl mt-4">{title}</h3>
+      <p className="text-foreground/75 mt-2">{desc}</p>
+      <ul className="mt-6 space-y-2.5 font-semibold">
         {items.map((it) => (
           <li key={it} className="flex items-start gap-2">
-            <Check className="h-4 w-4 mt-1 text-primary flex-shrink-0" /> {it}
+            <span className="mt-0.5 grid h-5 w-5 flex-shrink-0 place-items-center rounded-full border-2 border-ink bg-card">
+              <Check className="h-3 w-3" strokeWidth={3} />
+            </span>
+            {it}
           </li>
         ))}
       </ul>
@@ -506,29 +512,33 @@ function ModeCard({
   );
 }
 
-/** The four companions; their eyes follow the visitor's pointer. */
-function HeroCompanions({ hello }: { hello: string }) {
-  const [igno, chispa, bolt, luna] = CHARACTER_LIST;
+/** Desk scene: a notebook page with Igno, a sticky note and the rest of the crew. */
+function HeroBoard({ hello, note }: { hello: string; note: string }) {
+  const [, chispa, bolt, luna] = CHARACTER_LIST;
   return (
-    <div className="relative mx-auto grid w-full max-w-[420px] grid-cols-3 gap-4" aria-hidden>
-      <div className="col-span-3 flex flex-col items-center rounded-[2rem] bg-primary/8 border border-border pt-8 pb-6">
-        <Companion id={igno.id} size={170} />
-        <span className="mt-3 rounded-full bg-card border border-border px-4 py-1.5 text-sm font-semibold">
-          {hello}
-        </span>
-      </div>
-      {[
-        { c: chispa, bg: "bg-accent/20" },
-        { c: bolt, bg: "bg-mint/30" },
-        { c: luna, bg: "bg-sky/30" },
-      ].map(({ c, bg }) => (
-        <div
-          key={c.id}
-          className={`flex aspect-square items-center justify-center rounded-[1.5rem] border border-border ${bg}`}
-        >
-          <Companion id={c.id} size={72} />
+    <div className="relative mx-auto w-full max-w-[440px] pt-6" aria-hidden>
+      <div className="paper-lines relative rounded-2xl border-[2.5px] border-ink shadow-[6px_6px_0_var(--ink)] px-6 pt-10 pb-8 -rotate-1">
+        <div className="flex flex-col items-center">
+          <Companion id="igno" size={190} />
+          <span className="mt-2 rounded-full border-2 border-ink bg-card px-4 py-1.5 font-bold shadow-[2px_2px_0_var(--ink)]">
+            {hello}
+          </span>
         </div>
-      ))}
+      </div>
+      <div className="tape absolute -top-2 -right-3 w-36 rotate-6 rounded-sm border-2 border-ink bg-[#fff27a] p-3 shadow-[3px_4px_0_var(--ink)]">
+        <p className="font-hand text-2xl leading-6">{note}</p>
+      </div>
+      <div className="mt-5 grid grid-cols-3 gap-3">
+        {[
+          { c: chispa, bg: "bg-pink", r: "rotate-2" },
+          { c: bolt, bg: "bg-sky", r: "-rotate-2" },
+          { c: luna, bg: "bg-lime", r: "rotate-1" },
+        ].map(({ c, bg, r }) => (
+          <div key={c.id} className={`grid aspect-square place-items-center rounded-2xl sticker ${bg} ${r}`}>
+            <Companion id={c.id} size={84} />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

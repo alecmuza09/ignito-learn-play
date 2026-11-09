@@ -109,25 +109,25 @@ function Familia() {
   }
 
   return (
-    <main className="max-w-5xl mx-auto px-4 py-10 pb-24">
+    <main className="paper-grid min-h-[calc(100vh-4rem)]"><div className="max-w-5xl mx-auto px-4 py-10 pb-24">
       <header className="text-center mb-8">
         <p className="text-sm font-bold text-muted-foreground">
           {t.hi(auth.account?.display_name || auth.user?.email || "")}
         </p>
-        <h1 className="font-display text-4xl md:text-5xl font-bold tracking-tight mt-1">
+        <h1 className="font-display text-4xl md:text-6xl mt-1">
           {t.title}
         </h1>
         <p className="text-muted-foreground mt-2 max-w-xl mx-auto">{t.sub}</p>
       </header>
 
       {legacy && (
-        <div className="mb-6 rounded-3xl border-2 border-dashed border-primary/40 bg-primary/5 p-4 flex flex-col sm:flex-row items-center gap-3">
-          <span className="text-4xl">{legacy.avatar}</span>
+        <div className="mb-6 rounded-3xl sticker bg-lime p-4 flex flex-col sm:flex-row items-center gap-3">
+          <Companion id={legacy.companion} size={48} interactive={false} />
           <p className="flex-1 text-sm">{t.legacy(legacy.childName)}</p>
           <div className="flex gap-2">
             <button
               onClick={importLegacy}
-              className="rounded-full bg-primary text-primary-foreground px-4 py-2 text-sm font-bold"
+              className="btn-sticker bg-primary text-primary-foreground px-4 py-2 text-sm"
             >
               {t.import}
             </button>
@@ -136,7 +136,7 @@ function Familia() {
                 dismissLegacyProfile();
                 setLegacy(null);
               }}
-              className="rounded-full bg-muted px-4 py-2 text-sm font-bold"
+              className="btn-sticker bg-card px-4 py-2 text-sm"
             >
               {t.dismiss}
             </button>
@@ -153,7 +153,7 @@ function Familia() {
           return (
             <div
               key={l.id}
-              className="group relative rounded-3xl bg-card border border-border p-4 shadow-soft text-center transition-transform hover:-translate-y-1 animate-pop-in"
+              className="group relative rounded-3xl bg-card sticker p-4 text-center transition-transform hover:-translate-y-1 hover:rotate-[-1deg] animate-pop-in"
               style={{ animationDelay: `${i * 60}ms`, animationFillMode: "backwards" }}
             >
               <button
@@ -170,27 +170,26 @@ function Familia() {
                     interactive={false}
                   />
                 </div>
-                <div className="font-display text-xl font-bold mt-1 flex items-center justify-center gap-1.5">
-                  <span>{l.avatar}</span> {l.name}
-                </div>
+                <div className="font-display text-2xl mt-1 truncate">{l.name}</div>
                 <div className="mt-1 text-xs font-bold text-muted-foreground">
                   {l.kind === "adult" ? t.adult : `${t.kid} · ${l.age}`} · {lvl.name}
                 </div>
-                <div className="mt-3 flex justify-center gap-2 text-xs font-bold">
-                  <span className="rounded-full bg-accent text-accent-foreground px-2 py-0.5">
-                    ⭐ {l.xp}
-                  </span>
-                  <span className="rounded-full bg-mint text-mint-foreground px-2 py-0.5">
-                    📚 {l.completed_lessons.length}
-                  </span>
-                  <span className="rounded-full bg-coral text-coral-foreground px-2 py-0.5">
-                    🔥 {l.streak}
-                  </span>
-                </div>
+                <dl className="mt-3 grid grid-cols-3 gap-1 text-xs">
+                  {[
+                    { k: "XP", v: l.xp },
+                    { k: t.lessons, v: l.completed_lessons.length },
+                    { k: t.streak, v: l.streak },
+                  ].map((x) => (
+                    <div key={x.k} className="rounded-lg border-2 border-ink bg-background py-1">
+                      <dd className="font-bold tabular-nums text-sm">{x.v}</dd>
+                      <dt className="text-muted-foreground">{x.k}</dt>
+                    </div>
+                  ))}
+                </dl>
               </button>
               <button
                 onClick={() => remove(l)}
-                className="absolute top-2 right-2 rounded-full p-1.5 text-muted-foreground opacity-0 group-hover:opacity-100 focus:opacity-100 hover:bg-destructive/10 hover:text-destructive transition-opacity"
+                className="absolute top-2 right-2 rounded-full p-1.5 text-muted-foreground sm:opacity-0 group-hover:opacity-100 focus:opacity-100 hover:bg-destructive/10 hover:text-destructive transition-opacity"
                 aria-label={t.remove(l.name)}
               >
                 <Trash2 className="h-4 w-4" />
@@ -202,10 +201,10 @@ function Familia() {
         <Link
           to="/registro"
           search={{ tipo: "child" }}
-          className="rounded-3xl border-2 border-dashed border-border p-4 grid place-items-center text-center hover:border-primary hover:bg-primary/5 transition-colors min-h-[220px]"
+          className="rounded-3xl border-[2.5px] border-dashed border-ink p-4 grid place-items-center text-center hover:bg-lime transition-colors min-h-[220px]"
         >
           <div>
-            <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-primary text-primary-foreground">
+            <div className="mx-auto grid h-14 w-14 place-items-center rounded-full border-2 border-ink bg-primary text-primary-foreground">
               <Plus />
             </div>
             <div className="mt-2 font-bold">{t.addChild}</div>
@@ -214,16 +213,16 @@ function Familia() {
         <Link
           to="/registro"
           search={{ tipo: "adult" }}
-          className="rounded-3xl border-2 border-dashed border-border p-4 grid place-items-center text-center hover:border-primary hover:bg-primary/5 transition-colors min-h-[220px]"
+          className="rounded-3xl border-[2.5px] border-dashed border-ink p-4 grid place-items-center text-center hover:bg-lime transition-colors min-h-[220px]"
         >
           <div>
-            <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-foreground text-background">
+            <div className="mx-auto grid h-14 w-14 place-items-center rounded-full border-2 border-ink bg-sky">
               <Plus />
             </div>
             <div className="mt-2 font-bold">{t.addAdult}</div>
           </div>
         </Link>
       </div>
-    </main>
+    </div></main>
   );
 }

@@ -159,7 +159,7 @@ export const generateLesson = createServerFn({ method: "POST" })
       : format === "jugar"? "Lean heavily on tryIt and miniQuiz blocks scattered through the lesson."
       : "Mix block types freely.";
 
-    const sys = `You are IGNO, a playful, expert tutor on IGNOTO. Always reply in ${lang}, with energy and warmth. Use the child's interests as the metaphor backbone of every explanation. NEVER sound like a textbook — sound like a video-game cutscene. Emojis sparingly but joyfully. You output a Generative UI block tree the frontend renders.${data.audience === "adult" ? ADULT_OVERRIDE : ""}`;
+    const sys = `You are IGNO, a playful, expert tutor on IGNOTO. Always reply in ${lang}, with energy and warmth. Use the child's interests as the metaphor backbone of every explanation. NEVER sound like a textbook — sound like a video-game cutscene. Never use emojis. You output a Generative UI block tree the frontend renders.${data.audience === "adult" ? ADULT_OVERRIDE : ""}`;
     const prompt = `Compose ONE adaptive lesson as STRICT JSON (no markdown fences). The body is a list of typed UI blocks the frontend will render. Choose a composition that fits the topic and the child's preferred format. Vary it from a default template.
 
 Shape:
@@ -179,8 +179,8 @@ GenBlock union (pick the best for each beat — order matters, must start with a
   { "type": "compare", "left":  { "label": string, "imagePrompt": <english> },
                        "right": { "label": string, "imagePrompt": <english> },
                        "takeaway": string }
-  { "type": "steps", "title": string, "items": [ { "icon": "1 emoji", "label": string, "body": string } ] (2-5 items) }
-  { "type": "callout", "icon": "1 emoji", "title": string, "body": string }
+  { "type": "steps", "title": string, "items": [ { "label": string, "body": string } ] (2-5 items) }
+  { "type": "callout", "title": string, "body": string }
   { "type": "mascotSays", "text": string, "mood": "happy"|"wink"|"wow"|"calm" }
   { "type": "tryIt", "question": string, "kind": "tap"|"sort"|"input",
       "payload": one of:
@@ -286,18 +286,18 @@ export const askIgno = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => ignoInput.parse(d))
   .handler(async ({ data }) => {
     const lang = data.language === "en" ? "English" : "Spanish";
-    const sys = `You are IGNO, a playful tutor for ${data.childName}, age ${data.age}. Reply in ${lang} with warmth and brevity. Always weave in their favorite world: ${data.interests.join(", ") || "general kid topics"}. You build RICH, multi-block answers — not walls of text. Be a friend who happens to be brilliant.`;
+    const sys = `You are IGNO, a playful tutor for ${data.childName}, age ${data.age}. Reply in ${lang} with warmth and brevity. Always weave in their favorite world: ${data.interests.join(", ") || "general kid topics"}. You build RICH, multi-block answers — not walls of text. Be a friend who happens to be brilliant. Never use emojis.`;
     const user = `${data.lessonContext ? `(Contexto de la lección: ${data.lessonContext})\n\n` : ""}Pregunta del niño: ${data.question}
 
 Responde como STRICT JSON (sin markdown fences) con esta forma:
 {
   "blocks": [
-    { "type": "text", "text": string (1-3 frases cortas, puedes usar **negritas** y emojis) },
+    { "type": "text", "text": string (1-3 frases cortas, puedes usar **negritas**; NO uses emojis) },
     // opcionales:
     { "type": "image", "imagePrompt": string (frase EN inglés para una ilustración cartoon kid-friendly que mezcle el concepto con el mundo favorito del niño; sin texto en la imagen), "caption": string (en ${lang}) },
     { "type": "simulation", "kind": "photosynthesis"|"waterCycle"|"fractionBar"|"logicPath"|"solarSystem"|"heart"|"atom"|"ecosystem"|"foodChain"|"circuit"|"magnet"|"gravity"|"dna"|"volcano"|"geometry"|"multiplication"|"alphabet"|"timeline"|"musicNotes"|"lifeCycle"|"weather"|"rocket"|"wave"|"digestion"|"respiration"|"seasons"|"phaseChange"|"pendulum"|"additionBlocks"|"mapRoute"|"generic", "title": string, "caption": string, "steps": [string,string?,string?,string?] },
-    { "type": "example", "icon": string (1 emoji), "title": string (3-6 palabras), "body": string (1-2 frases con un ejemplo concreto del mundo del niño) },
-    { "type": "tip", "icon": string (1 emoji), "text": string (un mini consejo accionable) }
+    { "type": "example", "title": string (3-6 palabras), "body": string (1-2 frases con un ejemplo concreto del mundo del niño) },
+    { "type": "tip", "text": string (un mini consejo accionable) }
   ]
 }
 Reglas: 2 a 4 bloques en total. SIEMPRE incluye 1 "text" Y SIEMPRE incluye exactamente 1 "simulation" con el "kind" más específico que aplique al tema (NUNCA uses "generic" si hay otro que encaje). El "title" y "caption" deben ser muy breves (máx 6 palabras cada uno). Si das un ejemplo concreto, usa "example". Devuelve SOLO el JSON.`;
@@ -329,7 +329,7 @@ export const parentReport = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => reportInput.parse(d))
   .handler(async ({ data }) => {
     const lang = data.language === "en" ? "English" : "Spanish";
-    const sys = `You are IGNO writing a warm weekly progress report for parents in ${lang}. Be specific, celebrate progress, and suggest 2 concrete next steps. ~150 words. Use friendly, professional tone.`;
+    const sys = `You are IGNO writing a warm weekly progress report for parents in ${lang}. Be specific, celebrate progress, and suggest 2 concrete next steps. ~150 words. Use friendly, professional tone. Plain text, no emojis, no markdown headings.`;
     const prompt = `Child: ${data.childName}\nXP: ${data.xp}\nStreak: ${data.streak} days\nCompleted lessons: ${data.completedCount}\nSubjects & difficulty (1-4): ${data.subjects.map(s => `${s.name}=${s.difficulty}`).join(", ")}\n\nWrite the report in markdown.`;
     const { text: reply } = await callAI([
       { role: "system", content: sys },

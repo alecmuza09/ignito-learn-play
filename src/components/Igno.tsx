@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Mic, Volume2, VolumeX } from "lucide-react";
 import { logActivity, uiModeFor, updateProfile, useProfile } from "@/lib/profile";
 import { useT } from "@/lib/i18n";
+import { stripEmoji } from "@/lib/text";
 import { ignoSpeak } from "@/lib/voice.functions";
 import { useCompanionVoice, useSpeechInput } from "@/lib/voice";
 import { Companion, type CompanionState } from "./companion/Companion";
@@ -86,7 +87,6 @@ const VISUAL_ACTIONS = [
       properties: {
         title: { type: "string" },
         steps: { type: "array", items: { type: "string" }, minItems: 3, maxItems: 6 },
-        emoji: { type: "string" },
       },
       required: ["title", "steps"],
     }),
@@ -342,7 +342,7 @@ export function IgnoFloating() {
       {!open && (
         <div className="fixed bottom-4 right-4 z-50 flex items-end gap-2">
           {peek && (
-            <div className="mb-10 max-w-[220px] rounded-2xl rounded-br-sm bg-card border-2 border-primary/30 px-3 py-2 text-sm font-semibold shadow-soft animate-pop-in">
+            <div className="mb-10 max-w-[220px] rounded-2xl rounded-br-sm bg-card sticker-sm px-3 py-2 text-sm font-semibold animate-pop-in">
               {peek}
             </div>
           )}
@@ -360,13 +360,13 @@ export function IgnoFloating() {
         </div>
       )}
       {open && (
-        <div className="fixed bottom-4 right-4 z-50 w-[min(430px,calc(100vw-2rem))] h-[min(680px,calc(100vh-6rem))] bg-card rounded-3xl shadow-soft border-2 border-primary/20 overflow-hidden animate-pop-in flex flex-col">
+        <div className="fixed bottom-4 right-4 z-50 w-[min(430px,calc(100vw-2rem))] h-[min(680px,calc(100vh-6rem))] bg-card rounded-3xl sticker overflow-hidden animate-pop-in flex flex-col">
           <div className="companion-stage relative flex items-center gap-3 px-4 pt-3 pb-2 flex-shrink-0">
             <Companion id={companionId} size={76} state={state} getLevel={voice.getLevel} label={spec.name} />
             <div className="flex-1 min-w-0">
-              <h3 className="font-display text-xl font-bold leading-tight">{spec.name}</h3>
+              <h3 className="font-display text-2xl leading-tight">{spec.name}</h3>
               <p className="text-xs text-muted-foreground">{audience === "adult" ? t.adultSub : t.kidsSub}</p>
-              <p className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-card/80 px-2 py-0.5 text-[11px] font-bold">
+              <p className="mt-1 inline-flex items-center gap-1.5 rounded-full border-2 border-ink bg-card px-2 py-0.5 text-[11px] font-bold">
                 <span className={`h-2 w-2 rounded-full ${state === "idle" ? "bg-mint" : "bg-primary animate-pulse"}`} />
                 {status}
               </p>
@@ -375,7 +375,7 @@ export function IgnoFloating() {
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="h-9 w-9 rounded-full bg-card/80 text-xl leading-none hover:bg-card"
+                className="h-9 w-9 rounded-full border-2 border-ink bg-card text-xl leading-none hover:bg-lime"
                 aria-label={t.close}
               >
                 ×
@@ -386,7 +386,7 @@ export function IgnoFloating() {
                   if (voiceOn) voice.stop();
                   updateProfile({ voiceEnabled: !voiceOn });
                 }}
-                className="h-9 w-9 rounded-full bg-card/80 hover:bg-card"
+                className="h-9 w-9 rounded-full border-2 border-ink bg-card hover:bg-lime"
                 aria-label={voiceOn ? t.voiceOn : t.voiceOff}
                 aria-pressed={voiceOn}
               >
@@ -395,9 +395,9 @@ export function IgnoFloating() {
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-muted/30">
+          <div className="flex-1 overflow-y-auto p-3 space-y-3 paper-grid border-y-2 border-ink">
             {entries.length === 0 && (
-              <div className="rounded-2xl bg-card border border-border p-3 text-sm leading-relaxed animate-pop-in">
+              <div className="rounded-2xl bg-card border-2 border-ink p-3 text-sm leading-relaxed animate-pop-in">
                 {audience === "adult" ? t.helloAdult(profile.childName, spec.name) : t.hello(profile.childName, spec.name)}
               </div>
             )}
@@ -406,19 +406,19 @@ export function IgnoFloating() {
             ))}
             {speech.listening && speech.interim && (
               <div className="flex justify-end">
-                <div className="max-w-[86%] rounded-2xl px-3 py-2 text-sm bg-primary/60 text-primary-foreground italic">{speech.interim}</div>
+                <div className="max-w-[86%] rounded-2xl px-3 py-2 text-sm bg-primary/70 text-primary-foreground italic border-2 border-ink border-dashed">{speech.interim}</div>
               </div>
             )}
             <div ref={bottomRef} />
           </div>
 
-          <form onSubmit={onSubmit} className="flex gap-2 border-t border-border bg-card p-3">
+          <form onSubmit={onSubmit} className="flex gap-2 bg-card p-3">
             {speech.supported && (
               <button
                 type="button"
                 onClick={() => (speech.listening ? speech.stop() : (voice.stop(), speech.start()))}
                 disabled={sending}
-                className={`grid h-10 w-10 flex-shrink-0 place-items-center rounded-2xl transition-colors ${speech.listening ? "bg-coral text-coral-foreground animate-pulse" : "bg-muted hover:bg-secondary"}`}
+                className={`grid h-10 w-10 flex-shrink-0 place-items-center rounded-2xl transition-colors border-2 border-ink ${speech.listening ? "bg-coral animate-pulse" : "bg-card hover:bg-lime"}`}
                 aria-label={t.mic}
                 aria-pressed={speech.listening}
               >
@@ -428,14 +428,14 @@ export function IgnoFloating() {
             <input
               value={input}
               onChange={(event) => setInput(event.target.value)}
-              className="min-w-0 flex-1 rounded-2xl bg-muted px-3 py-2 text-sm outline-none focus:ring-2 ring-primary"
+              className="field !min-h-10 min-w-0 flex-1 !py-2 text-sm"
               placeholder={t.placeholder}
               disabled={sending}
             />
             <button
               type="submit"
               disabled={sending || !input.trim()}
-              className="rounded-2xl bg-primary text-primary-foreground px-4 py-2 text-sm font-bold disabled:opacity-50"
+              className="btn-sticker bg-primary text-primary-foreground px-4 text-sm"
             >
               {sending ? "…" : t.send}
             </button>
@@ -449,7 +449,7 @@ export function IgnoFloating() {
 function ChatBubble({ entry, pendingText }: { entry: ChatEntry; pendingText: string }) {
   if (entry.pending) {
     return (
-      <div className="max-w-[86%] rounded-2xl bg-card border border-border px-3 py-2 text-sm animate-pulse">
+      <div className="max-w-[86%] rounded-2xl bg-card border-2 border-ink px-3 py-2 text-sm animate-pulse">
         {pendingText}
       </div>
     );
@@ -461,9 +461,9 @@ function ChatBubble({ entry, pendingText }: { entry: ChatEntry; pendingText: str
   return (
     <div className={`flex ${mine ? "justify-end" : "justify-start"}`}>
       <div
-        className={`max-w-[86%] rounded-2xl px-3 py-2 text-sm leading-relaxed ${mine ? "bg-primary text-primary-foreground" : "bg-card border border-border"}`}
+        className={`max-w-[86%] rounded-2xl px-3 py-2 text-sm leading-relaxed ${mine ? "bg-primary text-primary-foreground border-2 border-ink" : "bg-card border-2 border-ink"}`}
       >
-        {entry.text}
+        {mine ? entry.text : stripEmoji(entry.text ?? "")}
       </div>
     </div>
   );
@@ -498,7 +498,6 @@ function ToolRenderer({ tool }: { tool: ToolCall }) {
       <StoryStepsCard
         title={String(args.title ?? "Historia paso a paso")}
         steps={Array.isArray(args.steps) ? args.steps.map(String) : []}
-        emoji={typeof args.emoji === "string" ? args.emoji : "✨"}
       />
     );
   }
@@ -536,8 +535,8 @@ function QuizCard({
 }) {
   const [picked, setPicked] = useState<number | null>(null);
   return (
-    <div className="rounded-2xl bg-card border-2 border-primary/30 p-3 my-2 animate-pop-in">
-      <p className="font-bold text-sm mb-2">🎯 {question}</p>
+    <div className="rounded-2xl bg-card sticker-sm p-3 my-2 animate-pop-in">
+      <p className="font-bold text-sm mb-2">{question}</p>
       <div className="grid gap-1.5">
         {options.map((opt, i) => {
           const isPicked = picked === i;
@@ -545,10 +544,10 @@ function QuizCard({
           const showState = picked !== null;
           let cls = "text-left text-sm rounded-xl px-3 py-2 border-2 transition ";
           if (!showState)
-            cls += "border-border bg-muted hover:bg-primary/10 hover:border-primary/40";
-          else if (isCorrect) cls += "border-mint bg-mint/20 text-mint-foreground font-semibold";
+            cls += "border-ink bg-card hover:bg-lime";
+          else if (isCorrect) cls += "border-ink bg-mint font-semibold";
           else if (isPicked) cls += "border-destructive bg-destructive/10 text-destructive";
-          else cls += "border-border bg-muted opacity-60";
+          else cls += "border-ink/30 bg-card opacity-60";
           return (
             <button
               key={i}
@@ -559,15 +558,15 @@ function QuizCard({
               }}
               className={cls}
             >
-              {showState && (isCorrect ? "✅ " : isPicked ? "❌ " : "")}
+              {showState && (isCorrect ? "Correcta: " : isPicked ? "Tu respuesta: " : "")}
               {opt}
             </button>
           );
         })}
       </div>
       {picked !== null && explanation && (
-        <p className="mt-2 text-xs bg-accent/15 border border-accent/30 rounded-lg px-2 py-1.5">
-          💡 {explanation}
+        <p className="mt-2 text-xs bg-lime/50 border-2 border-ink rounded-lg px-2 py-1.5">
+          {explanation}
         </p>
       )}
     </div>
@@ -590,8 +589,8 @@ function TryItCard({
   const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
   const correct = submitted && norm(val) === norm(answer);
   return (
-    <div className="rounded-2xl bg-card border-2 border-secondary/30 p-3 my-2 animate-pop-in">
-      <p className="font-bold text-sm mb-2">✏️ {question}</p>
+    <div className="rounded-2xl bg-card sticker-sm p-3 my-2 animate-pop-in">
+      <p className="font-bold text-sm mb-2">{question}</p>
       {hint && <p className="text-xs text-muted-foreground mb-1.5">Pista: {hint}</p>}
       <form
         onSubmit={(e) => {
@@ -607,23 +606,23 @@ function TryItCard({
             setVal(e.target.value);
             setSubmitted(false);
           }}
-          className="flex-1 rounded-lg bg-muted px-2.5 py-1.5 text-sm outline-none focus:ring-2 ring-primary"
+          className="field !min-h-10 !py-1.5 text-sm"
           placeholder="Tu respuesta…"
         />
         <button
           type="submit"
-          className="rounded-lg bg-primary text-primary-foreground px-3 text-sm font-bold"
+          className="btn-sticker bg-primary text-primary-foreground px-3 text-sm"
         >
-          OK
+          Revisar
         </button>
       </form>
       {submitted && (
         <p
-          className={`mt-2 text-xs rounded-lg px-2 py-1.5 ${correct ? "bg-mint/20 text-mint-foreground" : "bg-destructive/10 text-destructive"}`}
+          className={`mt-2 text-xs rounded-lg border-2 px-2 py-1.5 ${correct ? "border-ink bg-mint" : "border-destructive bg-destructive/10 text-destructive"}`}
         >
           {correct
-            ? `✅ ¡Correcto! ${explanation ?? ""}`
-            : `❌ Casi… la respuesta es "${answer}". ${explanation ?? ""}`}
+            ? `¡Correcto! ${explanation ?? ""}`
+            : `Casi. La respuesta es "${answer}". ${explanation ?? ""}`}
         </p>
       )}
     </div>
@@ -633,20 +632,16 @@ function TryItCard({
 function StoryStepsCard({
   title,
   steps,
-  emoji,
 }: {
   title: string;
   steps: string[];
-  emoji: string;
 }) {
   const [idx, setIdx] = useState(0);
   const last = idx >= steps.length - 1;
   return (
-    <div className="rounded-2xl bg-card border-2 border-accent/30 p-3 my-2 animate-pop-in">
-      <p className="font-bold text-sm mb-2">
-        {emoji} {title}
-      </p>
-      <div className="bg-muted rounded-xl p-2.5 text-sm min-h-[3rem]">
+    <div className="rounded-2xl bg-card sticker-sm p-3 my-2 animate-pop-in">
+      <p className="font-bold text-sm mb-2">{title}</p>
+      <div className="paper-lines border-2 border-ink rounded-xl p-2.5 pl-12 text-sm min-h-[3rem]">
         <span className="text-xs text-muted-foreground font-mono mr-1">
           {Math.min(idx + 1, Math.max(steps.length, 1))}/{Math.max(steps.length, 1)}
         </span>
@@ -657,16 +652,16 @@ function StoryStepsCard({
           {steps.map((_, i) => (
             <span
               key={i}
-              className={`w-1.5 h-1.5 rounded-full ${i <= idx ? "bg-primary" : "bg-muted"}`}
+              className={`w-2 h-2 rounded-full border border-ink ${i <= idx ? "bg-primary" : "bg-card"}`}
             />
           ))}
         </div>
         <button
           onClick={() => setIdx((i) => Math.min(i + 1, steps.length - 1))}
           disabled={last}
-          className="text-xs rounded-full bg-primary text-primary-foreground px-3 py-1 font-bold disabled:opacity-40"
+          className="btn-sticker bg-primary text-primary-foreground text-xs px-3 py-1"
         >
-          {last ? "¡Listo!" : "Siguiente →"}
+          {last ? "Listo" : "Siguiente"}
         </button>
       </div>
     </div>

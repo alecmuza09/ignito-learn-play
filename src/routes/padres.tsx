@@ -1,4 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { SubjectIcon } from "@/components/SubjectIcon";
+import { stripEmoji } from "@/lib/text";
 import { useRequireLearner } from "@/lib/use-guard";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -80,40 +82,40 @@ function Padres() {
   return (
     <main className="max-w-3xl mx-auto px-4 py-6 pb-24 space-y-6">
       <header>
-        <h1 className="font-display text-3xl font-bold">{t.h1}</h1>
+        <h1 className="font-display text-3xl">{t.h1}</h1>
         <p className="text-muted-foreground mt-1">{t.follow(profile.childName)}</p>
       </header>
 
       <section className="grid grid-cols-3 gap-3">
         <Stat label={t.lessons} value={profile.completedLessons.length} accent="primary" />
         <Stat label={t.xp} value={profile.xp} accent="accent" />
-        <Stat label={t.streak} value={`${profile.streak}🔥`} accent="coral" />
+        <Stat label={t.streak} value={profile.streak} accent="coral" />
       </section>
 
-      <section className="rounded-3xl bg-card border border-border p-5 shadow-soft">
-        <h2 className="font-display text-xl font-bold mb-3">{t.bySubject}</h2>
+      <section className="rounded-3xl bg-card sticker p-5">
+        <h2 className="font-display text-xl mb-3">{t.bySubject}</h2>
         <div className="space-y-3">
           {bySubject.map((s) => (
             <div key={s.id}>
               <div className="flex items-center justify-between text-sm mb-1">
-                <span className="font-bold">{s.emoji} {s.label}</span>
-                <span className="text-muted-foreground">{s.done}/{s.total} · {t.difficulty} {s.difficulty}/4</span>
+                <span className="flex items-center gap-2 font-semibold"><SubjectIcon id={s.id} size={28} /> {s.label}</span>
+                <span className="text-muted-foreground tabular-nums">{s.done}/{s.total} · {t.difficulty} {s.difficulty}/4</span>
               </div>
-              <div className="h-2.5 rounded-full bg-muted overflow-hidden"><div className="h-full bg-gradient-hero" style={{ width: `${s.pct}%` }} /></div>
+              <div className="h-3 rounded-full border-2 border-ink bg-background overflow-hidden"><div className="h-full bg-primary" style={{ width: `${s.pct}%` }} /></div>
             </div>
           ))}
         </div>
       </section>
 
-      <section className="rounded-3xl bg-card border border-border p-5 shadow-soft">
+      <section className="rounded-3xl bg-card sticker p-5">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="font-display text-xl font-bold">{t.weekly}</h2>
-          <button onClick={generate} disabled={loading} className="rounded-full bg-primary text-primary-foreground px-4 py-2 text-sm font-bold disabled:opacity-50">
+          <h2 className="font-display text-xl">{t.weekly}</h2>
+          <button onClick={generate} disabled={loading} className="btn-sticker bg-primary text-primary-foreground px-4 py-2 text-sm">
             {loading ? t.generating : t.generate}
           </button>
         </div>
         {report ? (
-          <div className="prose prose-sm max-w-none whitespace-pre-wrap text-sm leading-relaxed">{report}</div>
+          <div className="paper-lines rounded-2xl border-2 border-ink p-4 pl-14 whitespace-pre-wrap text-sm leading-[1.85rem]">{stripEmoji(report)}</div>
         ) : (
           <p className="text-sm text-muted-foreground">{t.placeholder}</p>
         )}
@@ -123,10 +125,10 @@ function Padres() {
 }
 
 function Stat({ label, value, accent }: { label: string; value: string | number; accent: "primary" | "accent" | "coral" }) {
-  const cls = accent === "primary" ? "bg-primary text-primary-foreground" : accent === "accent" ? "bg-accent text-accent-foreground" : "bg-coral text-coral-foreground";
+  const cls = accent === "primary" ? "bg-pink" : accent === "accent" ? "bg-lime" : "bg-sky";
   return (
-    <div className={`rounded-2xl p-4 text-center shadow-soft ${cls}`}>
-      <div className="font-display text-2xl font-bold">{value}</div>
+    <div className={`rounded-2xl p-4 text-center sticker-sm ${cls}`}>
+      <div className="font-display text-3xl tabular-nums">{value}</div>
       <div className="text-xs opacity-90">{label}</div>
     </div>
   );

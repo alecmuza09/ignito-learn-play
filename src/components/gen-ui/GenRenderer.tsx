@@ -4,6 +4,20 @@ import { toneClasses } from "@/lib/theme-from-interests";
 import { useGenTheme } from "./primitives";
 import { KawaiiBlob } from "./KawaiiBlob";
 import { AnimatedSimulation, AnimatedVisualFallback, QuizMotif } from "./AnimatedSimulation";
+import { Megaphone } from "lucide-react";
+import { stripEmoji } from "@/lib/text";
+
+/** Model output may include emoji; the UI doesn't use them, so strip every text field. */
+function cleanBlock<T>(v: T): T {
+  if (typeof v === "string") return stripEmoji(v) as T;
+  if (Array.isArray(v)) return v.map(cleanBlock) as T;
+  if (v && typeof v === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [k, x] of Object.entries(v)) out[k] = k === "imagePrompt" || k === "id" ? x : cleanBlock(x);
+    return out as T;
+  }
+  return v;
+}
 
 export interface GenRendererProps {
   blocks: GenBlock[];
@@ -12,7 +26,8 @@ export interface GenRendererProps {
   onTryItDone?: (block: TryItBlock, correct: boolean) => void;
 }
 
-export function GenRenderer({ blocks, imageUrls, onMiniQuizAnswer, onTryItDone }: GenRendererProps) {
+export function GenRenderer({ blocks: raw, imageUrls, onMiniQuizAnswer, onTryItDone }: GenRendererProps) {
+  const blocks = useMemo(() => raw.map(cleanBlock), [raw]);
   return (
     <div className="space-y-5">
       {blocks.map((b) => (
@@ -28,10 +43,10 @@ function BlockShell({ children, agentInserted }: { children: React.ReactNode; ag
   if (!agentInserted) return <div className="animate-pop-in">{children}</div>;
   return (
     <div className="relative animate-pop-in">
-      <div className="absolute -top-2 left-3 z-10 text-[10px] font-bold uppercase tracking-wider rounded-full bg-accent text-accent-foreground px-2 py-0.5 shadow-pop">
-        🤖 IA en vivo
+      <div className="absolute -top-3 left-4 z-10 text-[11px] font-bold rounded-full border-2 border-ink bg-lime px-2.5 py-0.5">
+        Hecho para ti
       </div>
-      <div className="ring-2 ring-accent/60 rounded-3xl">{children}</div>
+      <div>{children}</div>
     </div>
   );
 }
@@ -69,14 +84,14 @@ function HeroBlock({ b, url }: { b: Extract<GenBlock,{type:"hero"}>; url?: strin
           <div className={`absolute inset-x-0 bottom-0 h-2/3 ${t.bg} opacity-70`} />
           <div className="absolute bottom-0 left-0 right-0 p-5">
             <div className="text-[10px] font-bold uppercase opacity-90 tracking-wider">Misión</div>
-            <h1 className="font-display text-2xl md:text-3xl font-bold leading-tight">{b.title}</h1>
+            <h1 className="font-display text-2xl md:text-3xl leading-tight">{b.title}</h1>
             {b.subtitle && <p className="mt-1 opacity-90 text-sm">{b.subtitle}</p>}
           </div>
         </div>
       ) : (
         <div className="p-6">
           <div className="text-xs font-bold uppercase opacity-90 tracking-wider">Misión</div>
-          <h1 className="font-display text-3xl font-bold mt-1">{b.title}</h1>
+          <h1 className="font-display text-3xl mt-1">{b.title}</h1>
           {b.subtitle && <p className="mt-2 opacity-90 text-sm">{b.subtitle}</p>}
           <div className="mt-4 text-foreground">
             <AnimatedVisualFallback prompt={b.imagePrompt} title={b.title} compact />
@@ -91,19 +106,19 @@ function TextBlock({ b }: { b: Extract<GenBlock,{type:"text"}> }) {
   const isFact = b.emphasis === "fact";
   const isAnal = b.emphasis === "analogy";
   if (isFact) return (
-    <div className="rounded-3xl bg-coral text-coral-foreground p-5 shadow-soft">
-      <div className="text-xs font-bold uppercase opacity-90 mb-1">💡 Dato curioso</div>
+    <div className="rounded-3xl bg-coral text-coral-foreground p-5 sticker">
+      <div className="text-xs font-bold uppercase opacity-90 mb-1">Dato curioso</div>
       <p className="leading-relaxed">{b.body}</p>
     </div>
   );
   if (isAnal) return (
-    <div className="rounded-3xl bg-mint text-mint-foreground p-5 shadow-soft">
-      <div className="text-xs font-bold uppercase opacity-90 mb-1">🔗 Analogía</div>
+    <div className="rounded-3xl bg-mint text-mint-foreground p-5 sticker">
+      <div className="text-xs font-bold uppercase opacity-90 mb-1">Analogía</div>
       <p className="leading-relaxed">{b.body}</p>
     </div>
   );
   return (
-    <div className="rounded-3xl bg-card border border-border p-5">
+    <div className="rounded-3xl bg-card sticker p-5">
       <p className="leading-relaxed text-foreground/90">{b.body}</p>
     </div>
   );
@@ -129,7 +144,7 @@ function CompareBlock({ b, urls }: { b: Extract<GenBlock,{type:"compare"}>; urls
   const lUrl = urls[b.id + ":left"];
   const rUrl = urls[b.id + ":right"];
   return (
-    <div className="rounded-3xl bg-card border border-border p-4 space-y-3">
+    <div className="rounded-3xl bg-card sticker p-4 space-y-3">
       <div className="grid grid-cols-2 gap-3">
         {[["L", b.left, lUrl], ["R", b.right, rUrl]].map(([k, side, u]) => {
           const s = side as { label: string; imagePrompt: string };
@@ -160,13 +175,13 @@ function StepsBlock({ b }: { b: Extract<GenBlock,{type:"steps"}> }) {
   const theme = useGenTheme();
   const t = toneClasses(theme.tone);
   return (
-    <div className="rounded-3xl bg-card border border-border p-5">
-      {b.title && <h3 className="font-display text-lg font-bold mb-3">{b.title}</h3>}
+    <div className="rounded-3xl bg-card sticker p-5">
+      {b.title && <h3 className="font-display text-lg mb-3">{b.title}</h3>}
       <ol className="space-y-3">
         {b.items.map((it, i) => (
           <li key={i} className="flex gap-3 items-start">
             <span className={`shrink-0 w-9 h-9 rounded-2xl ${t.bgSoft} ${t.border} border-2 grid place-items-center text-base font-bold`}>
-              {it.icon ?? i + 1}
+              {i + 1}
             </span>
             <div className="flex-1">
               <div className="font-bold text-sm">{it.label}</div>
@@ -185,10 +200,10 @@ function CalloutBlock({ b }: { b: Extract<GenBlock,{type:"callout"}> }) {
   return (
     <div className={`rounded-3xl ${t.bgSoft} border-2 ${t.border}/40 p-4 flex gap-3`}>
       <div className={`shrink-0 w-12 h-12 rounded-2xl ${t.bg} ${t.text} grid place-items-center text-2xl shadow-pop`}>
-        {b.icon ?? "📣"}
+        <Megaphone className="h-5 w-5" />
       </div>
       <div>
-        <div className="font-display font-bold leading-tight">{b.title}</div>
+        <div className="font-display leading-tight">{b.title}</div>
         <p className="text-sm text-foreground/85 mt-1 leading-relaxed">{b.body}</p>
       </div>
     </div>
@@ -214,7 +229,7 @@ function CelebrateBlock({ b }: { b: Extract<GenBlock,{type:"celebrate"}> }) {
   const t = toneClasses(theme.accentTone);
   const parts = b.particles ?? theme.particles;
   return (
-    <div className={`relative overflow-hidden rounded-3xl ${t.bg} ${t.text} px-5 py-4 shadow-pop text-center`}>
+    <div className={`relative overflow-hidden rounded-3xl ${t.bg} ${t.text} px-5 py-4 text-center`}>
       <div aria-hidden className="absolute inset-0 pointer-events-none">
         {parts.concat(parts).map((c, i) => (
           <span key={i} className="absolute text-2xl opacity-70"
@@ -222,7 +237,7 @@ function CelebrateBlock({ b }: { b: Extract<GenBlock,{type:"celebrate"}> }) {
               animation: `gen-banner-float ${3+(i%3)}s ease-in-out ${i*0.15}s infinite alternate` }}>{c}</span>
         ))}
       </div>
-      <div className="relative font-display text-xl font-bold">{b.message}</div>
+      <div className="relative font-display text-xl">{b.message}</div>
     </div>
   );
 }
@@ -237,8 +252,8 @@ function MiniQuizBlockView({ b, onAnswer }: { b: MiniQuizBlock; onAnswer?: (b: M
   const motifText = `${b.question} ${b.options.join(" ")} ${b.explanation ?? ""}`;
   return (
     <div className="rounded-3xl bg-card border-2 border-primary/30 p-5 space-y-3">
-      <div className="text-xs font-bold uppercase tracking-wider text-primary">⚡ Mini-pregunta</div>
-      <div className="font-display text-lg font-bold">{b.question}</div>
+      <div className="text-xs font-bold uppercase tracking-wider text-primary">Mini pregunta</div>
+      <div className="font-display text-lg">{b.question}</div>
       <QuizMotif text={motifText} className="border border-border" />
       <div className="space-y-2">
         {b.options.map((o, i) => {
@@ -280,8 +295,8 @@ function TryItBlockView({ b, onDone }: { b: TryItBlock; onDone?: (b: TryItBlock,
   }`;
   return (
     <div className="rounded-3xl bg-card border-2 border-sky/40 p-5 space-y-3">
-      <div className="text-xs font-bold uppercase tracking-wider text-sky-foreground/80">🎯 Pruébalo</div>
-      <div className="font-display text-base font-bold">{b.question}</div>
+      <div className="text-xs font-bold uppercase tracking-wider text-sky-foreground/80">Pruébalo</div>
+      <div className="font-display text-base">{b.question}</div>
       <QuizMotif text={motifText} className="border border-border" />
       {b.payload.kind === "tap"   && <TapInteraction b={b} payload={b.payload} onDone={onDone} />}
       {b.payload.kind === "sort"  && <SortInteraction b={b} payload={b.payload} onDone={onDone} />}
@@ -367,7 +382,7 @@ function SortInteraction({ b, payload, onDone }: {
       </button>
       {done && (
         <div className={`text-sm rounded-2xl p-3 ${correct ? "bg-mint/25" : "bg-accent/15"}`}>
-          {correct ? "¡Orden perfecto! 🎉" : "Casi… el orden correcto era:"}
+          {correct ? "¡Orden perfecto!" : "Casi… el orden correcto era:"}
           {!correct && <div className="mt-1 text-xs">{target.join(" → ")}</div>}
           {payload.explanation && <div className="mt-1">{payload.explanation}</div>}
         </div>
@@ -396,7 +411,7 @@ function InputInteraction({ b, payload, onDone }: {
       </div>
       {done && (
         <div className={`text-sm rounded-2xl p-3 ${correct ? "bg-mint/25" : "bg-accent/15"}`}>
-          {correct ? "¡Bien hecho! 🎉" : `Respuesta: ${payload.answer}`}
+          {correct ? "¡Bien hecho!" : `Respuesta: ${payload.answer}`}
           {payload.explanation && <div className="mt-1">{payload.explanation}</div>}
         </div>
       )}

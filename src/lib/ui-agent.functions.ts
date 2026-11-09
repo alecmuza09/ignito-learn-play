@@ -58,7 +58,7 @@ Return STRICT JSON:
     "tone": "primary"|"coral"|"mint"|"sky"|"accent",
     "headline": string (<=4 words),
     "message": string (<=14 words),
-    "particles": string[] (1-4 emoji that fit the child's interests),
+    "particles": string[] (always an empty array),
     "intensity": "calm"|"normal"|"epic",
     "ttlMs": number (1500-4000)
   },
@@ -67,13 +67,13 @@ Return STRICT JSON:
 
 When to set insertBlock:
 - "streak" -> a "celebrate" block { "type":"celebrate", "message": "...", "particles":[...] } (always).
-- "wrong"  (wrongSoFar >= 2) -> a gentle "callout" block { "type":"callout", "icon":"💛", "title": "...", "body":"a tiny analogy that helps next time" }.
+- "wrong"  (wrongSoFar >= 2) -> a gentle "callout" block { "type":"callout", "title": "...", "body":"a tiny analogy that helps next time" }.
 - "stuck"  -> a "mascotSays" block { "type":"mascotSays", "text":"<one-line hint using their interest>", "mood":"wink" }.
 - "complete" -> a "celebrate" block.
 - otherwise (correct/start) -> "insertBlock": null.
 
 Allowed insert block types: "callout" | "mascotSays" | "celebrate".
-Use ONLY the fields shown above. The frontend renders it immediately and tags it as "🤖 IA en vivo".`;
+Use ONLY the fields shown above. The frontend renders it immediately and tags it as "Hecho para ti". Never use emojis in any field.`;
 
     let raw = "";
     if (geminiKey()) {
@@ -116,7 +116,7 @@ Use ONLY the fields shown above. The frontend renders it immediately and tags it
     }
     const reaction: AgentReactionPayload = (outer.reaction ?? (outer as unknown as AgentReactionPayload));
     reaction.ttlMs = Math.max(1500, Math.min(4000, reaction.ttlMs ?? 2200));
-    if (!Array.isArray(reaction.particles) || reaction.particles.length === 0) reaction.particles = ["✨"];
+    if (!Array.isArray(reaction.particles) || reaction.particles.length === 0) reaction.particles = [];
     let insertBlock: GenBlock | null = null;
     if (outer.insertBlock && typeof outer.insertBlock === "object") {
       const r = blockZ.safeParse(outer.insertBlock);
